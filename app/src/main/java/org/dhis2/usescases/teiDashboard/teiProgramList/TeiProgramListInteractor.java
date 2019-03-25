@@ -5,10 +5,10 @@ import android.content.DialogInterface;
 
 import org.dhis2.R;
 import org.dhis2.usescases.main.program.ProgramViewModel;
-import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.custom_views.OrgUnitDialog;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.program.Program;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -77,15 +77,14 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
                     selectedCalendar.set(Calendar.SECOND, 0);
                     selectedCalendar.set(Calendar.MILLISECOND, 0);
                     selectedEnrollmentDate = selectedCalendar.getTime();
-                    String enrollmentDate = DateUtils.uiDateFormat().format(selectedEnrollmentDate);
 
                     compositeDisposable.add(getOrgUnits(programUid)
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(
                                     allOrgUnits -> {
-                                        ArrayList<OrganisationUnitModel> orgUnits = new ArrayList<>();
-                                        for (OrganisationUnitModel orgUnit : allOrgUnits) {
+                                        ArrayList<OrganisationUnit> orgUnits = new ArrayList<>();
+                                        for (OrganisationUnit orgUnit : allOrgUnits) {
                                             boolean afterOpening = false;
                                             boolean beforeClosing = false;
                                             if (orgUnit.openingDate() == null || !selectedEnrollmentDate.before(orgUnit.openingDate()))
@@ -111,7 +110,8 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
                 year,
                 month,
                 day);
-        ProgramModel selectedProgram = getProgramFromUid(programUid);
+
+        Program selectedProgram = getProgramFromUid(programUid);
         if (selectedProgram != null && !selectedProgram.selectEnrollmentDatesInFuture()) {
             dateDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
         }
@@ -125,7 +125,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
 
     }
 
-    private ProgramModel getProgramFromUid(String programUid) {
+    private Program getProgramFromUid(String programUid) {
         return teiProgramListRepository.getProgram(programUid);
     }
 
@@ -134,14 +134,12 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
                 teiProgramListRepository.saveToEnroll(orgUnitUid, programUid, teiUid, enrollmentDate)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(enrollmentUid -> {
-                                    view.goToEnrollmentScreen(enrollmentUid, programUid);
-                                },
+                        .subscribe(enrollmentUid -> view.goToEnrollmentScreen(enrollmentUid, programUid),
                                 Timber::d)
         );
     }
 
-    public Observable<List<OrganisationUnitModel>> getOrgUnits(String programUid) {
+    public Observable<List<OrganisationUnit>> getOrgUnits(String programUid) {
         return teiProgramListRepository.getOrgUnits(programUid);
     }
 
@@ -185,12 +183,12 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
         );
     }
 
-    private void deleteRepeatedPrograms(List<ProgramViewModel> allPrograms, List<ProgramModel> alreadyEnrolledPrograms) {
+    private void deleteRepeatedPrograms(List<ProgramViewModel> allPrograms, List<Program> alreadyEnrolledPrograms) {
         ArrayList<ProgramViewModel> programListToPrint = new ArrayList<>();
         for (ProgramViewModel programModel1 : allPrograms) {
             boolean isAlreadyEnrolled = false;
             boolean onlyEnrollOnce = false;
-            for (ProgramModel programModel2 : alreadyEnrolledPrograms) {
+            for (Program programModel2 : alreadyEnrolledPrograms) {
                 if (programModel1.id().equals(programModel2.uid())) {
                     isAlreadyEnrolled = true;
                     onlyEnrollOnce = programModel2.onlyEnrollOnce();
@@ -204,7 +202,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
     }
 
     @Override
-    public String getProgramColor(String uid) {
+    public String getProgramColor(@NotNull String uid) {
         return teiProgramListRepository.getProgramColor(uid);
     }
 

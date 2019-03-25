@@ -30,6 +30,7 @@ import org.dhis2.utils.Period;
 import org.dhis2.utils.custom_views.RxDateDialog;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.Program;
 
 import java.text.SimpleDateFormat;
@@ -382,16 +383,14 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
             treeView.expandAll();
 
         treeView.setDefaultNodeClickListener((node, value) -> {
-            if (treeView.getSelected().size() == 1 && !node.isSelected()) {
+            if ((treeView.getSelected().size() == 1 && !node.isSelected()) || (treeView.getSelected().size() > 1)) {
                 binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
-            } else if (treeView.getSelected().size() > 1) {
-                binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
-
-                if (node.getChildren().isEmpty())
-                    presenter.onExpandOrgUnitNode(node, ((OrganisationUnit) node.getValue()).uid());
-                else
-                    node.setExpanded(node.isExpanded());
             }
+            if (node.getChildren().isEmpty())
+                presenter.onExpandOrgUnitNode(node, ((OrganisationUnit) node.getValue()).uid());
+            else
+                node.setExpanded(node.isExpanded());
+
         });
 
         binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
@@ -421,13 +420,13 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
         ArrayList<CategoryOptionCombo> catComboListFinal = new ArrayList<>();
         if (catComboList != null) {
             for (CategoryOptionCombo categoryOptionComboModel : catComboList) {
-                if (!"default".equals(categoryOptionComboModel.displayName()) && !categoryOptionComboModel.uid().equals(CategoryCombo.DEFAULT_UID)) {
+                if (!"default" .equals(categoryOptionComboModel.displayName()) && !categoryOptionComboModel.uid().equals(CategoryCombo.DEFAULT_UID)) {
                     catComboListFinal.add(categoryOptionComboModel);
                 }
             }
         }
 
-        if (catCombo.isDefault() || "default".equals(catCombo.displayName()) || catCombo.uid().equals(CategoryCombo.DEFAULT_UID) || catComboListFinal.isEmpty()) {
+        if (catCombo.isDefault() || "default" .equals(catCombo.displayName()) || catCombo.uid().equals(CategoryCombo.DEFAULT_UID) || catComboListFinal.isEmpty()) {
             binding.catCombo.setVisibility(View.GONE);
         } else {
             binding.catCombo.setVisibility(View.VISIBLE);

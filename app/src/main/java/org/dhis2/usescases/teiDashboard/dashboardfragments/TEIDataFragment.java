@@ -63,7 +63,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
 
     private FragmentTeiDataBinding binding;
 
-    private static TEIDataFragment instance;
+    static private TEIDataFragment instance;
     private TeiDashboardContracts.Presenter presenter;
 
     private EventAdapter adapter;
@@ -145,7 +145,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
 
         if (nprogram != null && nprogram.getCurrentEnrollment() != null) {
             SharedPreferences prefs = context.getSharedPreferences(Constants.SHARE_PREFS, Context.MODE_PRIVATE);
-            hasCatComb = !nprogram.getCurrentProgram().categoryCombo().equals(prefs.getString(Constants.DEFAULT_CAT_COMBO, ""));
+            hasCatComb = !nprogram.getCurrentProgram().categoryCombo().uid().equals(prefs.getString(Constants.DEFAULT_CAT_COMBO, ""));
             List<Event> events = new ArrayList<>();
             adapter = new EventAdapter(presenter, nprogram.getProgramStages(), events, nprogram.getCurrentEnrollment(), nprogram.getCurrentProgram());
             binding.teiRecycler.setLayoutManager(new LinearLayoutManager(getAbstracContext()));

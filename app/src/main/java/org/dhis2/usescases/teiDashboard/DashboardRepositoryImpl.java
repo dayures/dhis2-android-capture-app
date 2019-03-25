@@ -20,6 +20,7 @@ import org.hisp.dhis.android.core.data.database.DbDateColumnAdapter;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
+import org.hisp.dhis.android.core.enrollment.note.Note;
 import org.hisp.dhis.android.core.enrollment.note.NoteModel;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
@@ -463,7 +464,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
     }
 
     @Override
-    public Flowable<List<NoteModel>> getNotes(String programUid, String teUid) {
+    public Flowable<List<Note>> getNotes(String programUid, String teUid) {
         return briteDatabase.createQuery(NoteModel.TABLE, SELECT_NOTES, teUid == null ? "" : teUid, programUid == null ? "" : programUid)
                 .mapToList(cursor -> {
 
@@ -478,12 +479,12 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     String storedBy = storedByColumnIndex != -1 && !cursor.isNull(storedByColumnIndex) ? cursor.getString(storedByColumnIndex) : null;
                     Date storedDate = dbDateColumnAdapter.fromCursor(cursor, "storedDate");
 
-                    return NoteModel.builder()
+                    return Note.builder()
                             .id(id)
                             .enrollment(enrollment)
                             .value(value)
                             .storedBy(storedBy)
-                            .storedDate(storedDate)
+                            .storedDate(DateUtils.databaseDateFormat().format(storedDate))
                             .build();
 
                 }).toFlowable(BackpressureStrategy.LATEST);

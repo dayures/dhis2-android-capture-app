@@ -3,7 +3,6 @@ package org.dhis2.usescases.teiDashboard.teiDataDetail;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.util.Log;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -36,7 +35,6 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
     private final EnrollmentStatusStore enrollmentStore;
     private TeiDataDetailContracts.View view;
     private FusedLocationProviderClient mFusedLocationClient;
-    private String enrollmentUid;
 
     TeiDataDetailPresenter(DashboardRepository dashboardRepository, MetadataRepository metadataRepository, EnrollmentStatusStore enrollmentStatusStore) {
         this.dashboardRepository = dashboardRepository;
@@ -48,7 +46,6 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
     @Override
     public void init(TeiDataDetailContracts.View view, String uid, String programUid, String enrollmentUid) {
         this.view = view;
-        this.enrollmentUid = enrollmentUid;
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(view.getContext());
 
         if (programUid != null) {
@@ -65,8 +62,7 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
-                            view::setData,
-                            throwable -> Log.d("ERROR", throwable.getMessage()))
+                            view::setData, Timber::e)
             );
 
             disposable.add(
@@ -74,8 +70,7 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(
-                                    view.handleStatus(),
-                                    throwable -> Log.d("ERROR", throwable.getMessage()))
+                                    view.handleStatus(), Timber::e)
 
             );
 
@@ -100,8 +95,7 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
                     DashboardProgramModel::new)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(view::setData,
-                            throwable -> Log.d("ERROR", throwable.getMessage()))
+                    .subscribe(view::setData, Timber::e)
             );
         }
     }
@@ -114,7 +108,7 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
 
     @Override
     public void onDeactivate(DashboardProgramModel dashboardProgramModel) {
-        if (dashboardProgramModel.getCurrentProgram().accessDataWrite())
+        if (dashboardProgramModel.getCurrentProgram().access().data().write())
             disposable.add(enrollmentStore.save(dashboardProgramModel.getCurrentEnrollment().uid(), EnrollmentStatus.CANCELLED)
                     .subscribeOn(Schedulers.computation())
                     .observeOn(AndroidSchedulers.mainThread())
@@ -130,7 +124,7 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
 
     @Override
     public void onReOpen(DashboardProgramModel dashboardProgramModel) {
-        if (dashboardProgramModel.getCurrentProgram().accessDataWrite())
+        if (dashboardProgramModel.getCurrentProgram().access().data().write())
             disposable.add(enrollmentStore.save(dashboardProgramModel.getCurrentEnrollment().uid(), EnrollmentStatus.ACTIVE)
                     .subscribeOn(Schedulers.computation())
                     .observeOn(AndroidSchedulers.mainThread())
@@ -145,7 +139,7 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
 
     @Override
     public void onComplete(DashboardProgramModel dashboardProgramModel) {
-        if (dashboardProgramModel.getCurrentProgram().accessDataWrite())
+        if (dashboardProgramModel.getCurrentProgram().access().data().write())
             disposable.add(enrollmentStore.save(dashboardProgramModel.getCurrentEnrollment().uid(), EnrollmentStatus.COMPLETED)
                     .subscribeOn(Schedulers.computation())
                     .observeOn(AndroidSchedulers.mainThread())
@@ -160,7 +154,7 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
 
     @Override
     public void onActivate(DashboardProgramModel dashboardProgramModel) {
-        if (dashboardProgramModel.getCurrentProgram().accessDataWrite())
+        if (dashboardProgramModel.getCurrentProgram().access().data().write())
             disposable.add(enrollmentStore.save(dashboardProgramModel.getCurrentEnrollment().uid(), EnrollmentStatus.ACTIVE)
                     .subscribeOn(Schedulers.computation())
                     .observeOn(AndroidSchedulers.mainThread())
@@ -191,7 +185,7 @@ public class TeiDataDetailPresenter implements TeiDataDetailContracts.Presenter 
         }
         mFusedLocationClient.getLastLocation().addOnSuccessListener(location -> {
             if (location != null) {
-                saveLocation(location.getLatitude(),location.getLongitude());
+                saveLocation(location.getLatitude(), location.getLongitude());
             }
         });
     }

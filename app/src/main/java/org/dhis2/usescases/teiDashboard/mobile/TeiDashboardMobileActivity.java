@@ -5,20 +5,13 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
 import android.os.Handler;
-
-import androidx.annotation.Nullable;
-
-import com.google.android.material.ripple.RippleUtils;
-import com.google.android.material.tabs.TabLayout;
-import androidx.fragment.app.FragmentStatePagerAdapter;
-import androidx.viewpager.widget.ViewPager;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
+
+import com.google.android.material.tabs.TabLayout;
 
 import org.dhis2.BuildConfig;
 import org.dhis2.R;
@@ -36,12 +29,17 @@ import org.dhis2.usescases.teiDashboard.teiProgramList.TeiProgramListActivity;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.custom_views.CategoryComboDialog;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.viewpager.widget.ViewPager;
 import me.toptas.fancyshowcase.FancyShowCaseView;
 import me.toptas.fancyshowcase.FocusShape;
 
@@ -82,8 +80,6 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
         if (!changingProgram && prevDashboardProgram != null && !prevDashboardProgram.equals(programUid)) {
             finish();
         } else {
-         /*   if(changingProgram)
-                recreate();*/
             orientation = Resources.getSystem().getConfiguration().orientation;
             init(teiUid, programUid);
         }
@@ -104,7 +100,7 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NotNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.clear();
         outState.putString(Constants.TRACKED_ENTITY_INSTANCE, teiUid);
@@ -170,9 +166,8 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
 
         setViewpagerAdapter();
 
-        //TEIDataFragment.getInstance().setData(programModel);
-        Boolean enrollmentStatus = program.getCurrentEnrollment().enrollmentStatus() == EnrollmentStatus.ACTIVE;
-        if(getIntent().getStringExtra(Constants.EVENT_UID) != null && enrollmentStatus)
+        boolean enrollmentStatus = program.getCurrentEnrollment().status() == EnrollmentStatus.ACTIVE;
+        if (getIntent().getStringExtra(Constants.EVENT_UID) != null && enrollmentStatus)
             TEIDataFragment.getInstance().displayGenerateEvent(getIntent().getStringExtra(Constants.EVENT_UID));
 
         if (!HelpManager.getInstance().isTutorialReadyForScreen(getClass().getName())) {
@@ -187,7 +182,7 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
     }
 
     @Override
-    public void showCatComboDialog(String eventId, String catCombo, List<CategoryOptionComboModel> catComboOptions, String title) {
+    public void showCatComboDialog(String eventId, String catCombo, List<CategoryOptionCombo> catComboOptions, String title) {
         CategoryComboDialog dialog = new CategoryComboDialog(getAbstracContext(), catCombo, catComboOptions, 123,
                 selectedOption -> presenter.changeCatOption(eventId, selectedOption), title);
         dialog.setCancelable(false);
@@ -330,18 +325,15 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
             HelpManager.getInstance().setScreenHelp(getClass().getName(), steps);
 
             if (!prefs.getBoolean("TUTO_DASHBOARD_SHOWN", false) && !BuildConfig.DEBUG) {
-                HelpManager.getInstance().showHelp();/* getAbstractActivity().fancyShowCaseQueue.show();*/
+                HelpManager.getInstance().showHelp();
                 prefs.edit().putBoolean("TUTO_DASHBOARD_SHOWN", true).apply();
             }
-
         }, 500);
-
-
     }
 
     @Override
     public void showTutorial(boolean shaked) {
-        if(binding.tabLayout.getSelectedTabPosition()==0)
+        if (binding.tabLayout.getSelectedTabPosition() == 0)
             super.showTutorial(shaked);
         else
             showToast(getString(R.string.no_intructions));

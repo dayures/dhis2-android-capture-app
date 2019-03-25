@@ -41,7 +41,7 @@ public class OrgUnitUtils {
                 OrganisationUnit orgToAdd = OrganisationUnit.builder()
                         .uid(pathUid[i])
                         .level(i)
-//                        .parent(pathUid[i - 1])
+                        .parent(OrganisationUnit.builder().uid(pathUid[i - 1]).build())
                         .name(pathName[i])
                         .displayName(pathName[i])
                         .displayShortName(pathName[i])
@@ -65,7 +65,8 @@ public class OrgUnitUtils {
             TreeNode treeNode = new TreeNode(orgs).setViewHolder(new OrgUnitHolder(context, isMultiSelection));
             treeNode.setSelectable(myOrgUnitUids.contains(orgs.uid()));
             sublist.add(treeNode);
-            Collections.sort(sublist, (org1, org2) -> ((OrganisationUnit) org1.getValue()).displayName().compareTo(((OrganisationUnit) org2.getValue()).displayName()));
+            Collections.sort(sublist, (org1, org2) -> ((OrganisationUnit) org1.getValue()).displayName()
+                    .compareTo(((OrganisationUnit) org2.getValue()).displayName()));
             subLists.put(orgs.level(), sublist);
         }
 
@@ -77,7 +78,7 @@ public class OrgUnitUtils {
                 for (int level = keys.last(); level > 1; level--) {
                     for (TreeNode treeNode : subLists.get(level - 1)) {
                         for (TreeNode childTreeNode : subLists.get(level)) {
-                            if (((OrganisationUnit) childTreeNode.getValue()).parent().equals(((OrganisationUnit) treeNode.getValue()).uid()))
+                            if (((OrganisationUnit) childTreeNode.getValue()).parent().uid().equals(((OrganisationUnit) treeNode.getValue()).uid()))
                                 treeNode.addChild(childTreeNode);
                         }
 

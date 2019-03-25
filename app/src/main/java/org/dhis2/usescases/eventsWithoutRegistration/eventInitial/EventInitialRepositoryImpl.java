@@ -153,17 +153,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 .created(createDate)
                 .lastUpdated(createDate)
                 .status(EventStatus.ACTIVE)
-                .coordinate(new Coordinates() {
-                    @Override
-                    public Double latitude() {
-                        return Double.valueOf(latitude);
-                    }
-
-                    @Override
-                    public Double longitude() {
-                        return Double.valueOf(longitude);
-                    }
-                })
+                .coordinate(Coordinates.create(Double.valueOf(latitude), Double.valueOf(longitude)))
                 .program(programUid)
                 .programStage(programStage)
                 .organisationUnit(orgUnitUid)
@@ -217,17 +207,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 .created(createDate)
                 .lastUpdated(createDate)
                 .status(EventStatus.SCHEDULE)
-                .coordinate(new Coordinates() {
-                    @Override
-                    public Double latitude() {
-                        return Double.valueOf(latitude);
-                    }
-
-                    @Override
-                    public Double longitude() {
-                        return Double.valueOf(longitude);
-                    }
-                })
+                .coordinate(Coordinates.create(Double.valueOf(latitude), Double.valueOf(longitude)))
                 .program(program)
                 .programStage(programStage)
                 .organisationUnit(orgUnitUid)

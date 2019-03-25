@@ -89,7 +89,7 @@ public class OrgUnitButton extends RelativeLayout {
                 OrganisationUnit orgToAdd = OrganisationUnit.builder()
                         .uid(pathUid[i])
                         .level(i)
-//                        .parent(pathUid[i - 1])
+                        .parent(OrganisationUnit.builder().uid(pathUid[i - 1]).build())
                         .name(pathName[i])
                         .displayName(pathName[i])
                         .displayShortName(pathName[i])
@@ -120,7 +120,7 @@ public class OrgUnitButton extends RelativeLayout {
         for (int level = myOrgs.get(0).level(); level > 1; level--) {
             for (TreeNode treeNode : subLists.get(level - 1)) {
                 for (TreeNode treeNodeLevel : subLists.get(level)) {
-                    if (((OrganisationUnit) treeNodeLevel.getValue()).parent().equals(((OrganisationUnit) treeNode.getValue()).uid()))
+                    if (((OrganisationUnit) treeNodeLevel.getValue()).parent().uid().equals(((OrganisationUnit) treeNode.getValue()).uid()))
                         treeNode.addChild(treeNodeLevel);
                 }
             }

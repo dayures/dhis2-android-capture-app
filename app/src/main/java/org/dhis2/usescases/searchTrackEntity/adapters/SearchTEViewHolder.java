@@ -14,8 +14,8 @@ import org.dhis2.data.tuples.Trio;
 import org.dhis2.databinding.ItemSearchTrackedEntityBinding;
 import org.dhis2.usescases.searchTrackEntity.SearchTEContractsModule;
 import org.dhis2.utils.ColorUtils;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 
 import java.util.List;
 
@@ -61,15 +61,15 @@ public class SearchTEViewHolder extends RecyclerView.ViewHolder {
     }
 
 
-    private void setTEIData(List<TrackedEntityAttributeValueModel> trackedEntityAttributeValueModels) {
+    private void setTEIData(List<TrackedEntityAttributeValue> trackedEntityAttributeValueModels) {
         binding.setAttribute(trackedEntityAttributeValueModels);
         binding.executePendingBindings();
     }
 
-    private void setEnrollment(List<EnrollmentModel> enrollments) {
+    private void setEnrollment(List<Enrollment> enrollments) {
         binding.linearLayout.removeAllViews();
         boolean isFollowUp = false;
-        for (EnrollmentModel enrollment : enrollments) {
+        for (Enrollment enrollment : enrollments) {
             if (enrollment.followUp() != null && enrollment.followUp())
                 isFollowUp = true;
         }

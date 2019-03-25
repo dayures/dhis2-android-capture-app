@@ -3,6 +3,8 @@ package org.dhis2.data.user;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.hisp.dhis.android.core.D2;
+import org.hisp.dhis.android.core.user.User;
+import org.hisp.dhis.android.core.user.UserCredentials;
 import org.hisp.dhis.android.core.user.UserCredentialsModel;
 import org.hisp.dhis.android.core.user.UserModel;
 
@@ -26,18 +28,18 @@ public class UserRepositoryImpl implements UserRepository {
 
     @NonNull
     @Override
-    public Flowable<UserCredentialsModel> credentials() {
+    public Flowable<UserCredentials> credentials() {
         return briteDatabase
                 .createQuery(UserCredentialsModel.TABLE, SELECT_USER_CREDENTIALS)
-                .mapToOne(UserCredentialsModel::create)
+                .mapToOne(UserCredentials::create)
                 .take(1).toFlowable(BackpressureStrategy.BUFFER);
     }
 
     @NonNull
     @Override
-    public Flowable<UserModel> me() {
+    public Flowable<User> me() {
         return briteDatabase
                 .createQuery(UserModel.TABLE, SELECT_USER)
-                .mapToOne(UserModel::create).toFlowable(BackpressureStrategy.BUFFER);
+                .mapToOne(User::create).toFlowable(BackpressureStrategy.BUFFER);
     }
 }

@@ -126,7 +126,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             searchRelationshipAdapter = new SearchRelationshipAdapter(presenter, metadataRepository);
             binding.scrollView.setAdapter(searchRelationshipAdapter);
         } else {
-            searchTEAdapter = new SearchTEAdapter(presenter, metadataRepository);
+            searchTEAdapter = new SearchTEAdapter(presenter);
             binding.scrollView.setAdapter(searchTEAdapter);
         }
 

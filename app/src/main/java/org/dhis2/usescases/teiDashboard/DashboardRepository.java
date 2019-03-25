@@ -6,7 +6,7 @@ import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
-import org.hisp.dhis.android.core.enrollment.note.NoteModel;
+import org.hisp.dhis.android.core.enrollment.note.Note;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.ProgramIndicator;
@@ -42,7 +42,7 @@ public interface DashboardRepository {
 
     boolean setFollowUp(String enrollmentUid);
 
-    Flowable<List<NoteModel>> getNotes(String programUid, String teUid);
+    Flowable<List<Note>> getNotes(String programUid, String teUid);
 
     Consumer<Pair<String, Boolean>> handleNote();
 

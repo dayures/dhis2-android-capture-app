@@ -3,13 +3,11 @@ package org.dhis2.usescases.teiDashboard;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.TextView;
 
 import org.dhis2.R;
-import org.dhis2.data.forms.FormRepository;
 import org.dhis2.data.forms.dataentry.RuleEngineRepository;
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.tuples.Pair;
@@ -28,22 +26,20 @@ import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.EventCreationType;
 import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.D2;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
-import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.maintenance.D2Error;
-import org.hisp.dhis.android.core.program.ProgramIndicatorModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.Program;
+import org.hisp.dhis.android.core.program.ProgramIndicator;
+import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.relationship.Relationship;
 import org.hisp.dhis.android.core.relationship.RelationshipHelper;
 import org.hisp.dhis.android.core.relationship.RelationshipItem;
 import org.hisp.dhis.android.core.relationship.RelationshipItemTrackedEntityInstance;
-import org.hisp.dhis.android.core.relationship.RelationshipModel;
 import org.hisp.dhis.android.core.relationship.RelationshipType;
-import org.hisp.dhis.android.core.relationship.RelationshipTypeModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionDisplayKeyValuePair;
 import org.hisp.dhis.rules.models.RuleEffect;
@@ -51,7 +47,6 @@ import org.hisp.dhis.rules.models.RuleEffect;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.Map;
 
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.app.ActivityOptionsCompat;
@@ -84,7 +79,8 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     private CompositeDisposable compositeDisposable;
     private DashboardProgramModel dashboardProgramModel;
 
-    TeiDashboardPresenter(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository, RuleEngineRepository formRepository) {
+    TeiDashboardPresenter(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository,
+                          RuleEngineRepository formRepository) {
         this.d2 = d2;
         this.dashboardRepository = dashboardRepository;
         this.metadataRepository = metadataRepository;
@@ -122,7 +118,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                     .subscribe(
                             dashboardModel -> {
                                 this.dashboardProgramModel = dashboardModel;
-                                this.programWritePermission = dashboardProgramModel.getCurrentProgram().accessDataWrite();
+                                this.programWritePermission = dashboardProgramModel.getCurrentProgram().access().data().write();
                                 this.teType = dashboardProgramModel.getTei().trackedEntityType();
                                 view.setData(dashboardProgramModel);
                             },
@@ -167,8 +163,9 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
         compositeDisposable.add(
                 dashboardRepository.getTEIEnrollmentEvents(programUid, teUid)
                         .map(eventModels -> {
-                            for (EventModel eventModel : eventModels) {
-                                if (eventModel.status() == EventStatus.SCHEDULE && eventModel.dueDate() != null && eventModel.dueDate().before(DateUtils.getInstance().getToday())) { //If a schedule event dueDate is before today the event is skipped
+                            for (Event eventModel : eventModels) {
+                                if (eventModel.status() == EventStatus.SCHEDULE && eventModel.dueDate() != null &&
+                                        eventModel.dueDate().before(DateUtils.getInstance().getToday())) { //If a schedule event dueDate is before today the event is skipped
                                     dashboardRepository.updateState(eventModel, EventStatus.SKIPPED);
                                 }
                             }
@@ -277,7 +274,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     }
 
     @Override
-    public void setProgram(ProgramModel program) {
+    public void setProgram(Program program) {
         this.programUid = program.uid();
         view.restoreAdapter(programUid);
         getData();
@@ -301,13 +298,9 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     public void onEventSelected(String uid, View sharedView) {
         Fragment teiFragment = TEIDataFragment.getInstance();
         if (teiFragment != null && teiFragment.getContext() != null && teiFragment.isAdded()) {
-            /*Intent intent = new Intent(teiFragment.getContext(), EventCaptureActivity.class);
-            intent.putExtras(EventCaptureActivity.getActivityBundle(uid, programUid));
-            intent.putExtra(Constants.TRACKED_ENTITY_INSTANCE, teUid);
-            teiFragment.startActivityForResult(intent, TEIDataFragment.getEventRequestCode(), null);  */
             Intent intent = new Intent(teiFragment.getContext(), EventInitialActivity.class);
             intent.putExtras(EventInitialActivity.getBundle(
-                    programUid,uid,EventCreationType.DEFAULT.name(),teUid,null,null,null,dashboardProgramModel.getCurrentEnrollment().uid(),0, dashboardProgramModel.getCurrentEnrollment().enrollmentStatus()
+                    programUid, uid, EventCreationType.DEFAULT.name(), teUid, null, null, null, dashboardProgramModel.getCurrentEnrollment().uid(), 0, dashboardProgramModel.getCurrentEnrollment().status()
             ));
             teiFragment.startActivityForResult(intent, TEIDataFragment.getEventRequestCode(), null);
         }
@@ -325,25 +318,17 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
             intent.putExtras(extras);
             ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(view.getAbstractActivity(), sharedView, "shared_view");
             teiFragment.startActivityForResult(intent, TEIDataFragment.getEventRequestCode(), options.toBundle());
-/*
-            Intent intent2 = new Intent(teiFragment.getContext(), EventCaptureActivity.class);
-            intent2.putExtras(EventCaptureActivity.getActivityBundle(uid, programUid));
-            teiFragment.startActivityForResult(intent2, TEIDataFragment.getEventRequestCode(), null);*/
         }
     }
 
     @Override
     public void onFollowUp(DashboardProgramModel dashboardProgramModel) {
         boolean followup = dashboardRepository.setFollowUp(dashboardProgramModel.getCurrentEnrollment().uid());
-
-
         view.showToast(followup ?
                 view.getContext().getString(R.string.follow_up_enabled) :
                 view.getContext().getString(R.string.follow_up_disabled));
 
         TEIDataFragment.getInstance().switchFollowUp(followup);
-
-
     }
 
     @Override
@@ -351,7 +336,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
         compositeDisposable.clear();
     }
 
-    public Observable<List<TrackedEntityAttributeValueModel>> getTEIMainAttributes(String teiUid) {
+    public Observable<List<TrackedEntityAttributeValue>> getTEIMainAttributes(String teiUid) {
         return dashboardRepository.mainTrackedEntityAttributes(teiUid)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread());
@@ -375,9 +360,9 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     }
 
     @Override
-    public void addRelationship(String trackEntityInstance_A, String relationshipType) {
+    public void addRelationship(String trackEntityInstanceA, String relationshipType) {
         try {
-            Relationship relationship = RelationshipHelper.teiToTeiRelationship(teUid, trackEntityInstance_A, relationshipType);
+            Relationship relationship = RelationshipHelper.teiToTeiRelationship(teUid, trackEntityInstanceA, relationshipType);
             d2.relationshipModule().relationships.add(relationship);
         } catch (D2Error e) {
             view.displayMessage(e.errorDescription());
@@ -429,8 +414,8 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
         compositeDisposable.add(
                 dashboardRepository.relationshipsForTeiType(teType)
                         .map(list -> {
-                            List<Trio<RelationshipTypeModel, String, Integer>> finalList = new ArrayList<>();
-                            for (Pair<RelationshipTypeModel, String> rType : list) {
+                            List<Trio<RelationshipType, String, Integer>> finalList = new ArrayList<>();
+                            for (Pair<RelationshipType, String> rType : list) {
                                 int iconResId = dashboardRepository.getObjectStyle(view.getAbstracContext(), rType.val1());
                                 finalList.add(Trio.create(rType.val0(), rType.val1(), iconResId));
                             }
@@ -452,11 +437,11 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                         Observable.fromIterable(indicators)
                                 .filter(indicator -> indicator.displayInForm() != null && indicator.displayInForm())
                                 .map(indicator -> {
-                                    String indicatorValue = d2.programModule().programIndicatorEngine.getProgramIndicatorValue(
+                                    String indicatorValueAux = d2.programModule().programIndicatorEngine.getProgramIndicatorValue(
                                             dashboardProgramModel.getCurrentEnrollment().uid(),
                                             null,
                                             indicator.uid());
-                                    return Pair.create(indicator, indicatorValue == null ? "" : indicatorValue);
+                                    return Pair.create(indicator, indicatorValueAux == null ? "" : indicatorValueAux);
                                 })
                                 .filter(pair -> !pair.val1().isEmpty())
                                 .flatMap(pair -> dashboardRepository.getLegendColorForIndicator(pair.val0(), pair.val1()))
@@ -466,7 +451,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .map(data -> {
-                    Log.d("INDICATOR SIZE", "IS" + data.size());
+                    Timber.d("INDICATOR SIZE IS %d", data.size());
                     return data;
                 })
                 .subscribe(
@@ -486,14 +471,14 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
 
         if (calcResult.error() != null) {
             Timber.e(calcResult.error());
-            return ;
+            return;
         }
 
         for (RuleEffect ruleEffect : calcResult.items()) {
             RuleAction ruleAction = ruleEffect.ruleAction();
             if (ruleAction instanceof RuleActionDisplayKeyValuePair) {
-                Trio<ProgramIndicatorModel, String, String> indicator = Trio.create(
-                        ProgramIndicatorModel.builder().displayName(((RuleActionDisplayKeyValuePair) ruleAction).content()).build(),
+                Trio<ProgramIndicator, String, String> indicator = Trio.create(
+                        ProgramIndicator.builder().displayName(((RuleActionDisplayKeyValuePair) ruleAction).content()).build(),
                         ruleEffect.data(), "");
                 indicatorsFragment.addIndicator(indicator);
             }
@@ -541,7 +526,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     }
 
     @Override
-    public void subscribeToRelationshipLabel(RelationshipModel relationship, TextView textView) {
+    public void subscribeToRelationshipLabel(Relationship relationship, TextView textView) {
 
        /*
         compositeDisposable.add(
@@ -608,17 +593,17 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
         view.showDescription(description);
     }
 
-    public void getCatComboOptions(EventModel event) {
+    public void getCatComboOptions(Event event) {
         compositeDisposable.add(
                 Observable.zip(
-                        metadataRepository.getCategoryComboOptions(dashboardProgramModel.getCurrentProgram().categoryCombo()),
-                        metadataRepository.getCategoryFromCategoryCombo(dashboardProgramModel.getCurrentProgram().categoryCombo()),
+                        metadataRepository.getCategoryComboOptions(dashboardProgramModel.getCurrentProgram().categoryCombo().uid()),
+                        metadataRepository.getCategoryFromCategoryCombo(dashboardProgramModel.getCurrentProgram().categoryCombo().uid()),
                         Pair::create
                 )
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(pair -> {
-                                    for (ProgramStageModel programStage : dashboardProgramModel.getProgramStages()) {
+                                    for (ProgramStage programStage : dashboardProgramModel.getProgramStages()) {
                                         if (event.programStage().equals(programStage.uid()))
                                             view.showCatComboDialog(event.uid(), pair.val1().displayName(), pair.val0(), programStage.displayName());
                                     }
@@ -627,7 +612,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     }
 
     @Override
-    public void changeCatOption(String eventUid, CategoryOptionComboModel selectedOption) {
+    public void changeCatOption(String eventUid, CategoryOptionCombo selectedOption) {
         metadataRepository.saveCatOption(eventUid, selectedOption);
     }
 

@@ -356,7 +356,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                     String flag = "";
                     String style = "";
                     for (SystemSetting settingModel : systemSettingModels)
-                        if (settingModel.key().equals("style"))
+                        if (SystemSetting.SystemSettingKey.STYLE.equals(settingModel.key()))
                             style = settingModel.value();
                         else
                             flag = settingModel.value();

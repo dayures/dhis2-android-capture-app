@@ -40,7 +40,9 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
         binding = DataBindingUtil.setContentView(this, R.layout.activity_teidata_detail);
         binding.setPresenter(presenter);
 
-        init(getIntent().getStringExtra("TEI_UID"), getIntent().getStringExtra("PROGRAM_UID"), getIntent().getStringExtra("ENROLLMENT_UID"));
+        init(getIntent().getStringExtra("TEI_UID"),
+                getIntent().getStringExtra("PROGRAM_UID"),
+                getIntent().getStringExtra("ENROLLMENT_UID"));
 
         binding.fabActive.setOptionsClick(integer -> {
             if (integer == null)
@@ -53,6 +55,8 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
                 case R.id.complete:
                     presenter.onComplete(dashboardProgramModel);
                     break;
+                default:
+                    break;
             }
         });
 
@@ -64,6 +68,8 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
                 case R.id.reOpen:
                     presenter.onReOpen(dashboardProgramModel);
                     break;
+                default:
+                    break;
             }
         });
 
@@ -74,6 +80,9 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
             switch (integer) {
                 case R.id.activate:
                     presenter.onActivate(dashboardProgramModel);
+                    break;
+                default:
+                    break;
             }
         });
     }
@@ -88,7 +97,7 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
         this.dashboardProgramModel = program;
         binding.setDashboardModel(program);
         binding.setProgram(program.getCurrentProgram());
-        binding.setEnrollmentStatus(program.getCurrentEnrollment().enrollmentStatus());
+        binding.setEnrollmentStatus(program.getCurrentEnrollment().status());
         binding.executePendingBindings();
 
         if (program.getCurrentProgram().captureCoordinates()) {

@@ -8,6 +8,7 @@ import com.squareup.sqlbrite2.BriteDatabase;
 import org.dhis2.data.tuples.Pair;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
@@ -81,18 +82,17 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
     public Flowable<EnrollmentStatus> enrollmentStatus(@NonNull String enrollmentUid) {
         String query = "SELECT Enrollment.* FROM Enrollment WHERE Enrollment.uid = ? LIMIT 1";
         return briteDatabase.createQuery(EnrollmentModel.TABLE, query, enrollmentUid)
-                .mapToOne(EnrollmentModel::create)
-                .map(EnrollmentModel::enrollmentStatus).toFlowable(BackpressureStrategy.LATEST);
+                .mapToOne(Enrollment::create)
+                .map(Enrollment::status).toFlowable(BackpressureStrategy.LATEST);
     }
 
     @Override
     public Flowable<Pair<Double, Double>> enrollmentCoordinates() {
         return briteDatabase.createQuery(EnrollmentModel.TABLE, "SELECT * FROM Enrollment WHERE uid = ? LIMIT 1", enrollment)
-                .mapToOne(EnrollmentModel::create)
-                .filter(enrollmentModel -> enrollmentModel.latitude() != null && enrollmentModel.longitude() != null)
+                .mapToOne(Enrollment::create)
+                .filter(enrollmentModel -> enrollmentModel.coordinate().latitude() != null && enrollmentModel.coordinate().longitude() != null)
                 .map(enrollmentModel ->
-                        Pair.create(Double.valueOf(enrollmentModel.latitude()),
-                                Double.valueOf(enrollmentModel.longitude())))
+                        Pair.create(enrollmentModel.coordinate().latitude(), enrollmentModel.coordinate().longitude()))
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
