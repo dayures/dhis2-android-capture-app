@@ -1,9 +1,11 @@
 package org.dhis2.usescases.reservedValue;
 
 
-import androidx.recyclerview.widget.RecyclerView;
-import org.dhis2.databinding.ItemReservedValueBinding;
 import org.dhis2.BR;
+import org.dhis2.databinding.ItemReservedValueBinding;
+
+import androidx.recyclerview.widget.RecyclerView;
+
 public class ReservedValueViewHolder extends RecyclerView.ViewHolder {
 
     private ItemReservedValueBinding binding;
@@ -16,7 +18,7 @@ public class ReservedValueViewHolder extends RecyclerView.ViewHolder {
 
     }
 
-    public void bind(ReservedValueContracts.Presenter presenter, ReservedValueModel dataElement){
+    public void bind(ReservedValueContracts.Presenter presenter, ReservedValueModel dataElement) {
         //TODO cambiarlo en el xml tambien
         binding.setVariable(BR.dataElement, dataElement);
         binding.setVariable(BR.presenter, presenter);

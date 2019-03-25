@@ -9,9 +9,9 @@ import org.dhis2.data.forms.dataentry.fields.orgUnit.OrgUnitViewModel;
 import org.dhis2.data.forms.dataentry.fields.radiobutton.RadioButtonViewModel;
 import org.dhis2.data.forms.dataentry.fields.spinner.SpinnerViewModel;
 import org.dhis2.data.forms.dataentry.fields.unsupported.UnsupportedViewModel;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
+import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.ValueType;
-import org.hisp.dhis.android.core.common.ValueTypeDeviceRenderingModel;
+import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
 
 import androidx.annotation.NonNull;
@@ -49,6 +49,7 @@ public final class FieldViewModelFactoryImpl implements FieldViewModelFactory {
     @NonNull
     private final String hintChooseDate;
 
+    @SuppressWarnings("squid:S00107")
     public FieldViewModelFactoryImpl(@NonNull String hintEnterText, @NonNull String hintEnterLongText,
                                      @NonNull String hintEnterNumber, @NonNull String hintEnterInteger,
                                      @NonNull String hintEnterIntegerPositive, @NonNull String hintEnterIntegerNegative,
@@ -74,19 +75,20 @@ public final class FieldViewModelFactoryImpl implements FieldViewModelFactory {
     public FieldViewModel create(@NonNull String id, @NonNull String label, @NonNull ValueType type,
                                  @NonNull Boolean mandatory, @Nullable String optionSet, @Nullable String value,
                                  @Nullable String section, @Nullable Boolean allowFutureDates, @NonNull Boolean editable, @Nullable ProgramStageSectionRenderingType renderingType,
-                                 @Nullable String description, @Nullable ValueTypeDeviceRenderingModel fieldRendering, @Nullable Integer optionCount, ObjectStyleModel objectStyle) {
+                                 @Nullable String description, @Nullable ValueTypeDeviceRendering fieldRendering, @Nullable Integer optionCount, ObjectStyle objectStyle) {
         isNull(type, "type must be supplied");
 
         if (!isEmpty(optionSet)) {
             if (renderingType == null || renderingType == ProgramStageSectionRenderingType.LISTING)
-                return SpinnerViewModel.create(id, label, hintFilterOptions, mandatory, optionSet, value, section, editable, description, optionCount,objectStyle);
+                return SpinnerViewModel.create(id, label, hintFilterOptions, mandatory, optionSet, value, section,
+                        editable, description, optionCount, objectStyle);
             else
-                return ImageViewModel.create(id, label, optionSet, value, section, editable, mandatory, description,objectStyle); //transforms option set into image option selector
+                return ImageViewModel.create(id, label, optionSet, value, section, editable, mandatory, description, objectStyle); //transforms option set into image option selector
         }
 
         switch (type) {
             case AGE:
-                return AgeViewModel.create(id, label, mandatory, value, section, editable, description,objectStyle);
+                return AgeViewModel.create(id, label, mandatory, value, section, editable, description, objectStyle);
             case TEXT:
             case EMAIL:
             case LETTER:
@@ -100,11 +102,11 @@ public final class FieldViewModelFactoryImpl implements FieldViewModelFactory {
             case INTEGER_ZERO_OR_POSITIVE:
             case UNIT_INTERVAL:
             case URL:
-                return EditTextViewModel.create(id, label, mandatory, value, hintEnterText, 1, type, section, editable, description, fieldRendering,objectStyle);
+                return EditTextViewModel.create(id, label, mandatory, value, hintEnterText, 1, type, section, editable, description, fieldRendering, objectStyle);
             case TIME:
             case DATE:
             case DATETIME:
-                return DateTimeViewModel.create(id, label, mandatory, type, value, section, allowFutureDates, editable, description,objectStyle);
+                return DateTimeViewModel.create(id, label, mandatory, type, value, section, allowFutureDates, editable, description, objectStyle);
             case COORDINATE:
                 return CoordinateViewModel.create(id, label, mandatory, value, section, editable, description, objectStyle);
             case BOOLEAN:
@@ -118,7 +120,7 @@ public final class FieldViewModelFactoryImpl implements FieldViewModelFactory {
             case USERNAME:
                 return UnsupportedViewModel.create(id, label, mandatory, value, section, editable, description, objectStyle);
             default:
-                return EditTextViewModel.create(id, label, mandatory, value, hintEnterText, 1, type, section, editable, description, fieldRendering,objectStyle);
+                return EditTextViewModel.create(id, label, mandatory, value, hintEnterText, 1, type, section, editable, description, fieldRendering, objectStyle);
         }
     }
 }

@@ -1,9 +1,9 @@
 package org.dhis2.usescases.searchTrackEntity.adapters;
 
 import org.dhis2.data.tuples.Trio;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,16 +11,16 @@ import java.util.List;
 public class SearchTeiModel {
 
 
-    private TrackedEntityInstanceModel tei; //7
+    private TrackedEntityInstance tei; //7
     private boolean hasOverdue; //6
     private boolean isOnline;//8
 
-    private List<TrackedEntityAttributeValueModel> attributeValues; //3,4
-    private List<EnrollmentModel> enrollments;
+    private List<TrackedEntityAttributeValue> attributeValues; //3,4
+    private List<Enrollment> enrollments;
     private List<Trio<String, String, String>> enrollmentsInfo;//2
 
 
-    public SearchTeiModel(TrackedEntityInstanceModel tei, List<TrackedEntityAttributeValueModel> attributeValues) {
+    public SearchTeiModel(TrackedEntityInstance tei, List<TrackedEntityAttributeValue> attributeValues) {
         this.tei = tei;
         this.enrollments = new ArrayList<>();
         this.enrollmentsInfo = new ArrayList<>();
@@ -30,19 +30,19 @@ public class SearchTeiModel {
         this.isOnline = true;
     }
 
-    public TrackedEntityInstanceModel getTei() {
+    public TrackedEntityInstance getTei() {
         return tei;
     }
 
-    public List<EnrollmentModel> getEnrollments() {
+    public List<Enrollment> getEnrollments() {
         return enrollments;
     }
 
-    public void setEnrollments(List<EnrollmentModel> enrollments) {
+    public void setEnrollments(List<Enrollment> enrollments) {
         this.enrollments = enrollments;
     }
 
-    public void addEnrollment(EnrollmentModel enrollmentModel) {
+    public void addEnrollment(Enrollment enrollmentModel) {
         this.enrollments.add(enrollmentModel);
     }
 
@@ -67,11 +67,11 @@ public class SearchTeiModel {
         this.attributeValues.clear();
     }
 
-    public List<TrackedEntityAttributeValueModel> getAttributeValues() {
+    public List<TrackedEntityAttributeValue> getAttributeValues() {
         return attributeValues;
     }
 
-    public void addAttributeValues(TrackedEntityAttributeValueModel attributeValues) {
+    public void addAttributeValues(TrackedEntityAttributeValue attributeValues) {
         this.attributeValues.add(attributeValues);
     }
 

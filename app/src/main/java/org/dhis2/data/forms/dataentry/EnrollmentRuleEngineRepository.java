@@ -114,7 +114,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     @NonNull
     private Flowable<List<RuleAttributeValue>> queryAttributeValues() {
         return briteDatabase.createQuery(Arrays.asList(EnrollmentModel.TABLE,
-                TrackedEntityAttributeValueModel.TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid == null ? "" : enrollmentUid)
+                TrackedEntityAttributeValueModel.TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid)
                 .mapToList(cursor -> {
                             String value = cursor.getString(1);
                             boolean useCode = cursor.getInt(2) == 1;

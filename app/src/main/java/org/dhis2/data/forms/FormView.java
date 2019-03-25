@@ -1,15 +1,13 @@
 package org.dhis2.data.forms;
 
-import androidx.annotation.NonNull;
+import com.google.android.gms.maps.model.LatLng;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
-import com.google.android.gms.maps.model.LatLng;
-
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.rules.models.RuleActionErrorOnCompletion;
 import org.hisp.dhis.rules.models.RuleActionShowError;
 import org.hisp.dhis.rules.models.RuleActionWarningOnCompletion;
@@ -17,6 +15,7 @@ import org.hisp.dhis.rules.models.RuleActionWarningOnCompletion;
 import java.util.Date;
 import java.util.List;
 
+import androidx.annotation.NonNull;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 
@@ -38,7 +37,7 @@ interface FormView {
     Consumer<List<FormSectionViewModel>> renderSectionViewModels();
 
     @NonNull
-    Consumer<Pair<ProgramModel, String>> renderReportDate();
+    Consumer<Pair<Program, String>> renderReportDate();
 
     @NonNull
     Consumer<String> renderTitle();
@@ -52,7 +51,7 @@ interface FormView {
     void renderStatusChangeSnackBar(@NonNull ReportStatus eventStatus);
 
     @NonNull
-    Consumer<Pair<ProgramModel, String>> renderIncidentDate();
+    Consumer<Pair<Program, String>> renderIncidentDate();
 
     void initReportDatePicker(boolean reportAllowFutureDates, boolean incidentAllowFutureDates);
 
@@ -76,7 +75,7 @@ interface FormView {
 
     void setShowError(RuleActionShowError showError);
 
-    void showCatComboDialog(CategoryComboModel categoryComboModel, List<CategoryOptionComboModel> categoryOptionComboModels);
+    void showCatComboDialog(CategoryCombo categoryComboModel, List<CategoryOptionCombo> categoryOptionComboModels);
 
     Consumer<Boolean> renderCaptureCoordinates();
 

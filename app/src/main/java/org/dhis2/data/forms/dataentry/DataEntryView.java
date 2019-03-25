@@ -1,14 +1,13 @@
 package org.dhis2.data.forms.dataentry;
 
-import androidx.annotation.NonNull;
-
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.data.tuples.Trio;
-import org.hisp.dhis.android.core.option.OptionModel;
+import org.hisp.dhis.android.core.option.Option;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 
@@ -26,7 +25,7 @@ interface DataEntryView {
 
     Flowable<Trio<String, String, Integer>> optionSetActions();
 
-    void setListOptions(List<OptionModel> options);
+    void setListOptions(List<Option> options);
 
     void showMessage(int messageId);
 }

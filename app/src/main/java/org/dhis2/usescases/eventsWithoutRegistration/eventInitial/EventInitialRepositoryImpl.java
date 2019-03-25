@@ -9,18 +9,26 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.utils.CodeGenerator;
 import org.dhis2.utils.DateUtils;
+import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionComboCategoryOptionLinkModel;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
+import org.hisp.dhis.android.core.common.Coordinates;
 import org.hisp.dhis.android.core.common.State;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.text.ParseException;
@@ -74,30 +82,31 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
     @NonNull
     @Override
-    public Observable<EventModel> event(String eventId) {
+    public Observable<Event> event(String eventId) {
         String id = eventId == null ? "" : eventId;
-        String SELECT_EVENT_WITH_ID = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.Columns.UID + " = '" + id + "' AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
-        return briteDatabase.createQuery(EventModel.TABLE, SELECT_EVENT_WITH_ID)
-                .mapToOne(EventModel::create);
+        String selectEventWithId = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.Columns.UID + " = '" + id + "' AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+        return briteDatabase.createQuery(EventModel.TABLE, selectEventWithId)
+                .mapToOne(Event::create);
     }
 
     @NonNull
     @Override
-    public Observable<List<OrganisationUnitModel>> orgUnits(String programId) {
+    public Observable<List<OrganisationUnit>> orgUnits(String programId) {
         return briteDatabase.createQuery(OrganisationUnitModel.TABLE, SELECT_ORG_UNITS, programId == null ? "" : programId)
-                .mapToList(OrganisationUnitModel::create);
+                .mapToList(OrganisationUnit::create);
     }
 
     @NonNull
     @Override
-    public Observable<CategoryComboModel> catComboModel(String programUid) {
+    public Observable<CategoryCombo> catComboModel(String programUid) {
         String catComboQuery = "SELECT CategoryCombo.* FROM CategoryCombo JOIN Program ON Program.categoryCombo = CategoryCombo.uid WHERE Program.uid = ?";
-        return briteDatabase.createQuery(CategoryComboModel.TABLE, catComboQuery, programUid).mapToOne(CategoryComboModel::create);
+        return briteDatabase.createQuery(CategoryComboModel.TABLE, catComboQuery, programUid)
+                .mapToOne(CategoryCombo::create);
     }
 
     @NonNull
     @Override
-    public Observable<List<CategoryOptionComboModel>> catCombo(String programUid) {
+    public Observable<List<CategoryOptionCombo>> catCombo(String programUid) {
         String catComboQuery = "SELECT CategoryOptionCombo.* FROM CategoryOptionCombo " +
                 "JOIN CategoryCombo ON CategoryCombo.uid= CategoryOptionCombo.categoryCombo " +
                 "JOIN CategoryOptionComboCategoryOptionLink ON CategoryOptionComboCategoryOptionLink.categoryOptionCombo = CategoryOptionCombo.uid " +
@@ -105,19 +114,19 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 "JOIN Program ON Program.categoryCombo = CategoryCombo.uid " +
                 "WHERE categoryOption.accessDataWrite AND program.uid = ?";
         return briteDatabase.createQuery(CategoryOptionComboModel.TABLE, catComboQuery, programUid)
-                .mapToList(CategoryOptionComboModel::create);
+                .mapToList(CategoryOptionCombo::create);
     }
 
     @NonNull
     @Override
-    public Observable<List<OrganisationUnitModel>> filteredOrgUnits(String date, String programId) {
+    public Observable<List<OrganisationUnit>> filteredOrgUnits(String date, String programId) {
         if (date == null)
             return orgUnits(programId);
         return briteDatabase.createQuery(OrganisationUnitModel.TABLE, SELECT_ORG_UNITS_FILTERED,
                 date,
                 date,
                 programId == null ? "" : programId)
-                .mapToList(OrganisationUnitModel::create);
+                .mapToList(OrganisationUnit::create);
     }
 
     @Override
@@ -136,22 +145,25 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
 
-        //If we are creating a new event, do not schedule it
-        /*if (date != null && date.after(createDate))
-            return scheduleEvent(enrollmentUid, trackedEntityInstanceUid, context, programUid, programStage,
-                    date, orgUnitUid, categoryOptionsUid, categoryOptionComboUid, latitude, longitude);*/
-
-
         String uid = codeGenerator.generate();
 
-        EventModel eventModel = EventModel.builder()
+        Event eventModel = Event.builder()
                 .uid(uid)
                 .enrollment(enrollmentUid)
                 .created(createDate)
                 .lastUpdated(createDate)
                 .status(EventStatus.ACTIVE)
-                .latitude(latitude)
-                .longitude(longitude)
+                .coordinate(new Coordinates() {
+                    @Override
+                    public Double latitude() {
+                        return Double.valueOf(latitude);
+                    }
+
+                    @Override
+                    public Double longitude() {
+                        return Double.valueOf(longitude);
+                    }
+                })
                 .program(programUid)
                 .programStage(programStage)
                 .organisationUnit(orgUnitUid)
@@ -199,14 +211,23 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
         String uid = codeGenerator.generate();
 
-        EventModel eventModel = EventModel.builder()
+        Event eventModel = Event.builder()
                 .uid(uid)
                 .enrollment(enrollmentUid)
                 .created(createDate)
                 .lastUpdated(createDate)
                 .status(EventStatus.SCHEDULE)
-                .latitude(latitude)
-                .longitude(longitude)
+                .coordinate(new Coordinates() {
+                    @Override
+                    public Double latitude() {
+                        return Double.valueOf(latitude);
+                    }
+
+                    @Override
+                    public Double longitude() {
+                        return Double.valueOf(longitude);
+                    }
+                })
                 .program(program)
                 .programStage(programStage)
                 .organisationUnit(orgUnitUid)
@@ -248,9 +269,9 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
     @Override
     public Observable<String> updateTrackedEntityInstance(String eventId, String trackedEntityInstanceUid, String orgUnitUid) {
-        String TEI_QUERY = "SELECT * FROM TrackedEntityInstance WHERE TrackedEntityInstance.uid = ? LIMIT 1";
-        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, TEI_QUERY, trackedEntityInstanceUid == null ? "" : trackedEntityInstanceUid)
-                .mapToOne(TrackedEntityInstanceModel::create).distinctUntilChanged()
+        String teiQuery = "SELECT * FROM TrackedEntityInstance WHERE TrackedEntityInstance.uid = ? LIMIT 1";
+        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, teiQuery, trackedEntityInstanceUid == null ? "" : trackedEntityInstanceUid)
+                .mapToOne(TrackedEntityInstance::create).distinctUntilChanged()
                 .map(trackedEntityInstanceModel -> {
                     ContentValues contentValues = trackedEntityInstanceModel.toContentValues();
                     contentValues.put(TrackedEntityInstanceModel.Columns.ORGANISATION_UNIT, orgUnitUid);
@@ -270,33 +291,33 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
     @NonNull
     @Override
-    public Observable<EventModel> newlyCreatedEvent(long rowId) {
-        String SELECT_EVENT_WITH_ROWID = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.Columns.ID + " = '" + rowId + "'" + " AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
-        return briteDatabase.createQuery(EventModel.TABLE, SELECT_EVENT_WITH_ROWID).mapToOne(EventModel::create);
+    public Observable<Event> newlyCreatedEvent(long rowId) {
+        String selectEventWithRowid = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.Columns.ID + " = '" + rowId + "'" + " AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+        return briteDatabase.createQuery(EventModel.TABLE, selectEventWithRowid).mapToOne(Event::create);
     }
 
     @NonNull
     @Override
-    public Observable<ProgramStageModel> programStage(String programUid) {
+    public Observable<ProgramStage> programStage(String programUid) {
         String id = programUid == null ? "" : programUid;
-        String SELECT_PROGRAM_STAGE = "SELECT * FROM " + ProgramStageModel.TABLE + " WHERE " + ProgramStageModel.Columns.PROGRAM + " = '" + id + "' LIMIT 1";
-        return briteDatabase.createQuery(ProgramStageModel.TABLE, SELECT_PROGRAM_STAGE)
-                .mapToOne(ProgramStageModel::create);
+        String selectProgramStage = "SELECT * FROM " + ProgramStageModel.TABLE + " WHERE " + ProgramStageModel.Columns.PROGRAM + " = '" + id + "' LIMIT 1";
+        return briteDatabase.createQuery(ProgramStageModel.TABLE, selectProgramStage)
+                .mapToOne(ProgramStage::create);
     }
 
     @NonNull
     @Override
-    public Observable<ProgramStageModel> programStageWithId(String programStageUid) {
+    public Observable<ProgramStage> programStageWithId(String programStageUid) {
         String id = programStageUid == null ? "" : programStageUid;
-        String SELECT_PROGRAM_STAGE_WITH_ID = "SELECT * FROM " + ProgramStageModel.TABLE + " WHERE " + ProgramStageModel.Columns.UID + " = '" + id + "' LIMIT 1";
-        return briteDatabase.createQuery(ProgramStageModel.TABLE, SELECT_PROGRAM_STAGE_WITH_ID)
-                .mapToOne(ProgramStageModel::create);
+        String selectProgramStageWithId = "SELECT * FROM " + ProgramStageModel.TABLE + " WHERE " + ProgramStageModel.Columns.UID + " = '" + id + "' LIMIT 1";
+        return briteDatabase.createQuery(ProgramStageModel.TABLE, selectProgramStageWithId)
+                .mapToOne(ProgramStage::create);
     }
 
 
     @NonNull
     @Override
-    public Observable<EventModel> editEvent(String trackedEntityInstance, String eventUid, String date, String orgUnitUid, String catComboUid, String catOptionCombo, String latitude, String longitude) {
+    public Observable<Event> editEvent(String trackedEntityInstance, String eventUid, String date, String orgUnitUid, String catComboUid, String catOptionCombo, String latitude, String longitude) {
 
         Date currentDate = Calendar.getInstance().getTime();
         Date dueDate = null;
@@ -345,8 +366,8 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
     @NonNull
     @Override
-    public Observable<List<EventModel>> getEventsFromProgramStage(String programUid, String enrollmentUid, String programStageUid) {
-        String EVENTS_QUERY = String.format(
+    public Observable<List<Event>> getEventsFromProgramStage(String programUid, String enrollmentUid, String programStageUid) {
+        String eventsQuery = String.format(
                 "SELECT Event.* FROM %s JOIN %s " +
                         "ON %s.%s = %s.%s " +
                         "WHERE %s.%s = ? " +
@@ -364,20 +385,20 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 EventModel.TABLE, EventModel.Columns.DUE_DATE, EventModel.TABLE, EventModel.Columns.EVENT_DATE,
                 EventModel.TABLE, EventModel.Columns.DUE_DATE, EventModel.TABLE, EventModel.Columns.EVENT_DATE);
 
-        return briteDatabase.createQuery(EventModel.TABLE, EVENTS_QUERY, programUid == null ? "" : programUid,
+        return briteDatabase.createQuery(EventModel.TABLE, eventsQuery, programUid == null ? "" : programUid,
                 enrollmentUid == null ? "" : enrollmentUid,
                 programStageUid == null ? "" : programStageUid)
-                .mapToList(EventModel::create);
+                .mapToList(Event::create);
     }
 
     @Override
     public Observable<Boolean> accessDataWrite(String programId) {
-        String WRITE_PERMISSION = "SELECT ProgramStage.accessDataWrite FROM ProgramStage WHERE ProgramStage.program = ? LIMIT 1";
-        String PROGRAM_WRITE_PERMISSION = "SELECT Program.accessDataWrite FROM Program WHERE Program.uid = ? LIMIT 1";
-        return briteDatabase.createQuery(ProgramStageModel.TABLE, WRITE_PERMISSION, programId == null ? "" : programId)
+        String writePermission = "SELECT ProgramStage.accessDataWrite FROM ProgramStage WHERE ProgramStage.program = ? LIMIT 1";
+        String programWritePermission = "SELECT Program.accessDataWrite FROM Program WHERE Program.uid = ? LIMIT 1";
+        return briteDatabase.createQuery(ProgramStageModel.TABLE, writePermission, programId == null ? "" : programId)
                 .mapToOne(cursor -> cursor.getInt(0) == 1)
                 .flatMap(programStageAccessDataWrite ->
-                        briteDatabase.createQuery(ProgramModel.TABLE, PROGRAM_WRITE_PERMISSION, programId == null ? "" : programId)
+                        briteDatabase.createQuery(ProgramModel.TABLE, programWritePermission, programId == null ? "" : programId)
                                 .mapToOne(cursor -> (cursor.getInt(0) == 1) && programStageAccessDataWrite));
     }
 
@@ -385,13 +406,13 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     public void deleteEvent(String eventId, String trackedEntityInstance) {
         try (Cursor eventCursor = briteDatabase.query("SELECT Event.* FROM Event WHERE Event.uid = ?", eventId)) {
             if (eventCursor != null && eventCursor.moveToNext()) {
-                EventModel eventModel = EventModel.create(eventCursor);
+                Event eventModel = Event.create(eventCursor);
                 if (eventModel.state() == State.TO_POST) {
-                    String DELETE_WHERE = String.format(
+                    String deleteWhere = String.format(
                             "%s.%s = ?",
                             EventModel.TABLE, EventModel.Columns.UID
                     );
-                    briteDatabase.delete(EventModel.TABLE, DELETE_WHERE, eventId);
+                    briteDatabase.delete(EventModel.TABLE, deleteWhere, eventId);
                 } else {
                     ContentValues contentValues = eventModel.toContentValues();
                     contentValues.put(EventModel.Columns.STATE, State.TO_DELETE.name());
@@ -413,8 +434,8 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         if (!isEmpty(eventUid)) {
             try (Cursor enrollmentCursor = briteDatabase.query("SELECT Enrollment.* FROM Enrollment JOIN Event ON Event.enrollment = Enrollment.uid WHERE Event.uid = ?", eventUid)) {
                 if (enrollmentCursor != null && enrollmentCursor.moveToFirst()) {
-                    EnrollmentModel enrollment = EnrollmentModel.create(enrollmentCursor);
-                    isEnrollmentOpen = enrollment.enrollmentStatus() == EnrollmentStatus.ACTIVE;
+                    Enrollment enrollment = Enrollment.create(enrollmentCursor);
+                    isEnrollmentOpen = enrollment.status() == EnrollmentStatus.ACTIVE;
                 }
             }
         }
@@ -425,7 +446,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         String selectEnrollment = "SELECT * FROM Enrollment WHERE uid = ?";
         try (Cursor enrollmentCursor = briteDatabase.query(selectEnrollment, enrollmentUid)) {
             if (enrollmentCursor != null && enrollmentCursor.moveToFirst()) {
-                EnrollmentModel enrollment = EnrollmentModel.create(enrollmentCursor);
+                Enrollment enrollment = Enrollment.create(enrollmentCursor);
                 ContentValues cv = enrollment.toContentValues();
                 cv.put(EnrollmentModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
                 cv.put(EnrollmentModel.Columns.STATE,
@@ -439,7 +460,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         String selectTei = "SELECT * FROM TrackedEntityInstance WHERE uid = ?";
         try (Cursor teiCursor = briteDatabase.query(selectTei, teiUid)) {
             if (teiCursor != null && teiCursor.moveToFirst()) {
-                TrackedEntityInstanceModel teiModel = TrackedEntityInstanceModel.create(teiCursor);
+                TrackedEntityInstance teiModel = TrackedEntityInstance.create(teiCursor);
                 ContentValues cv = teiModel.toContentValues();
                 cv.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
                 cv.put(TrackedEntityInstanceModel.Columns.STATE,

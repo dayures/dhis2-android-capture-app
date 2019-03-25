@@ -78,24 +78,6 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
         gestureScanner = new GestureDetector(this, this);
 
         presenter.init(this);
-
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-
-        super.onStop();
     }
 
     @Override
@@ -233,6 +215,8 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 break;
             case FINISH:
                 finishDataEntry();
+                break;
+            default:
                 break;
         }
     }
@@ -425,13 +409,11 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
         try {
             float diffY = e2.getY() - e1.getY();
             float diffX = e2.getX() - e1.getX();
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                    if (diffX > 0) {
-                        onSwipeRight();
-                    } else {
-                        onSwipeLeft();
-                    }
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
+                if (diffX > 0) {
+                    onSwipeRight();
+                } else {
+                    onSwipeLeft();
                 }
             }
         } catch (Exception exception) {

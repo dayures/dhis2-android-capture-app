@@ -1,9 +1,9 @@
 package org.dhis2.usescases.datasets.dataSetTable;
 
 import org.dhis2.usescases.general.AbstractActivityContracts;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.dataelement.DataElementModel;
-import org.hisp.dhis.android.core.dataset.DataSetModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.dataelement.DataElement;
+import org.hisp.dhis.android.core.dataset.DataSet;
 
 import java.util.List;
 import java.util.Map;
@@ -12,17 +12,18 @@ public class DataSetTableContract {
 
     public interface View extends AbstractActivityContracts.View {
 
-        void setDataElements(Map<String, List<DataElementModel>> data, Map<String, List<CategoryOptionComboModel>> stringListMap);
+        void setDataElements(Map<String, List<DataElement>> data, Map<String, List<CategoryOptionCombo>> stringListMap);
 
-        void setDataSet(DataSetModel data);
+        void setDataSet(DataSet data);
     }
 
     public interface Presenter extends AbstractActivityContracts.Presenter {
         void onBackClick();
+
         void init(View view, String orgUnitUid, String periodTypeName, String periodInitialDate, String catCombo);
 
-        List<DataElementModel> getDataElements(String string);
+        List<DataElement> getDataElements(String string);
 
-        List<CategoryOptionComboModel> getCatOptionCombos(String string);
+        List<CategoryOptionCombo> getCatOptionCombos(String string);
     }
 }

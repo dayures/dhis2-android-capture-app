@@ -1,12 +1,11 @@
 package org.dhis2.usescases.teiDashboard.eventDetail;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.event.Event;
 
 import java.util.Date;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.reactivex.Flowable;
 
 /**
@@ -18,7 +17,7 @@ public interface DataEntryStore {
     @NonNull
     Flowable<Long> save(@NonNull String uid, @Nullable String value);
 
-    void updateEventStatus(EventModel eventModel);
+    void updateEventStatus(Event eventModel);
 
-    void updateEvent(@NonNull Date eventDate, @NonNull EventModel eventModel);
+    void updateEvent(@NonNull Date eventDate, @NonNull Event eventModel);
 }

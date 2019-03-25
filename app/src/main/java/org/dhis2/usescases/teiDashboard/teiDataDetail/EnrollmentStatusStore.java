@@ -11,6 +11,7 @@ import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.util.Calendar;
@@ -112,7 +113,7 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
         sqLiteBind(updateStatement, 1, BaseIdentifiableObject.DATE_FORMAT
                 .format(Calendar.getInstance().getTime()));
         sqLiteBind(updateStatement, 2, value);
-        sqLiteBind(updateStatement, 3, enrollment == null ? "" : enrollment);
+        sqLiteBind(updateStatement, 3, enrollment);
 
         long updated = briteDatabase.executeUpdateDelete(
                 TrackedEntityAttributeValueModel.TABLE, updateStatement);
@@ -124,8 +125,8 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
 
     @NonNull
     private Flowable<Long> updateEnrollment(long status) {
-        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, SELECT_TEI, enrollment == null ? "" : enrollment)
-                .mapToOne(TrackedEntityInstanceModel::create).take(1).toFlowable(BackpressureStrategy.LATEST)
+        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, SELECT_TEI, enrollment)
+                .mapToOne(TrackedEntityInstance::create).take(1).toFlowable(BackpressureStrategy.LATEST)
                 .switchMap(tei -> {
                     if (State.SYNCED.equals(tei.state()) || State.TO_DELETE.equals(tei.state()) ||
                             State.ERROR.equals(tei.state())) {
@@ -143,6 +144,4 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
                     return Flowable.just(status);
                 });
     }
-
-
 }

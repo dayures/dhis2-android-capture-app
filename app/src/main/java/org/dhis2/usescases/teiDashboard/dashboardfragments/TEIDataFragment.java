@@ -24,8 +24,9 @@ import org.dhis2.utils.DialogClickListener;
 import org.dhis2.utils.EventCreationType;
 import org.dhis2.utils.custom_views.CustomDialog;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
-import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.program.ProgramStage;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,12 +68,11 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
 
     private EventAdapter adapter;
     private CustomDialog dialog;
-    private String lastModifiedEventUid;
-    private ProgramStageModel programStageFromEvent;
+    private ProgramStage programStageFromEvent;
     private ObservableBoolean followUp = new ObservableBoolean(false);
 
     private boolean hasCatComb;
-    private ArrayList<EventModel> catComboShowed = new ArrayList<>();
+    private ArrayList<Event> catComboShowed = new ArrayList<>();
     private Context context;
 
 
@@ -84,11 +84,12 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     }
 
     public static TEIDataFragment createInstance() {
-        return instance = new TEIDataFragment();
+        instance = new TEIDataFragment();
+        return instance;
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NotNull Context context) {
         super.onAttach(context);
         this.context = context;
         presenter = ((TeiDashboardMobileActivity) context).getPresenter();
@@ -96,8 +97,12 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
 
     @Override
     public void onDestroy() {
-        instance = null;
+        destroyInstance();
         super.onDestroy();
+    }
+
+    private static void destroyInstance() {
+        instance = null;
     }
 
     @Nullable
@@ -129,11 +134,11 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     @Override
     public void onResume() {
         super.onResume();
-        presenter = ((TeiDashboardMobileActivity) getActivity()).getPresenter();
-
-        binding.setPresenter(presenter);
-
-        setData(presenter.getDashBoardData());
+        if (getActivity() != null) {
+            presenter = ((TeiDashboardMobileActivity) getActivity()).getPresenter();
+            binding.setPresenter(presenter);
+            setData(presenter.getDashBoardData());
+        }
     }
 
     public void setData(DashboardProgramModel nprogram) {
@@ -141,8 +146,8 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
         if (nprogram != null && nprogram.getCurrentEnrollment() != null) {
             SharedPreferences prefs = context.getSharedPreferences(Constants.SHARE_PREFS, Context.MODE_PRIVATE);
             hasCatComb = !nprogram.getCurrentProgram().categoryCombo().equals(prefs.getString(Constants.DEFAULT_CAT_COMBO, ""));
-            List<EventModel> events = new ArrayList<>();
-            adapter = new EventAdapter(presenter, nprogram.getProgramStages(), events, nprogram.getCurrentEnrollment(),nprogram.getCurrentProgram());
+            List<Event> events = new ArrayList<>();
+            adapter = new EventAdapter(presenter, nprogram.getProgramStages(), events, nprogram.getCurrentEnrollment(), nprogram.getCurrentProgram());
             binding.teiRecycler.setLayoutManager(new LinearLayoutManager(getAbstracContext()));
             binding.teiRecycler.setAdapter(adapter);
             binding.setTrackEntity(nprogram.getTei());
@@ -181,15 +186,13 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQ_DETAILS) {
-            if (resultCode == RESULT_OK) {
-                presenter.getData();
-            }
+        if (requestCode == REQ_DETAILS && resultCode == RESULT_OK) {
+            presenter.getData();
         }
         if (requestCode == REQ_EVENT && resultCode == RESULT_OK) {
             presenter.getTEIEvents(this);
             if (data != null) {
-                lastModifiedEventUid = data.getStringExtra(Constants.EVENT_UID);
+                String lastModifiedEventUid = data.getStringExtra(Constants.EVENT_UID);
                 if (lastModifiedEventUid != null)
                     presenter.displayGenerateEvent(this, lastModifiedEventUid);
             }
@@ -197,13 +200,12 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
         }
     }
 
-    public Consumer<List<EventModel>> setEvents() {
+    public Consumer<List<Event>> setEvents() {
         return events -> {
             adapter.swapItems(events);
-            for (EventModel event : events) {
-                if (event.eventDate() != null) {
-                    if (event.eventDate().after(DateUtils.getInstance().getToday()))
-                        binding.teiRecycler.scrollToPosition(events.indexOf(event));
+            for (Event event : events) {
+                if (event.eventDate() != null && event.eventDate().after(DateUtils.getInstance().getToday())) {
+                    binding.teiRecycler.scrollToPosition(events.indexOf(event));
                 }
                 if (hasCatComb && event.attributeOptionCombo() == null && !catComboShowed.contains(event)) {
                     presenter.getCatComboOptions(event);
@@ -213,39 +215,44 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
         };
     }
 
-    public Consumer<ProgramStageModel> displayGenerateEvent() {
+    public Consumer<ProgramStage> displayGenerateEvent() {
         return programStageModel -> {
-            this.programStageFromEvent = programStageModel;
-            if (programStageModel.displayGenerateEventBox() || programStageModel.allowGenerateNextVisit()) {
-                dialog = new CustomDialog(
-                        getContext(),
-                        getString(R.string.dialog_generate_new_event),
-                        getString(R.string.message_generate_new_event),
-                        getString(R.string.button_ok),
-                        getString(R.string.cancel),
-                        RC_GENERATE_EVENT,
-                        this);
-                dialog.show();
-            } else if (programStageModel.remindCompleted())
-                showDialogCloseProgram();
+            if (getContext() != null && isAdded()) {
+                this.programStageFromEvent = programStageModel;
+                if (programStageModel.displayGenerateEventBox() || programStageModel.allowGenerateNextVisit()) {
+                    dialog = new CustomDialog(
+                            getContext(),
+                            getString(R.string.dialog_generate_new_event),
+                            getString(R.string.message_generate_new_event),
+                            getString(R.string.button_ok),
+                            getString(R.string.cancel),
+                            RC_GENERATE_EVENT,
+                            this);
+                    dialog.show();
+                } else if (programStageModel.remindCompleted()) {
+                    showDialogCloseProgram();
+                }
+            }
         };
     }
 
-    private void showDialogCloseProgram(){
-        dialog = new CustomDialog(
-                getContext(),
-                getString(R.string.event_completed),
-                getString(R.string.complete_enrollment_message),
-                getString(R.string.button_ok),
-                getString(R.string.cancel),
-                RC_EVENTS_COMPLETED,
-                this);
-        dialog.show();
+    private void showDialogCloseProgram() {
+        if (getContext() != null && isAdded()) {
+            dialog = new CustomDialog(
+                    getContext(),
+                    getString(R.string.event_completed),
+                    getString(R.string.complete_enrollment_message),
+                    getString(R.string.button_ok),
+                    getString(R.string.cancel),
+                    RC_EVENTS_COMPLETED,
+                    this);
+            dialog.show();
+        }
     }
 
     public Consumer<Single<Boolean>> areEventsCompleted() {
         return eventsCompleted -> {
-            if (eventsCompleted.blockingGet()) {
+            if (getContext() != null && isAdded() && eventsCompleted.blockingGet()) {
                 dialog = new CustomDialog(
                         getContext(),
                         getString(R.string.event_completed_title),
@@ -256,7 +263,6 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
                         this);
                 dialog.show();
             }
-
         };
     }
 

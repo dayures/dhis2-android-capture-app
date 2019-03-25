@@ -11,11 +11,11 @@
 
         <variable
             name="enrollment"
-            type="org.hisp.dhis.android.core.enrollment.EnrollmentModel" />
+            type="org.hisp.dhis.android.core.enrollment.Enrollment" />
 
         <variable
             name="trackEntity"
-            type="org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel" />
+            type="org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance" />
 
         <variable
             name="presenter"
@@ -27,7 +27,7 @@
 
         <variable
             name="program"
-            type="org.hisp.dhis.android.core.program.ProgramModel" />
+            type="org.hisp.dhis.android.core.program.Program" />
 
         <variable
             name="followup"

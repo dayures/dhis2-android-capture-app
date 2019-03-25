@@ -2,16 +2,15 @@ package org.dhis2.usescases.datasets.datasetDetail;
 
 import android.annotation.SuppressLint;
 import android.os.Bundle;
-import androidx.annotation.IntDef;
 
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.usescases.datasets.datasetInitial.DataSetInitialActivity;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.OrgUnitUtils;
 import org.dhis2.utils.Period;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.PeriodType;
 
 import java.lang.annotation.Retention;
@@ -19,6 +18,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.Date;
 import java.util.List;
 
+import androidx.annotation.IntDef;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
@@ -29,7 +29,7 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
 
     private DataSetDetailRepository dataSetDetailRepository;
     private DataSetDetailContract.View view;
-    private CategoryOptionComboModel categoryOptionComboModel;
+    private CategoryOptionCombo categoryOptionComboModel;
     private MetadataRepository metadataRepository;
     private int lastSearchType;
     private Date fromDate;
@@ -37,8 +37,8 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
     private Period period;
     private List<Date> dates;
     private CompositeDisposable compositeDisposable;
-    private List<OrganisationUnitModel> orgUnits;
-    private CategoryComboModel mCatCombo;
+    private List<OrganisationUnit> orgUnits;
+    private CategoryCombo mCatCombo;
     private List<String> selectedOrgUnits;
     private PeriodType selectedPeriodType;
 
@@ -93,7 +93,7 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
         Bundle bundle = new Bundle();
         bundle.putString(Constants.DATA_SET_UID, view.dataSetUid());
 
-        view.startActivity(DataSetInitialActivity.class,bundle,false,false,null);
+        view.startActivity(DataSetInitialActivity.class, bundle, false, false, null);
     }
 
     @Override
@@ -103,7 +103,7 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
     }
 
     @Override
-    public void onCatComboSelected(CategoryOptionComboModel categoryOptionComboModel, String
+    public void onCatComboSelected(CategoryOptionCombo categoryOptionComboModel, String
             orgUnitQuery) {
         updateFilters(categoryOptionComboModel, orgUnitQuery);
     }
@@ -115,11 +115,11 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
 
     @Override
     public void onDataSetClick(String eventId, String orgUnit) {
-
+        // unused
     }
 
     @Override
-    public List<OrganisationUnitModel> getOrgUnits() {
+    public List<OrganisationUnit> getOrgUnits() {
         return this.orgUnits;
     }
 
@@ -148,8 +148,8 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
     @Override
     public void getOrgUnits(Date date) {
         compositeDisposable.add(dataSetDetailRepository.orgUnits()
-                .map(orgUnits -> {
-                    this.orgUnits = orgUnits;
+                .map(orgUnitsResult -> {
+                    this.orgUnits = orgUnitsResult;
                     return OrgUnitUtils.renderTree(view.getContext(), orgUnits, true);
                 })
                 .subscribeOn(Schedulers.computation())
@@ -160,7 +160,7 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
                 ));
     }
 
-    private void updateFilters(CategoryOptionComboModel categoryOptionComboModel, String
+    private void updateFilters(CategoryOptionCombo categoryOptionComboModel, String
             orgUnitQuery) {
         this.categoryOptionComboModel = categoryOptionComboModel;
         switch (lastSearchType) {

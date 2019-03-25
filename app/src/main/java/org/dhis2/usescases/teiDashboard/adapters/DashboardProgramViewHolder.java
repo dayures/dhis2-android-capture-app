@@ -5,8 +5,8 @@ import org.dhis2.Bindings.Bindings;
 import org.dhis2.databinding.ItemDashboardProgramBinding;
 import org.dhis2.usescases.teiDashboard.DashboardProgramModel;
 import org.dhis2.usescases.teiDashboard.TeiDashboardContracts;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
+import org.hisp.dhis.android.core.program.Program;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -23,8 +23,8 @@ class DashboardProgramViewHolder extends RecyclerView.ViewHolder {
     }
 
     public void bind(TeiDashboardContracts.Presenter presenter, DashboardProgramModel dashboardProgramModel, int position) {
-        ProgramModel programModel = dashboardProgramModel.getEnrollmentProgramModels().get(position);
-        EnrollmentModel enrollment = dashboardProgramModel.getEnrollmentForProgram(programModel.uid());
+        Program programModel = dashboardProgramModel.getEnrollmentProgramModels().get(position);
+        Enrollment enrollment = dashboardProgramModel.getEnrollmentForProgram(programModel.uid());
         binding.setVariable(BR.presenter, presenter);
         binding.setVariable(BR.program, programModel);
 

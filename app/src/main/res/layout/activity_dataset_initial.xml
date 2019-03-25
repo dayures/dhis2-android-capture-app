@@ -84,7 +84,8 @@
                         app:imageBackground="@{ @drawable/photo_temp }"
                         app:srcCompat="@drawable/ic_clinical_f_outline"
                         tools:background="@drawable/photo_temp"
-                        tools:tint="@color/black_de0" />
+                        tools:tint="@color/black_de0"
+                        tools:ignore="ContentDescription" />
 
                     <TextView
                         android:layout_width="match_parent"

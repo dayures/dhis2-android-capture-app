@@ -70,7 +70,7 @@ class OrgUnitCascadeHolder extends RecyclerView.ViewHolder {
             itemView.setVisibility(View.VISIBLE);
             setMenu(data, adapter);
             binding.levelText.setOnClickListener(view -> menu.show());
-        } else if (data.size() <= 1)
+        } else
             itemView.setVisibility(View.GONE);
     }
 

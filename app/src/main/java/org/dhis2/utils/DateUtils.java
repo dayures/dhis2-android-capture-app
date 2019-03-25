@@ -1,6 +1,6 @@
 package org.dhis2.utils;
 
-import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.period.DatePeriod;
 import org.hisp.dhis.android.core.period.PeriodType;
@@ -204,7 +204,7 @@ public class DateUtils {
         try {
             databaseDateFormatNoSeconds().parse(dateTime);
             return true;
-        } catch (ParseException e){
+        } catch (ParseException e) {
             return false;
         }
     }
@@ -240,7 +240,7 @@ public class DateUtils {
     /**********************
      COMPARE DATES REGION*/
     @Deprecated
-    public boolean hasExpired(@NonNull EventModel event, int expiryDays, int completeEventExpiryDays, @Nullable PeriodType expiryPeriodType) {
+    public boolean hasExpired(@NonNull Event event, int expiryDays, int completeEventExpiryDays, @Nullable PeriodType expiryPeriodType) {
         Calendar expiredDate = Calendar.getInstance();
 
         if (event.status() == EventStatus.COMPLETED && completeEventExpiryDays == 0) {
@@ -344,7 +344,7 @@ public class DateUtils {
         return new int[]{interval.getYears(), interval.getMonths(), interval.getDays()};
     }
 
-    public Date getNewDate(List<EventModel> events, PeriodType periodType) {
+    public Date getNewDate(List<Event> events, PeriodType periodType) {
         Calendar now = Calendar.getInstance();
         now.set(Calendar.HOUR_OF_DAY, 0);
         now.set(Calendar.MINUTE, 0);
@@ -355,7 +355,7 @@ public class DateUtils {
         Date newDate = new Date();
         boolean needNewDate = true;
 
-        for (EventModel event : events) {
+        for (Event event : events) {
             eventDates.add(event.eventDate());
         }
 
@@ -1029,7 +1029,6 @@ public class DateUtils {
      */
     public Boolean isEventExpired(Date eventDate, Date completeDate, EventStatus status, int compExpDays, PeriodType programPeriodType, int expDays) {
         if (status == EventStatus.COMPLETED && completeDate == null)
-//            throw new NullPointerException("completeDate can't be null if status of event is COMPLETED");
             return false;
 
         boolean expiredBecouseOfPeriod;

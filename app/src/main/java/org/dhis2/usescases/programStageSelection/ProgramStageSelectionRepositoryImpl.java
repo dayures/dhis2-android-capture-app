@@ -9,11 +9,12 @@ import org.dhis2.data.tuples.Pair;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.EventCreationType;
 import org.dhis2.utils.Result;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
+import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
+import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
@@ -49,16 +50,16 @@ import static android.text.TextUtils.isEmpty;
 
 public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectionRepository {
 
-    private final String PROGRAM_STAGE_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ? ORDER BY %s.%s ASC",
+    private static final String PROGRAM_STAGE_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ? ORDER BY %s.%s ASC",
             ProgramStageModel.TABLE, ProgramStageModel.TABLE, ProgramStageModel.Columns.PROGRAM,
             ProgramStageModel.TABLE, ProgramStageModel.Columns.SORT_ORDER);
 
-    private final String PROGRAM_STAGE_QUERY_SCHEDULE = String.format("SELECT * FROM %s WHERE %s.%s = ? AND %s.%s = '0' ORDER BY %s.%s ASC",
+    private static final String PROGRAM_STAGE_QUERY_SCHEDULE = String.format("SELECT * FROM %s WHERE %s.%s = ? AND %s.%s = '0' ORDER BY %s.%s ASC",
             ProgramStageModel.TABLE, ProgramStageModel.TABLE, ProgramStageModel.Columns.PROGRAM,
             ProgramStageModel.TABLE, ProgramStageModel.Columns.HIDE_DUE_DATE,
             ProgramStageModel.TABLE, ProgramStageModel.Columns.SORT_ORDER);
 
-    private final String CURRENT_PROGRAM_STAGES = "SELECT ProgramStage.* FROM ProgramStage WHERE ProgramStage.uid IN " +
+    private static final String CURRENT_PROGRAM_STAGES = "SELECT ProgramStage.* FROM ProgramStage WHERE ProgramStage.uid IN " +
             "(SELECT DISTINCT Event.programStage FROM Event WHERE Event.enrollment = ? AND Event.State != 'TO_DELETE' ) ORDER BY ProgramStage.sortOrder ASC";
 
     private static final String QUERY_ENROLLMENT = "SELECT\n" +
@@ -106,15 +107,6 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
             "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
             "WHERE Event.enrollment = ?\n" +
             " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'";
-
-    /*private static final String QUERY_VALUES = "SELECT " +
-            "  eventDate," +
-            "  programStage," +
-            "  dataElement," +
-            "  value" +
-            " FROM TrackedEntityDataValue " +
-            "  INNER JOIN Event ON TrackedEntityDataValue.event = Event.uid " +
-            " WHERE event = ? AND value IS NOT NULL AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'";*/
 
     private static final String QUERY_VALUES = "SELECT " +
             "  Event.eventDate," +
@@ -185,7 +177,7 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
                                 String programStage = cursor.getString(1);
                                 String dataElement = cursor.getString(2);
                                 String value = cursor.getString(3) != null ? cursor.getString(3) : "";
-                                Boolean useCode = cursor.getInt(4) == 1;
+                                boolean useCode = cursor.getInt(4) == 1;
                                 String optionCode = cursor.getString(5);
                                 String optionName = cursor.getString(6);
                                 if (!isEmpty(optionCode) && !isEmpty(optionName))
@@ -221,7 +213,7 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
                     String programStage = cursor.getString(1);
                     String dataElement = cursor.getString(2);
                     String value = cursor.getString(3) != null ? cursor.getString(3) : "";
-                    Boolean useCode = cursor.getInt(4) == 1;
+                    boolean useCode = cursor.getInt(4) == 1;
                     String optionCode = cursor.getString(5);
                     String optionName = cursor.getString(6);
                     if (!isEmpty(optionCode) && !isEmpty(optionName))
@@ -267,29 +259,29 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
 
     @NonNull
     @Override
-    public Observable<List<ProgramStageModel>> getProgramStages(String programUid) {
+    public Observable<List<ProgramStage>> getProgramStages(String programUid) {
         return briteDatabase.createQuery(ProgramStageModel.TABLE, PROGRAM_STAGE_QUERY, programUid == null ? "" : programUid)
-                .mapToList(ProgramStageModel::create);
+                .mapToList(ProgramStage::create);
     }
 
     @NonNull
     @Override
-    public Flowable<List<ProgramStageModel>> enrollmentProgramStages(String programId, String enrollmentUid) {
-        List<ProgramStageModel> enrollmentStages = new ArrayList<>();
-        List<ProgramStageModel> selectableStages = new ArrayList<>();
+    public Flowable<List<ProgramStage>> enrollmentProgramStages(String programId, String enrollmentUid) {
+        List<ProgramStage> enrollmentStages = new ArrayList<>();
+        List<ProgramStage> selectableStages = new ArrayList<>();
         return briteDatabase.createQuery(ProgramStageModel.TABLE, CURRENT_PROGRAM_STAGES, enrollmentUid == null ? "" : enrollmentUid)
-                .mapToList(ProgramStageModel::create)
+                .mapToList(ProgramStage::create)
                 .flatMap(data -> {
                     enrollmentStages.addAll(data);
                     return briteDatabase.createQuery(ProgramStageModel.TABLE,
                             !Objects.equals(eventCreationType, EventCreationType.SCHEDULE.name()) ? PROGRAM_STAGE_QUERY : PROGRAM_STAGE_QUERY_SCHEDULE, programId == null ? "" : programId)
-                            .mapToList(ProgramStageModel::create);
+                            .mapToList(ProgramStage::create);
                 })
                 .map(data -> {
                     boolean isSelectable;
-                    for (ProgramStageModel programStage : data) {
+                    for (ProgramStage programStage : data) {
                         isSelectable = true;
-                        for (ProgramStageModel enrollmentStage : enrollmentStages) {
+                        for (ProgramStage enrollmentStage : enrollmentStages) {
                             if (enrollmentStage.uid().equals(programStage.uid())) {
                                 isSelectable = programStage.repeatable();
                             }
@@ -316,17 +308,17 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
     }
 
     @Override
-    public List<Pair<ProgramStageModel, ObjectStyleModel>> objectStyle(List<ProgramStageModel> programStageModels) {
-        List<Pair<ProgramStageModel, ObjectStyleModel>> finalList = new ArrayList<>();
-        for (ProgramStageModel stageModel : programStageModels) {
-            ObjectStyleModel objectStyleModel = null;
+    public List<Pair<ProgramStage, ObjectStyle>> objectStyle(List<ProgramStage> programStageModels) {
+        List<Pair<ProgramStage, ObjectStyle>> finalList = new ArrayList<>();
+        for (ProgramStage stageModel : programStageModels) {
+            ObjectStyle objectStyleModel = null;
             try (Cursor cursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ? LIMIT 1", stageModel.uid())) {
                 if (cursor != null && cursor.moveToFirst()) {
-                    objectStyleModel = ObjectStyleModel.create(cursor);
+                    objectStyleModel = ObjectStyle.create(cursor);
                 }
             }
             if (objectStyleModel == null)
-                objectStyleModel = ObjectStyleModel.builder().build();
+                objectStyleModel = ObjectStyle.builder().build();
             finalList.add(Pair.create(stageModel, objectStyleModel));
         }
 

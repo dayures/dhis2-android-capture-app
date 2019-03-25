@@ -1,7 +1,6 @@
 package org.dhis2.usescases.teiDashboard;
 
 import android.os.Bundle;
-import androidx.fragment.app.FragmentStatePagerAdapter;
 import android.widget.TextView;
 
 import org.dhis2.data.tuples.Pair;
@@ -10,16 +9,16 @@ import org.dhis2.usescases.teiDashboard.dashboardfragments.IndicatorsFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.NotesFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.RelationshipFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.TEIDataFragment;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.relationship.Relationship;
-import org.hisp.dhis.android.core.relationship.RelationshipModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 
 import java.util.Calendar;
 import java.util.List;
 
+import androidx.fragment.app.FragmentStatePagerAdapter;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
@@ -47,7 +46,7 @@ public class TeiDashboardContracts {
 
         void restoreAdapter(String programUid);
 
-        void showCatComboDialog(String eventId, String programStage, List<CategoryOptionComboModel> catComboOptions, String title);
+        void showCatComboDialog(String eventId, String programStage, List<CategoryOptionCombo> catComboOptions, String title);
     }
 
     public interface Presenter {
@@ -61,7 +60,7 @@ public class TeiDashboardContracts {
 
         void onShareQRClick();
 
-        void setProgram(ProgramModel program);
+        void setProgram(Program program);
 
         void seeDetails(android.view.View view, DashboardProgramModel dashboardProgramModel);
 
@@ -83,13 +82,13 @@ public class TeiDashboardContracts {
         void onShareClick(android.view.View view);
 
         //RelationshipFragment
-        Observable<List<TrackedEntityAttributeValueModel>> getTEIMainAttributes(String teiUid);
+        Observable<List<TrackedEntityAttributeValue>> getTEIMainAttributes(String teiUid);
 
         void subscribeToRelationships(RelationshipFragment relationshipFragment);
 
         void goToAddRelationship(String teiTypeToAdd);
 
-        void addRelationship(String trackEntityInstance_A, String relationshipType);
+        void addRelationship(String trackEntityInstanceA, String relationshipType);
 
         void deleteRelationship(Relationship relationshipModel);
 
@@ -111,7 +110,7 @@ public class TeiDashboardContracts {
 
         void openDashboard(String teiUid);
 
-        void subscribeToRelationshipLabel(RelationshipModel relationship, TextView textView);
+        void subscribeToRelationshipLabel(Relationship relationship, TextView textView);
 
         void completeEnrollment(TEIDataFragment teiDataFragment);
 
@@ -125,9 +124,9 @@ public class TeiDashboardContracts {
 
         void onScheduleSelected(String uid, android.view.View sharedView);
 
-        void getCatComboOptions(EventModel event);
+        void getCatComboOptions(Event event);
 
-        void changeCatOption(String eventUid, CategoryOptionComboModel selectedOption);
+        void changeCatOption(String eventUid, CategoryOptionCombo selectedOption);
 
-        }
+    }
 }

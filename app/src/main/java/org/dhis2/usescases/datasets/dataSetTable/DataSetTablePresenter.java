@@ -1,10 +1,8 @@
 package org.dhis2.usescases.datasets.dataSetTable;
 
-import android.util.Log;
-
 import org.dhis2.data.tuples.Pair;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.dataelement.DataElementModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.dataelement.DataElement;
 
 import java.util.List;
 import java.util.Map;
@@ -18,9 +16,9 @@ import timber.log.Timber;
 public class DataSetTablePresenter implements DataSetTableContract.Presenter {
 
     private final DataSetTableRepository tableRepository;
-    DataSetTableContract.View view;
+    private DataSetTableContract.View view;
     private CompositeDisposable compositeDisposable;
-    private Pair<Map<String, List<DataElementModel>>, Map<String, List<CategoryOptionComboModel>>> tableData;
+    private Pair<Map<String, List<DataElement>>, Map<String, List<CategoryOptionCombo>>> tableData;
 
     public DataSetTablePresenter(DataSetTableRepository dataSetTableRepository) {
         this.tableRepository = dataSetTableRepository;
@@ -41,7 +39,7 @@ public class DataSetTablePresenter implements DataSetTableContract.Presenter {
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe(
-                                data -> Log.d("SATA_SETS", "VALUES LIST SIZE = " + data.size()),
+                                data -> Timber.d("VALUES LIST SIZE = %d", data.size()),
                                 Timber::e
                         )
         );
@@ -76,13 +74,13 @@ public class DataSetTablePresenter implements DataSetTableContract.Presenter {
     }
 
     @Override
-    public List<DataElementModel> getDataElements(String key) {
+    public List<DataElement> getDataElements(String key) {
         return tableData.val0().get(key);
     }
 
     @Override
-    public List<CategoryOptionComboModel> getCatOptionCombos(String key) {
-        return tableData.val1().get( tableData.val0().get(key).get(0).categoryCombo());
+    public List<CategoryOptionCombo> getCatOptionCombos(String key) {
+        return tableData.val1().get(tableData.val0().get(key).get(0).categoryCombo());
     }
 
     @Override

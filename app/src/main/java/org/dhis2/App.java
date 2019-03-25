@@ -101,7 +101,7 @@ public class App extends MultiDexApplication implements Components {
         Fabric.with(this, new Crashlytics());
         Timber.d("FABRIC INITIALIZATION END AT %s", System.currentTimeMillis() - startTime);
 
-        this.instance = this;
+        instance = this;
 
         setUpAppComponent();
         setUpServerComponent();

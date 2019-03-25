@@ -12,12 +12,14 @@ import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactory;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
+import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.ValueType;
-import org.hisp.dhis.android.core.common.ValueTypeDeviceRenderingModel;
+import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.maintenance.D2Error;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 
 import java.util.ArrayList;
@@ -97,7 +99,7 @@ final class EnrollmentRepository implements DataEntryRepository {
     @Override
     public Observable<List<FieldViewModel>> list() {
         return briteDatabase
-                .createQuery(TrackedEntityAttributeValueModel.TABLE, QUERY, enrollment == null ? "" : enrollment)
+                .createQuery(TrackedEntityAttributeValueModel.TABLE, QUERY, enrollment)
                 .mapToList(this::transform);
     }
 
@@ -116,9 +118,9 @@ final class EnrollmentRepository implements DataEntryRepository {
 
 
     @Override
-    public Observable<List<OrganisationUnitModel>> getOrgUnits() {
+    public Observable<List<OrganisationUnit>> getOrgUnits() {
         return briteDatabase.createQuery(OrganisationUnitModel.TABLE, "SELECT * FROM " + OrganisationUnitModel.TABLE)
-                .mapToList(OrganisationUnitModel::create);
+                .mapToList(OrganisationUnit::create);
     }
 
     @NonNull
@@ -196,21 +198,21 @@ final class EnrollmentRepository implements DataEntryRepository {
             }
         }
 
-        ValueTypeDeviceRenderingModel fieldRendering = null;
+        ValueTypeDeviceRendering fieldRendering = null;
         if (uid == null) {
             uid = "";
         }
         try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering " +
                 "JOIN ProgramTrackedEntityAttribute ON ProgramTrackedEntityAttribute.uid = ValueTypeDeviceRendering.uid WHERE ProgramTrackedEntityAttribute.trackedEntityAttribute = ?", uid)) {
             if (rendering != null && rendering.moveToFirst()) {
-                fieldRendering = ValueTypeDeviceRenderingModel.create(rendering);
+                fieldRendering = ValueTypeDeviceRendering.create(rendering);
             }
         }
 
-        ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
+        ObjectStyle objectStyle = ObjectStyle.builder().build();
         try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
             if (objStyleCursor != null && objStyleCursor.moveToFirst())
-                objectStyle = ObjectStyleModel.create(objStyleCursor);
+                objectStyle = ObjectStyle.create(objStyleCursor);
         }
 
         if (warning != null) {
@@ -229,7 +231,7 @@ final class EnrollmentRepository implements DataEntryRepository {
     public void assign(String field, String content) {
         try (Cursor dataValueCursor = briteDatabase.query("SELECT * FROM TrackedEntityAttributeValue WHERE trackedEntityAttribute = ?", field == null ? "" : field)) {
             if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
-                TrackedEntityAttributeValueModel dataValue = TrackedEntityAttributeValueModel.create(dataValueCursor);
+                TrackedEntityAttributeValue dataValue = TrackedEntityAttributeValue.create(dataValueCursor);
                 ContentValues contentValues = dataValue.toContentValues();
                 contentValues.put(TrackedEntityAttributeValueModel.Columns.VALUE, content);
                 int row = briteDatabase.update(TrackedEntityAttributeValueModel.TABLE, contentValues, "trackedEntityAttribute = ?", field == null ? "" : field);

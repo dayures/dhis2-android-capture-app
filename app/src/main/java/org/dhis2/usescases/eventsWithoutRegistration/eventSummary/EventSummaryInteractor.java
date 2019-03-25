@@ -201,7 +201,7 @@ public class EventSummaryInteractor implements EventSummaryContract.Interactor {
                 if (model != null)
                     fieldViewModels.put(showError.field(), model.withError(showError.content()));
                 else
-                    Log.d("PR_FIELD_ERROR", String.format("Field with uid %s is missing", showError.field()));
+                    Timber.d("Field with uid %s is missing", showError.field());
                 view.fieldWithError(true);
             } else if (ruleAction instanceof RuleActionHideField) {
                 RuleActionHideField hideField = (RuleActionHideField) ruleAction;

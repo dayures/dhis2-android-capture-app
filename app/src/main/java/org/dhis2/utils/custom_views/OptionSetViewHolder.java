@@ -1,7 +1,7 @@
 package org.dhis2.utils.custom_views;
 
 import org.dhis2.databinding.ItemOptionBinding;
-import org.hisp.dhis.android.core.option.OptionModel;
+import org.hisp.dhis.android.core.option.Option;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,12 +17,10 @@ public class OptionSetViewHolder extends RecyclerView.ViewHolder {
         this.listener = listener;
     }
 
-    public void bind(OptionModel option) {
+    public void bind(Option option) {
         binding.setOption(option.displayName());
         binding.executePendingBindings();
 
-        itemView.setOnClickListener(view -> {
-            listener.onSelectOption(option);
-        });
+        itemView.setOnClickListener(view -> listener.onSelectOption(option));
     }
 }

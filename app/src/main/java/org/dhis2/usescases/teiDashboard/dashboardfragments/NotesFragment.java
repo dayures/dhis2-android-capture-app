@@ -1,11 +1,7 @@
 package org.dhis2.usescases.teiDashboard.dashboardfragments;
 
 import android.content.Context;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -18,10 +14,15 @@ import org.dhis2.usescases.general.FragmentGlobalAbstract;
 import org.dhis2.usescases.teiDashboard.TeiDashboardContracts;
 import org.dhis2.usescases.teiDashboard.adapters.NotesAdapter;
 import org.dhis2.usescases.teiDashboard.mobile.TeiDashboardMobileActivity;
-import org.hisp.dhis.android.core.enrollment.note.NoteModel;
+import org.hisp.dhis.android.core.enrollment.note.Note;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.Fragment;
 import io.reactivex.functions.Consumer;
 
 /**
@@ -29,11 +30,11 @@ import io.reactivex.functions.Consumer;
  */
 
 public class NotesFragment extends FragmentGlobalAbstract {
-    FragmentNotesBinding binding;
-    static NotesFragment instance;
+    private FragmentNotesBinding binding;
+    private static NotesFragment instance;
     private NotesAdapter noteAdapter;
-    TeiDashboardContracts.Presenter presenter;
-    ActivityGlobalAbstract activity;
+    private TeiDashboardContracts.Presenter presenter;
+    private ActivityGlobalAbstract activity;
 
     static public NotesFragment getInstance() {
         if (instance == null)
@@ -43,7 +44,7 @@ public class NotesFragment extends FragmentGlobalAbstract {
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NotNull Context context) {
         super.onAttach(context);
         activity = (ActivityGlobalAbstract) context;
         presenter = ((TeiDashboardMobileActivity) context).getPresenter();
@@ -85,7 +86,7 @@ public class NotesFragment extends FragmentGlobalAbstract {
         binding.editNote.getText().clear();
     }
 
-    public Consumer<List<NoteModel>> swapNotes() {
+    public Consumer<List<Note>> swapNotes() {
         return noteModels -> {
             noteAdapter.setItems(noteModels);
         };
@@ -93,6 +94,7 @@ public class NotesFragment extends FragmentGlobalAbstract {
 
 
     public static Fragment createInstance() {
-        return instance = new NotesFragment();
+        instance = new NotesFragment();
+        return instance;
     }
 }

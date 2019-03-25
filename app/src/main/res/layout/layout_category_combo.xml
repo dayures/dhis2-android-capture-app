@@ -2,15 +2,15 @@
 <layout xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <data>
-        <import type="org.hisp.dhis.android.core.category.CategoryOptionComboModel"/>
+        <import type="org.hisp.dhis.android.core.category.CategoryOptionCombo"/>
 
         <variable
             name="catCombo"
-            type="org.hisp.dhis.android.core.category.CategoryComboModel" />
+            type="org.hisp.dhis.android.core.category.CategoryCombo" />
 
         <variable
             name="catComboOptions"
-            type="java.util.ArrayList&lt;CategoryOptionComboModel>" />
+            type="java.util.ArrayList&lt;CategoryOptionCombo>" />
     </data>
 
     <androidx.constraintlayout.widget.ConstraintLayout

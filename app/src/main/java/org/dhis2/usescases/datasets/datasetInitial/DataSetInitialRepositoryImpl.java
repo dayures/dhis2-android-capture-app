@@ -1,19 +1,21 @@
 package org.dhis2.usescases.datasets.datasetInitial;
 
 import android.database.Cursor;
-import androidx.annotation.NonNull;
 
 import com.squareup.sqlbrite2.BriteDatabase;
 
-import org.hisp.dhis.android.core.category.CategoryModel;
+import org.hisp.dhis.android.core.category.Category;
+import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionModel;
 import org.hisp.dhis.android.core.dataset.DataSetModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.PeriodType;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
 import io.reactivex.Observable;
 
 public class DataSetInitialRepositoryImpl implements DataSetInitialRepository {
@@ -59,7 +61,7 @@ public class DataSetInitialRepositoryImpl implements DataSetInitialRepository {
                     PeriodType periodType = PeriodType.valueOf(cursor.getString(3));
                     String categoryComboName = cursor.getString(4);
 
-                    List<CategoryModel> categoryModels = getCategoryModels(categoryComboUid);
+                    List<Category> categoryModels = getCategoryModels(categoryComboUid);
 
                     return DataSetInitialModel.create(
                             displayName,
@@ -72,12 +74,12 @@ public class DataSetInitialRepositoryImpl implements DataSetInitialRepository {
                 });
     }
 
-    private List<CategoryModel> getCategoryModels(String categoryComboUid) {
-        List<CategoryModel> categoryModelList = new ArrayList<>();
+    private List<Category> getCategoryModels(String categoryComboUid) {
+        List<Category> categoryModelList = new ArrayList<>();
         try (Cursor cursor = briteDatabase.query(GET_CATEGORIES, categoryComboUid)) {
             if (cursor != null && cursor.moveToFirst()) {
                 for (int i = 0; i < cursor.getCount(); i++) {
-                    categoryModelList.add(CategoryModel.create(cursor));
+                    categoryModelList.add(Category.create(cursor));
                     cursor.moveToNext();
                 }
             }
@@ -88,15 +90,15 @@ public class DataSetInitialRepositoryImpl implements DataSetInitialRepository {
 
     @NonNull
     @Override
-    public Observable<List<OrganisationUnitModel>> orgUnits() {
+    public Observable<List<OrganisationUnit>> orgUnits() {
         return briteDatabase.createQuery(OrganisationUnitModel.TABLE, GET_ORG_UNITS, dataSetUid)
-                .mapToList(OrganisationUnitModel::create);
+                .mapToList(OrganisationUnit::create);
     }
 
     @NonNull
     @Override
-    public Observable<List<CategoryOptionModel>> catCombo(String categoryUid) {
+    public Observable<List<CategoryOption>> catCombo(String categoryUid) {
         return briteDatabase.createQuery(CategoryOptionModel.TABLE, GET_CATEGORY_OPTION, categoryUid)
-                .mapToList(CategoryOptionModel::create);
+                .mapToList(CategoryOption::create);
     }
 }

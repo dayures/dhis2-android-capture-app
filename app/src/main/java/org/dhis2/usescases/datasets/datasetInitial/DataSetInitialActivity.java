@@ -17,16 +17,17 @@ import org.dhis2.utils.Constants;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.custom_views.OrgUnitDialog;
 import org.dhis2.utils.custom_views.PeriodDialog;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryModel;
-import org.hisp.dhis.android.core.category.CategoryOptionModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.category.Category;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOption;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.PeriodType;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -40,8 +41,8 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
     @Inject
     DataSetInitialContract.Presenter presenter;
 
-    private HashMap<String, CategoryOptionModel> selectedCatOptions;
-    private OrganisationUnitModel selectedOrgUnit;
+    private HashMap<String, CategoryOption> selectedCatOptions;
+    private OrganisationUnit selectedOrgUnit;
     private Date selectedPeriod;
     private String dataSetUid;
 
@@ -69,7 +70,7 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
 
     @Override
     public void setAccessDataWrite(Boolean canWrite) {
-
+        // unused
     }
 
     @Override
@@ -77,8 +78,8 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
         binding.setDataSetModel(dataSetInitialModel);
         binding.catComboContainer.removeAllViews();
         selectedCatOptions = new HashMap<>();
-        if (!dataSetInitialModel.categoryCombo().equals(CategoryComboModel.DEFAULT_UID))
-            for (CategoryModel categoryModel : dataSetInitialModel.categories()) {
+        if (!dataSetInitialModel.categoryCombo().equals(CategoryCombo.DEFAULT_UID))
+            for (Category categoryModel : dataSetInitialModel.categories()) {
                 selectedCatOptions.put(categoryModel.uid(), null);
                 ItemCategoryComboBinding categoryComboBinding = ItemCategoryComboBinding.inflate(getLayoutInflater(), binding.catComboContainer, false);
                 categoryComboBinding.inputLayout.setHint(categoryModel.displayName());
@@ -95,8 +96,8 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
      * When changing orgUnit, date must be cleared
      */
     @Override
-    public void showOrgUnitDialog(List<OrganisationUnitModel> data) {
-        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstace().setMultiSelection(false);
+    public void showOrgUnitDialog(List<OrganisationUnit> data) {
+        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setOrgUnits(data);
         orgUnitDialog.setTitle(getString(R.string.org_unit))
                 .setPossitiveListener(v -> {
@@ -130,10 +131,10 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
     }
 
     @Override
-    public void showCatComboSelector(String catOptionUid, List<CategoryOptionModel> data) {
+    public void showCatComboSelector(String catOptionUid, List<CategoryOption> data) {
         PopupMenu menu = new PopupMenu(this, selectedView, Gravity.BOTTOM);
 //        menu.getMenu().add(Menu.NONE, Menu.NONE, 0, viewModel.label()); Don't show label
-        for (CategoryOptionModel optionModel : data)
+        for (CategoryOption optionModel : data)
             menu.getMenu().add(Menu.NONE, Menu.NONE, data.indexOf(optionModel), optionModel.displayName());
 
         menu.setOnDismissListener(menu1 -> selectedView = null);
@@ -167,7 +168,7 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
     public String getSelectedCatOptions() {
         StringBuilder catComb = new StringBuilder("");
         for (int i = 0; i < selectedCatOptions.keySet().size(); i++) {
-            CategoryOptionModel catOpt = selectedCatOptions.get(selectedCatOptions.keySet().toArray()[i]);
+            CategoryOption catOpt = selectedCatOptions.get(selectedCatOptions.keySet().toArray()[i]);
             catComb.append(catOpt.code());
             if (i < selectedCatOptions.values().size() - 1)
                 catComb.append(", ");
@@ -186,8 +187,8 @@ public class DataSetInitialActivity extends ActivityGlobalAbstract implements Da
             visible = false;
         if (selectedPeriod == null)
             visible = false;
-        for (String key : selectedCatOptions.keySet()) {
-            if (selectedCatOptions.get(key) == null)
+        for (Map.Entry<String, CategoryOption> entry : selectedCatOptions.entrySet()) {
+            if (entry.getValue() == null)
                 visible = false;
         }
 

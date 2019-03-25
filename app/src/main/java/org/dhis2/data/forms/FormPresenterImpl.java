@@ -10,7 +10,7 @@ import org.dhis2.data.forms.dataentry.RuleEngineRepository;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.schedulers.SchedulerProvider;
 import org.dhis2.utils.Result;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionErrorOnCompletion;
 import org.hisp.dhis.rules.models.RuleActionHideField;
@@ -61,7 +61,7 @@ class FormPresenterImpl implements FormPresenter {
     private final FlowableProcessor<String> processor;
     private FormView view;
 
-    private boolean isEvent = false;
+    private boolean isEvent;
 
     FormPresenterImpl(@NonNull FormViewArguments formViewArguments,
                       @NonNull SchedulerProvider schedulerProvider,
@@ -407,7 +407,7 @@ class FormPresenterImpl implements FormPresenter {
     }
 
     @Override
-    public void saveCategoryOption(CategoryOptionComboModel selectedOption) {
+    public void saveCategoryOption(CategoryOptionCombo selectedOption) {
         formRepository.saveCategoryOption(selectedOption);
     }
 }

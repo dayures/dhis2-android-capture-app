@@ -8,15 +8,17 @@ import com.squareup.sqlbrite2.BriteDatabase;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactory;
 import org.dhis2.utils.DateUtils;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
+import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.ValueType;
-import org.hisp.dhis.android.core.common.ValueTypeDeviceRenderingModel;
-import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.Program;
+import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 
 import java.util.ArrayList;
@@ -162,10 +164,10 @@ final class ProgramStageRepository implements DataEntryRepository {
                                 String displayName = cursor.getString(1);
                                 String optionCode = cursor.getString(2);
 
-                                ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
+                                ObjectStyle objectStyle = ObjectStyle.builder().build();
                                 try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", fieldViewModel.uid())) {
                                     if (objStyleCursor.moveToFirst())
-                                        objectStyle = ObjectStyleModel.create(objStyleCursor);
+                                        objectStyle = ObjectStyle.create(objStyleCursor);
                                 }
 
                                 renderList.add(fieldFactory.create(
@@ -192,16 +194,16 @@ final class ProgramStageRepository implements DataEntryRepository {
     }
 
     @Override
-    public Observable<List<OrganisationUnitModel>> getOrgUnits() {
+    public Observable<List<OrganisationUnit>> getOrgUnits() {
         return briteDatabase.createQuery(OrganisationUnitModel.TABLE, "SELECT * FROM " + OrganisationUnitModel.TABLE)
-                .mapToList(OrganisationUnitModel::create);
+                .mapToList(OrganisationUnit::create);
     }
 
     @Override
     public void assign(String field, String content) {
         try (Cursor dataValueCursor = briteDatabase.query("SELECT * FROM TrackedEntityDataValue WHERE dataElement = ?", field == null ? "" : field)) {
             if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
-                TrackedEntityDataValueModel dataValue = TrackedEntityDataValueModel.create(dataValueCursor);
+                TrackedEntityDataValue dataValue = TrackedEntityDataValue.create(dataValueCursor);
                 ContentValues contentValues = dataValue.toContentValues();
                 contentValues.put(TrackedEntityDataValueModel.Columns.VALUE, content);
                 int row = briteDatabase.update(TrackedEntityDataValueModel.TABLE, contentValues, "dataElement = ?", field == null ? "" : field);
@@ -237,39 +239,39 @@ final class ProgramStageRepository implements DataEntryRepository {
         } catch (Exception e) {
             Timber.e(e);
         }
-        ValueTypeDeviceRenderingModel fieldRendering = null;
+        ValueTypeDeviceRendering fieldRendering = null;
         try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering" +
                 " JOIN ProgramStageDataElement ON ProgramStageDataElement.uid = ValueTypeDeviceRendering.uid" +
                 " WHERE ProgramStageDataElement.uid = ?", uid)) {
             if (rendering != null && rendering.moveToFirst()) {
-                fieldRendering = ValueTypeDeviceRenderingModel.create(rendering);
+                fieldRendering = ValueTypeDeviceRendering.create(rendering);
             }
         }
 
-        EventModel eventModel;
-        ProgramStageModel programStageModel;
-        ProgramModel programModel;
+        Event eventModel;
+        ProgramStage programStageModel;
+        Program programModel;
         try (Cursor eventCursor = briteDatabase.query("SELECT * FROM Event WHERE uid = ?", eventUid)) {
             eventCursor.moveToFirst();
-            eventModel = EventModel.create(eventCursor);
+            eventModel = Event.create(eventCursor);
         }
 
         try (Cursor programStageCursor = briteDatabase.query("SELECT * FROM ProgramStage WHERE uid = ?", eventModel.programStage())) {
             programStageCursor.moveToFirst();
-            programStageModel = ProgramStageModel.create(programStageCursor);
+            programStageModel = ProgramStage.create(programStageCursor);
         }
 
         try (Cursor programCursor = briteDatabase.query("SELECT * FROM Program WHERE uid = ?", eventModel.program())) {
             programCursor.moveToFirst();
-            programModel = ProgramModel.create(programCursor);
+            programModel = Program.create(programCursor);
         }
 
         boolean hasExpired = DateUtils.getInstance().hasExpired(eventModel, programModel.expiryDays(), programModel.completeEventsExpiryDays(), programStageModel.periodType() != null ? programStageModel.periodType() : programModel.expiryPeriodType());
 
-        ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
+        ObjectStyle objectStyle = ObjectStyle.builder().build();
         try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
             if (objStyleCursor != null && objStyleCursor.moveToFirst())
-                objectStyle = ObjectStyleModel.create(objStyleCursor);
+                objectStyle = ObjectStyle.create(objStyleCursor);
         }
 
         return fieldFactory.create(uid, isEmpty(formLabel) ? label : formLabel, valueType, mandatory, optionSetUid, dataValue, section,
@@ -281,10 +283,10 @@ final class ProgramStageRepository implements DataEntryRepository {
     private String prepareStatement() {
         String where;
         if (isEmpty(sectionUid)) {
-            where = String.format(Locale.US, "WHERE Event.uid = '%s'", eventUid == null ? "" : eventUid);
+            where = String.format(Locale.US, "WHERE Event.uid = '%s'", eventUid);
         } else {
             where = String.format(Locale.US, "WHERE Event.uid = '%s' AND " +
-                    "Field.section = '%s'", eventUid == null ? "" : eventUid, sectionUid == null ? "" : sectionUid);
+                    "Field.section = '%s'", eventUid, sectionUid);
         }
 
         return String.format(Locale.US, QUERY, where);

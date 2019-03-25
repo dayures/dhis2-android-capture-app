@@ -28,10 +28,9 @@ import org.dhis2.utils.EndlessRecyclerViewScrollListener;
 import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.Period;
 import org.dhis2.utils.custom_views.RxDateDialog;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.program.Program;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -155,7 +154,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
 
     @Override
-    public void setProgram(ProgramModel program) {
+    public void setProgram(Program program) {
         binding.setName(program.displayName());
     }
 
@@ -205,7 +204,6 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                             presenter.setFilters(selectedDates, currentPeriod, orgUnitFilter.toString());
                             endlessScrollListener.resetState(0);
                             pageProcessor.onNext(0);
-//                            presenter.getProgramEventsWithDates(selectedDates, currentPeriod, orgUnitFilter.toString());
 
                         } else {
                             ArrayList<Date> date = new ArrayList<>();
@@ -234,7 +232,6 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                             presenter.setFilters(date, currentPeriod, orgUnitFilter.toString());
                             endlessScrollListener.resetState(0);
                             pageProcessor.onNext(0);
-//                            presenter.getProgramEventsWithDates(date, currentPeriod, orgUnitFilter.toString());
                         }
                     },
                     Timber::d);
@@ -251,7 +248,6 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                 presenter.setFilters(day, currentPeriod, orgUnitFilter.toString());
                 endlessScrollListener.resetState(0);
                 pageProcessor.onNext(0);
-//                presenter.getProgramEventsWithDates(day, currentPeriod, orgUnitFilter.toString());
                 binding.buttonPeriodText.setText(DateUtils.getInstance().formatDate(dates[0]));
                 chosenDateDay = dates[0];
             }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
@@ -286,6 +282,8 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
             case YEARLY:
                 currentPeriod = NONE;
                 drawable = ContextCompat.getDrawable(getContext(), R.drawable.ic_view_none);
+                break;
+            default:
                 break;
         }
         binding.buttonTime.setImageDrawable(drawable);
@@ -340,6 +338,8 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                 endlessScrollListener.resetState(0);
                 pageProcessor.onNext(0);
                 break;
+            default:
+                break;
         }
 
         binding.buttonPeriodText.setText(textToShow);
@@ -388,7 +388,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                 binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
 
                 if (node.getChildren().isEmpty())
-                    presenter.onExpandOrgUnitNode(node, ((OrganisationUnitModel) node.getValue()).uid());
+                    presenter.onExpandOrgUnitNode(node, ((OrganisationUnit) node.getValue()).uid());
                 else
                     node.setExpanded(node.isExpanded());
             }
@@ -417,21 +417,21 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
     }
 
     @Override
-    public void setCatComboOptions(CategoryComboModel catCombo, List<CategoryOptionComboModel> catComboList) {
-        ArrayList<CategoryOptionComboModel> catComboListFinal = new ArrayList<>();
+    public void setCatComboOptions(CategoryCombo catCombo, List<CategoryOptionCombo> catComboList) {
+        ArrayList<CategoryOptionCombo> catComboListFinal = new ArrayList<>();
         if (catComboList != null) {
-            for (CategoryOptionComboModel categoryOptionComboModel : catComboList) {
-                if (!"default".equals(categoryOptionComboModel.displayName()) && !categoryOptionComboModel.uid().equals(CategoryComboModel.DEFAULT_UID)) {
+            for (CategoryOptionCombo categoryOptionComboModel : catComboList) {
+                if (!"default".equals(categoryOptionComboModel.displayName()) && !categoryOptionComboModel.uid().equals(CategoryCombo.DEFAULT_UID)) {
                     catComboListFinal.add(categoryOptionComboModel);
                 }
             }
         }
 
-        if (catCombo.isDefault() || "default".equals(catCombo.displayName()) || catCombo.uid().equals(CategoryComboModel.DEFAULT_UID) || catComboListFinal.isEmpty()) {
+        if (catCombo.isDefault() || "default".equals(catCombo.displayName()) || catCombo.uid().equals(CategoryCombo.DEFAULT_UID) || catComboListFinal.isEmpty()) {
             binding.catCombo.setVisibility(View.GONE);
         } else {
             binding.catCombo.setVisibility(View.VISIBLE);
-            CatComboAdapter adapter = new CatComboAdapter(this,
+            CatComboAdapter comboAdapter = new CatComboAdapter(this,
                     R.layout.spinner_layout,
                     R.id.spinner_text,
                     catComboListFinal,
@@ -439,7 +439,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                     R.color.white_faf);
 
             binding.catCombo.setVisibility(View.VISIBLE);
-            binding.catCombo.setAdapter(adapter);
+            binding.catCombo.setAdapter(comboAdapter);
 
             binding.catCombo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
@@ -451,7 +451,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                         pageProcessor.onNext(0);
                     } else {
                         isFilteredByCatCombo = true;
-                        presenter.onCatComboSelected(adapter.getItem(position - 1));
+                        presenter.onCatComboSelected(comboAdapter.getItem(position - 1));
                         endlessScrollListener.resetState();
                         pageProcessor.onNext(0);
                     }
@@ -459,8 +459,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
                 @Override
                 public void onNothingSelected(AdapterView<?> parent) {
-                   /* isFilteredByCatCombo = false;
-                    presenter.clearCatComboFilters();*/
+                    // unused
                 }
             });
         }
@@ -507,10 +506,10 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
             List<String> orgUnitsUids = new ArrayList<>();
             for (TreeNode treeNode : treeView.getSelected()) {
-                orgUnitsUids.add(((OrganisationUnitModel) treeNode.getValue()).uid());
+                orgUnitsUids.add(((CategoryCombo) treeNode.getValue()).uid());
             }
 
-            if (treeView.getSelected().size() >= 1) {
+            if (!treeView.getSelected().isEmpty()) {
                 binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
             }
             presenter.updateOrgUnitFilter(orgUnitsUids);
@@ -551,7 +550,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
             HelpManager.getInstance().setScreenHelp(getClass().getName(), steps);
 
             if (!prefs.getBoolean("TUTO_PROGRAM_EVENT", false) && !BuildConfig.DEBUG) {
-                HelpManager.getInstance().showHelp();/* getAbstractActivity().fancyShowCaseQueue.show();*/
+                HelpManager.getInstance().showHelp();
                 prefs.edit().putBoolean("TUTO_PROGRAM_EVENT", true).apply();
             }
 

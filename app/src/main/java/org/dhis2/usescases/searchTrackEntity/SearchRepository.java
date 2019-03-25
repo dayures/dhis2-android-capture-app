@@ -1,22 +1,18 @@
 package org.dhis2.usescases.searchTrackEntity;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.dhis2.usescases.searchTrackEntity.adapters.SearchTeiModel;
-
-import org.hisp.dhis.android.core.option.OptionModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.option.Option;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
@@ -27,30 +23,30 @@ import io.reactivex.Observable;
 public interface SearchRepository {
 
     @NonNull
-    Observable<List<TrackedEntityAttributeModel>> programAttributes(String programId);
+    Observable<List<TrackedEntityAttribute>> programAttributes(String programId);
 
-    Observable<List<TrackedEntityAttributeModel>> programAttributes();
+    Observable<List<TrackedEntityAttribute>> programAttributes();
 
-    Observable<List<OptionModel>> optionSet(String optionSetId);
+    Observable<List<Option>> optionSet(String optionSetId);
 
-    Observable<List<ProgramModel>> programsWithRegistration(String programTypeId);
+    Observable<List<Program>> programsWithRegistration(String programTypeId);
 
-    Observable<List<TrackedEntityInstanceModel>> trackedEntityInstances(@NonNull String teType,
-                                                                        @Nullable ProgramModel selectedProgram,
-                                                                        @Nullable HashMap<String, String> queryData, Integer page);
+    Observable<List<TrackedEntityInstance>> trackedEntityInstances(@NonNull String teType,
+                                                                   @Nullable Program selectedProgram,
+                                                                   @Nullable HashMap<String, String> queryData, Integer page);
 
-    Observable<List<TrackedEntityInstanceModel>> trackedEntityInstancesToUpdate(@NonNull String teType,
-                                                                                @Nullable ProgramModel selectedProgram,
-                                                                                @Nullable HashMap<String, String> queryData, int listSize);
+    Observable<List<TrackedEntityInstance>> trackedEntityInstancesToUpdate(@NonNull String teType,
+                                                                           @Nullable Program selectedProgram,
+                                                                           @Nullable HashMap<String, String> queryData, int listSize);
 
     @NonNull
-    Observable<String> saveToEnroll(@NonNull String teiType, @NonNull String orgUnitUID, @NonNull String programUid, @Nullable String teiUid, HashMap<String, String> queryDatam,Date enrollmentDate);
+    Observable<String> saveToEnroll(@NonNull String teiType, @NonNull String orgUnitUID, @NonNull String programUid, @Nullable String teiUid, HashMap<String, String> queryDatam, Date enrollmentDate);
 
-    Observable<List<OrganisationUnitModel>> getOrgUnits(@Nullable String selectedProgramUid);
+    Observable<List<OrganisationUnit>> getOrgUnits(@Nullable String selectedProgramUid);
 
-    Flowable<List<SearchTeiModel>> transformIntoModel(List<SearchTeiModel> teiList, @Nullable ProgramModel selectedProgram);
+    Flowable<List<SearchTeiModel>> transformIntoModel(List<SearchTeiModel> teiList, @Nullable Program selectedProgram);
 
     String getProgramColor(@NonNull String programUid);
 
-    Observable<List<TrackedEntityAttributeModel>> trackedEntityTypeAttributes();
+    Observable<List<TrackedEntityAttribute>> trackedEntityTypeAttributes();
 }

@@ -5,7 +5,7 @@ import android.content.Context;
 import com.unnamed.b.atv.model.TreeNode;
 
 import org.dhis2.usescases.main.program.OrgUnitHolder;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,24 +24,24 @@ import timber.log.Timber;
 
 public class OrgUnitUtils {
 
-    public static TreeNode renderTree(Context context, @NonNull List<OrganisationUnitModel> myOrgs, Boolean isMultiSelection) {
+    public static TreeNode renderTree(Context context, @NonNull List<OrganisationUnit> myOrgs, Boolean isMultiSelection) {
 
         HashMap<Integer, ArrayList<TreeNode>> subLists = new HashMap<>();
 
-        List<OrganisationUnitModel> allOrgs = new ArrayList<>();
+        List<OrganisationUnit> allOrgs = new ArrayList<>();
         ArrayList<String> myOrgUnitUids = new ArrayList<>();
         if (myOrgs == null) {
             myOrgs = new ArrayList<>();
         }
-        for (OrganisationUnitModel myorg : myOrgs) {
+        for (OrganisationUnit myorg : myOrgs) {
             myOrgUnitUids.add(myorg.uid());
             String[] pathName = myorg.displayNamePath().split("/");
             String[] pathUid = myorg.path().split("/");
             for (int i = myorg.level(); i > 0; i--) {
-                OrganisationUnitModel orgToAdd = OrganisationUnitModel.builder()
+                OrganisationUnit orgToAdd = OrganisationUnit.builder()
                         .uid(pathUid[i])
                         .level(i)
-                        .parent(pathUid[i - 1])
+//                        .parent(pathUid[i - 1])
                         .name(pathName[i])
                         .displayName(pathName[i])
                         .displayShortName(pathName[i])
@@ -60,12 +60,12 @@ public class OrgUnitUtils {
         }
 
         //Separamos las orunits en listas por nivel
-        for (OrganisationUnitModel orgs : allOrgs) {
+        for (OrganisationUnit orgs : allOrgs) {
             ArrayList<TreeNode> sublist = subLists.get(orgs.level());
             TreeNode treeNode = new TreeNode(orgs).setViewHolder(new OrgUnitHolder(context, isMultiSelection));
             treeNode.setSelectable(myOrgUnitUids.contains(orgs.uid()));
             sublist.add(treeNode);
-            Collections.sort(sublist, (org1, org2) -> ((OrganisationUnitModel) org1.getValue()).displayName().compareTo(((OrganisationUnitModel) org2.getValue()).displayName()));
+            Collections.sort(sublist, (org1, org2) -> ((OrganisationUnit) org1.getValue()).displayName().compareTo(((OrganisationUnit) org2.getValue()).displayName()));
             subLists.put(orgs.level(), sublist);
         }
 
@@ -77,7 +77,7 @@ public class OrgUnitUtils {
                 for (int level = keys.last(); level > 1; level--) {
                     for (TreeNode treeNode : subLists.get(level - 1)) {
                         for (TreeNode childTreeNode : subLists.get(level)) {
-                            if (((OrganisationUnitModel) childTreeNode.getValue()).parent().equals(((OrganisationUnitModel) treeNode.getValue()).uid()))
+                            if (((OrganisationUnit) childTreeNode.getValue()).parent().equals(((OrganisationUnit) treeNode.getValue()).uid()))
                                 treeNode.addChild(childTreeNode);
                         }
 
@@ -97,9 +97,9 @@ public class OrgUnitUtils {
     }
 
 
-    public static List<TreeNode> createNode(Context context, List<OrganisationUnitModel> orgUnits, boolean isMultiSelection) {
+    public static List<TreeNode> createNode(Context context, List<OrganisationUnit> orgUnits, boolean isMultiSelection) {
         List<TreeNode> levelNode = new ArrayList<>();
-        for (OrganisationUnitModel org : orgUnits) {
+        for (OrganisationUnit org : orgUnits) {
             TreeNode treeNode = new TreeNode(org).setViewHolder(new OrgUnitHolder(context, isMultiSelection));
             treeNode.setSelectable(true);
             levelNode.add(treeNode);

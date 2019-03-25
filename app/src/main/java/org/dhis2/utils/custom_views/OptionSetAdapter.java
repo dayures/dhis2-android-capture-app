@@ -1,21 +1,22 @@
 package org.dhis2.utils.custom_views;
 
-import androidx.databinding.DataBindingUtil;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import org.dhis2.R;
 import org.dhis2.databinding.ItemOptionBinding;
-import org.hisp.dhis.android.core.option.OptionModel;
+import org.hisp.dhis.android.core.option.Option;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.RecyclerView;
+
 public class OptionSetAdapter extends RecyclerView.Adapter<OptionSetViewHolder> {
 
-    private List<OptionModel> options;
+    private List<Option> options;
     private OptionSetOnClickListener listener;
 
     public OptionSetAdapter(OptionSetOnClickListener listener) {
@@ -41,13 +42,13 @@ public class OptionSetAdapter extends RecyclerView.Adapter<OptionSetViewHolder> 
         return options.size();
     }
 
-    public void setOptions(List<OptionModel> options, int currentPage) {
+    public void setOptions(List<Option> options, int currentPage) {
         if (currentPage == 0) {
             this.options = options;
             notifyDataSetChanged();
         } else {
             this.options.addAll(options);
-            notifyItemRangeInserted(this.options.size()-options.size(),options.size());
+            notifyItemRangeInserted(this.options.size() - options.size(), options.size());
         }
     }
 }

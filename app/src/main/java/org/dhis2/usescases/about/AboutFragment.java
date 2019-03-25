@@ -2,10 +2,7 @@ package org.dhis2.usescases.about;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,10 +13,14 @@ import org.dhis2.Components;
 import org.dhis2.R;
 import org.dhis2.databinding.FragmentAboutBinding;
 import org.dhis2.usescases.general.FragmentGlobalAbstract;
-import org.hisp.dhis.android.core.user.UserCredentialsModel;
+import org.hisp.dhis.android.core.user.UserCredentials;
+import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
 import timber.log.Timber;
 
 /**
@@ -34,7 +35,7 @@ public class AboutFragment extends FragmentGlobalAbstract implements AboutContra
     private FragmentAboutBinding aboutBinding;
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NotNull Context context) {
         super.onAttach(context);
         ((Components) context.getApplicationContext()).userComponent()
                 .plus(new AboutModule()).inject(this);
@@ -90,8 +91,8 @@ public class AboutFragment extends FragmentGlobalAbstract implements AboutContra
     }
 
     @Override
-    public void renderUserCredentials(UserCredentialsModel userCredentialsModel) {
-        String text = String.format(getString(R.string.about_user), userCredentialsModel.username());
+    public void renderUserCredentials(UserCredentials userCredentials) {
+        String text = String.format(getString(R.string.about_user), userCredentials.username());
         aboutBinding.aboutUser.setText(text);
     }
 

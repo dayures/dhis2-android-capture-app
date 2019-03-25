@@ -1,17 +1,20 @@
 package org.dhis2.usescases.programEventDetail;
 
+import com.unnamed.b.atv.model.TreeNode;
+
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.utils.Period;
-import com.unnamed.b.atv.model.TreeNode;
-
+import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.DatePeriod;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 
 import java.util.Date;
 import java.util.List;
@@ -37,11 +40,11 @@ public class ProgramEventDetailContract {
 
         void showRageDatePicker();
 
-        void setProgram(ProgramModel programModel);
+        void setProgram(Program programModel);
 
         void renderError(String message);
 
-        void setCatComboOptions(CategoryComboModel catCombo, List<CategoryOptionComboModel> catComboList);
+        void setCatComboOptions(CategoryCombo catCombo, List<CategoryOptionCombo> catComboList);
 
         void showHideFilter();
 
@@ -73,19 +76,19 @@ public class ProgramEventDetailContract {
 
         void onBackClick();
 
-        void setProgram(ProgramModel program);
+        void setProgram(Program program);
 
-        void onCatComboSelected(CategoryOptionComboModel categoryOptionComboModel);
+        void onCatComboSelected(CategoryOptionCombo categoryOptionComboModel);
 
         void clearCatComboFilters();
 
         void onEventClick(String eventId, String orgUnit);
 
-        Observable<List<String>> getEventDataValueNew(EventModel event);
+        Observable<List<String>> getEventDataValueNew(Event event);
 
         void showFilter();
 
-        List<OrganisationUnitModel> getOrgUnits();
+        List<OrganisationUnit> getOrgUnits();
 
         void setFilters(List<Date> selectedDates, Period currentPeriod, String orgUnits);
 

@@ -14,13 +14,18 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.usescases.qrCodes.QrViewModel;
 import org.dhis2.utils.DateUtils;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,14 +76,14 @@ public class QRCodeGenerator implements QRInterface {
 
         return
                 briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, TEI, teiUid == null ? "" : teiUid)
-                        .mapToOne(TrackedEntityInstanceModel::create)
+                        .mapToOne(TrackedEntityInstance::create)
                         .map(data -> bitmaps.add(new QrViewModel(TEI_JSON, gson.toJson(data))))
 
 
                         .flatMap(data -> briteDatabase.createQuery(TrackedEntityAttributeValueModel.TABLE, TEI_ATTR, teiUid == null ? "" : teiUid)
-                                .mapToList(TrackedEntityAttributeValueModel::create))
+                                .mapToList(TrackedEntityAttributeValue::create))
                         .map(data -> {
-                            ArrayList<TrackedEntityAttributeValueModel> arrayListAux = new ArrayList<>();
+                            ArrayList<TrackedEntityAttributeValue> arrayListAux = new ArrayList<>();
                             // DIVIDE ATTR QR GENERATION -> 1 QR PER 2 ATTR
                             int count = 0;
                             for (int i = 0; i < data.size(); i++) {
@@ -98,9 +103,9 @@ public class QRCodeGenerator implements QRInterface {
 
 
                         .flatMap(data -> briteDatabase.createQuery(EnrollmentModel.TABLE, TEI_ENROLLMENTS, teiUid == null ? "" : teiUid)
-                                .mapToList(EnrollmentModel::create))
+                                .mapToList(Enrollment::create))
                         .map(data -> {
-                            ArrayList<EnrollmentModel> arrayListAux = new ArrayList<>();
+                            ArrayList<Enrollment> arrayListAux = new ArrayList<>();
                             // DIVIDE ENROLLMENT QR GENERATION -> 1 QR PER 2 ENROLLMENT
                             int count = 0;
                             for (int i = 0; i < data.size(); i++) {
@@ -129,10 +134,10 @@ public class QRCodeGenerator implements QRInterface {
                                 Observable.fromIterable(data)
                                         .flatMap(event -> {
                                                     bitmaps.add(new QrViewModel(EVENTS_JSON, gson.toJson(event)));
-                                                    return briteDatabase.createQuery(TrackedEntityDataValueModel.TABLE, TEI_DATA, event.uid() == null ? "" : event.uid())
-                                                            .mapToList(TrackedEntityDataValueModel::create)
+                                                    return briteDatabase.createQuery(TrackedEntityDataValueModel.TABLE, TEI_DATA, event.uid())
+                                                            .mapToList(TrackedEntityDataValue::create)
                                                             .map(dataValueList -> {
-                                                                ArrayList<TrackedEntityDataValueModel> arrayListAux = new ArrayList<>();
+                                                                ArrayList<TrackedEntityDataValue> arrayListAux = new ArrayList<>();
                                                                 // DIVIDE ATTR QR GENERATION -> 1 QR PER 2 ATTR
                                                                 int count = 0;
                                                                 for (int i = 0; i < dataValueList.size(); i++) {
@@ -162,15 +167,15 @@ public class QRCodeGenerator implements QRInterface {
 
         return
                 briteDatabase.createQuery(EventModel.TABLE, EVENT, eventUid == null ? "" : eventUid)
-                        .mapToOne(EventModel::create)
+                        .mapToOne(Event::create)
                         .map(data -> {
                             bitmaps.add(new QrViewModel(EVENT_JSON, gson.toJson(data)));
                             return data;
                         })
                         .flatMap(data -> briteDatabase.createQuery(TrackedEntityDataValueModel.TABLE, TEI_DATA, data.uid() == null ? "" : data.uid())
-                                .mapToList(TrackedEntityDataValueModel::create))
+                                .mapToList(TrackedEntityDataValue::create))
                         .map(data -> {
-                            ArrayList<TrackedEntityDataValueModel> arrayListAux = new ArrayList<>();
+                            ArrayList<TrackedEntityDataValue> arrayListAux = new ArrayList<>();
                             // DIVIDE ATTR QR GENERATION -> 1 QR PER 2 ATTR
                             int count = 0;
                             for (int i = 0; i < data.size(); i++) {
@@ -193,13 +198,8 @@ public class QRCodeGenerator implements QRInterface {
     public static Bitmap transform(String type, String info) {
         byte[] data;
         String encoded;
-        try {
-            data = info.getBytes("UTF-8");
-            encoded = Base64.encodeToString(data, Base64.DEFAULT);
-        } catch (UnsupportedEncodingException e) {
-            Timber.e(e);
-            encoded = e.getLocalizedMessage();
-        }
+        data = info.getBytes(StandardCharsets.UTF_8);
+        encoded = Base64.encodeToString(data, Base64.DEFAULT);
 
         MultiFormatWriter multiFormatWriter = new MultiFormatWriter();
         Bitmap bitmap = null;

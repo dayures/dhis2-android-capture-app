@@ -43,16 +43,16 @@ import org.dhis2.utils.custom_views.CustomDialog;
 import org.dhis2.utils.custom_views.OrgUnitDialog;
 import org.dhis2.utils.custom_views.PeriodDialog;
 import org.dhis2.utils.custom_views.ProgressBarAnimation;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
-import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.PeriodType;
-import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.Program;
+import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -96,7 +96,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     @Inject
     EventInitialContract.Presenter presenter;
 
-    private EventModel eventModel;
+    private Event eventModel;
 
     private ActivityEventInitialBinding binding;
 
@@ -105,12 +105,12 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     private String selectedOrgUnit;
     private Date selectedOrgUnitOpeningDate;
     private Date selectedOrgUnitClosedDate;
-    private CategoryOptionComboModel selectedCatOptionCombo;
-    private CategoryComboModel selectedCatCombo;
-    private ProgramStageModel programStageModel;
+    private CategoryOptionCombo selectedCatOptionCombo;
+    private CategoryCombo selectedCatCombo;
+    private ProgramStage programStageModel;
     private String selectedLat;
     private String selectedLon;
-    private List<CategoryOptionComboModel> categoryOptionComboModels;
+    private List<CategoryOptionCombo> categoryOptionComboModels;
     private String eventUid;
     private String programUid;
     private EventCreationType eventCreationType;
@@ -122,7 +122,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     private PeriodType periodType;
     private String programStageUid;
     private OrgUnitDialog orgUnitDialog;
-    private ProgramModel program;
+    private Program program;
     private String savedLat;
     private String savedLon;
     private ArrayList<String> sectionsToHide;
@@ -130,6 +130,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     private Boolean accessData;
     private EnrollmentStatus enrollmentStatus;
 
+    @SuppressWarnings("squid:S00107")
     public static Bundle getBundle(String programUid, String eventUid, String eventCreationType,
                                    String teiUid, PeriodType eventPeriodType, String orgUnit, String stageUid,
                                    String enrollmentUid, int eventScheduleInterval, EnrollmentStatus enrollmentStatus) {
@@ -387,8 +388,8 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     private boolean isSelectedDateBetweenOpeningAndClosedDates() {
         if (selectedDate == null)
             return false;
-        boolean isAfterOpening = selectedOrgUnitOpeningDate == null || (selectedOrgUnitOpeningDate != null && selectedDate.after(selectedOrgUnitOpeningDate));
-        boolean isBeforeClosed = selectedOrgUnitClosedDate == null || (selectedOrgUnitClosedDate != null && selectedDate.before(selectedOrgUnitClosedDate));
+        boolean isAfterOpening = selectedOrgUnitOpeningDate == null || selectedDate.after(selectedOrgUnitOpeningDate);
+        boolean isBeforeClosed = selectedOrgUnitClosedDate == null || selectedDate.before(selectedOrgUnitClosedDate);
         return isAfterOpening && isBeforeClosed;
 
     }
@@ -398,7 +399,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public void setProgram(@NonNull ProgramModel program) {
+    public void setProgram(@NonNull Program program) {
         this.program = program;
 
         String activityTitle;
@@ -437,8 +438,8 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             else
                 new PeriodDialog()
                         .setPeriod(periodType)
-                        .setPossitiveListener(selectedDate -> {
-                            this.selectedDate = selectedDate;
+                        .setPossitiveListener(selectedDateResult -> {
+                            this.selectedDate = selectedDateResult;
                             binding.date.setText(DateUtils.getInstance().getPeriodUIString(periodType, selectedDate, Locale.getDefault()));
                             binding.date.clearFocus();
                             if (!fixedOrgUnit)
@@ -498,36 +499,26 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         treeView.setDefaultNodeClickListener((node, value) -> {
             if (node.isSelectable()) {
                 treeView.selectNode(node, node.isSelected());
-                ArrayList<String> childIds = new ArrayList<>();
-                childIds.add(((OrganisationUnitModel) value).uid());
-                for (TreeNode childNode : node.getChildren()) {
-                    childIds.add(((OrganisationUnitModel) childNode.getValue()).uid());
-                    for (TreeNode childNode2 : childNode.getChildren()) {
-                        childIds.add(((OrganisationUnitModel) childNode2.getValue()).uid());
-                        for (TreeNode childNode3 : childNode2.getChildren()) {
-                            childIds.add(((OrganisationUnitModel) childNode3.getValue()).uid());
-                        }
-                    }
-                }
+
                 if (!fixedOrgUnit) {
-                    selectedOrgUnit = ((OrganisationUnitModel) value).uid();
-                    binding.orgUnit.setText(((OrganisationUnitModel) value).displayName());
+                    selectedOrgUnit = ((OrganisationUnit) value).uid();
+                    binding.orgUnit.setText(((OrganisationUnit) value).displayName());
                 }
                 binding.drawerLayout.closeDrawers();
             }
         });
 
         if (treeView.getSelected() != null && !treeView.getSelected().isEmpty() && !fixedOrgUnit) {
-            binding.orgUnit.setText(((OrganisationUnitModel) treeView.getSelected().get(0).getValue()).displayName());
-            selectedOrgUnit = ((OrganisationUnitModel) treeView.getSelected().get(0).getValue()).uid();
-            selectedOrgUnitOpeningDate = ((OrganisationUnitModel) treeView.getSelected().get(0).getValue()).openingDate();
-            selectedOrgUnitClosedDate = ((OrganisationUnitModel) treeView.getSelected().get(0).getValue()).closedDate();
+            binding.orgUnit.setText(((OrganisationUnit) treeView.getSelected().get(0).getValue()).displayName());
+            selectedOrgUnit = ((OrganisationUnit) treeView.getSelected().get(0).getValue()).uid();
+            selectedOrgUnitOpeningDate = ((OrganisationUnit) treeView.getSelected().get(0).getValue()).openingDate();
+            selectedOrgUnitClosedDate = ((OrganisationUnit) treeView.getSelected().get(0).getValue()).closedDate();
         }
         checkActionButtonVisibility();
     }
 
     @Override
-    public void setEvent(EventModel event) {
+    public void setEvent(Event event) {
 
         binding.setEvent(event);
 
@@ -536,11 +527,11 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             binding.date.setText(DateUtils.uiDateFormat().format(selectedDate));
         }
 
-        if (event.latitude() != null && event.longitude() != null) {
+        if (event.coordinate().latitude() != null && event.coordinate().longitude() != null) {
             runOnUiThread(() -> {
                 if (isEmpty(savedLat)) {
-                    binding.lat.setText(event.latitude());
-                    binding.lon.setText(event.longitude());
+                    binding.lat.setText(String.valueOf(event.coordinate().latitude()));
+                    binding.lon.setText(String.valueOf(event.coordinate().longitude()));
                 } else {
                     binding.lat.setText(savedLat);
                     binding.lon.setText(savedLon);
@@ -554,7 +545,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public void setCatOption(CategoryOptionComboModel categoryOptionComboModel) {
+    public void setCatOption(CategoryOptionCombo categoryOptionComboModel) {
         if (categoryOptionComboModels != null) {
             for (int i = 0; i < categoryOptionComboModels.size(); i++) {
                 if (categoryOptionComboModels.get(i).uid().equals(categoryOptionComboModel.uid())) {
@@ -595,7 +586,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public void setProgramStage(ProgramStageModel programStage) {
+    public void setProgramStage(ProgramStage programStage) {
         this.programStageModel = programStage;
         if (programStageModel.captureCoordinates()) {
             binding.coordinatesLayout.setVisibility(View.VISIBLE);
@@ -633,7 +624,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public void setCatComboOptions(CategoryComboModel catCombo, List<CategoryOptionComboModel> catComboList) {
+    public void setCatComboOptions(CategoryCombo catCombo, List<CategoryOptionCombo> catComboList) {
 
         runOnUiThread(() -> {
 
@@ -734,13 +725,11 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    presenter.onLocationClick();
-                }
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        // If request is cancelled, the result arrays are empty.
+        if (requestCode == EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                presenter.onLocationClick();
             }
         }
     }
@@ -813,7 +802,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public void renderObjectStyle(ObjectStyleModel data) {
+    public void renderObjectStyle(ObjectStyle data) {
         if (data.icon() != null) {
             Resources resources = getResources();
             String iconName = data.icon().startsWith("ic_") ? data.icon() : "ic_" + data.icon();
@@ -883,14 +872,14 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public void showOrgUnitSelector(List<OrganisationUnitModel> orgUnits) {
-        Iterator<OrganisationUnitModel> iterator = orgUnits.iterator();
+    public void showOrgUnitSelector(List<OrganisationUnit> orgUnits) {
+        Iterator<OrganisationUnit> iterator = orgUnits.iterator();
         while (iterator.hasNext()) {
-            OrganisationUnitModel orgUnit = iterator.next();
+            OrganisationUnit orgUnit = iterator.next();
             if (orgUnit.closedDate() != null && selectedDate.after(orgUnit.closedDate()))
                 iterator.remove();
         }
-        if (orgUnits != null && !orgUnits.isEmpty()) {
+        if (!orgUnits.isEmpty()) {
             orgUnitDialog = new OrgUnitDialog()
                     .setTitle(getString(R.string.org_unit))
                     .setMultiSelection(false)
@@ -915,7 +904,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     }
 
     private boolean catComboIsDefaultOrNull() {
-        return (selectedCatCombo == null || selectedCatCombo.isDefault() || CategoryComboModel.DEFAULT_UID.equals(selectedCatCombo.uid()));
+        return (selectedCatCombo == null || selectedCatCombo.isDefault() || CategoryCombo.DEFAULT_UID.equals(selectedCatCombo.uid()));
     }
 
     @Override

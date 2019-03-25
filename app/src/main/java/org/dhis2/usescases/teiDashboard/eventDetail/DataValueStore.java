@@ -8,11 +8,13 @@ import org.dhis2.data.user.UserRepository;
 import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
-import org.hisp.dhis.android.core.user.UserCredentialsModel;
+import org.hisp.dhis.android.core.user.UserCredentials;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -32,7 +34,7 @@ final class DataValueStore implements DataEntryStore {
     private final BriteDatabase briteDatabase;
 
     @NonNull
-    private final Flowable<UserCredentialsModel> userCredentials;
+    private final Flowable<UserCredentials> userCredentials;
 
     @NonNull
     private final String eventUid;
@@ -66,7 +68,7 @@ final class DataValueStore implements DataEntryStore {
     }
 
     @Override
-    public void updateEventStatus(EventModel eventModel) {
+    public void updateEventStatus(Event eventModel) {
         ContentValues contentValues = new ContentValues();
         Date currentDate = Calendar.getInstance().getTime();
         contentValues.put(EventModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
@@ -95,7 +97,7 @@ final class DataValueStore implements DataEntryStore {
     }
 
     @Override
-    public void updateEvent(@NonNull Date eventDate, @NonNull EventModel eventModel) {
+    public void updateEvent(@NonNull Date eventDate, @NonNull Event eventModel) {
         ContentValues contentValues = new ContentValues();
         Date currentDate = Calendar.getInstance().getTime();
         contentValues.put(EventModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
@@ -134,8 +136,8 @@ final class DataValueStore implements DataEntryStore {
 
     private long insert(@NonNull String uid, @Nullable String value, @NonNull String storedBy) {
         Date created = Calendar.getInstance().getTime();
-        TrackedEntityDataValueModel dataValueModel =
-                TrackedEntityDataValueModel.builder()
+        TrackedEntityDataValue dataValueModel =
+                TrackedEntityDataValue.builder()
                         .created(created)
                         .lastUpdated(created)
                         .dataElement(uid)
@@ -149,7 +151,7 @@ final class DataValueStore implements DataEntryStore {
 
     private Flowable<Long> updateEvent(long status) {
         return briteDatabase.createQuery(EventModel.TABLE, SELECT_EVENT, eventUid)
-                .mapToOne(EventModel::create).take(1).toFlowable(BackpressureStrategy.LATEST)
+                .mapToOne(Event::create).take(1).toFlowable(BackpressureStrategy.LATEST)
                 .switchMap(eventModel -> {
                     if (State.SYNCED.equals(eventModel.state()) || State.TO_DELETE.equals(eventModel.state()) ||
                             State.ERROR.equals(eventModel.state())) {

@@ -16,7 +16,6 @@ import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.edittext.EditTextViewModel;
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.schedulers.SchedulerProvider;
-import org.dhis2.data.tuples.Quartet;
 import org.dhis2.data.tuples.Quintet;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryActivity;
@@ -27,10 +26,10 @@ import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.OrgUnitUtils;
 import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.D2;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.PeriodType;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionHideField;
 import org.hisp.dhis.rules.models.RuleActionHideSection;
@@ -62,7 +61,7 @@ import timber.log.Timber;
 public class EventInitialPresenter implements EventInitialContract.Presenter {
 
     public static final int ACCESS_COARSE_LOCATION_PERMISSION_REQUEST = 101;
-    static private EventInitialContract.View view;
+    private EventInitialContract.View view;
     private final MetadataRepository metadataRepository;
     private final EventInitialRepository eventInitialRepository;
     private final EventSummaryRepository eventSummaryRepository;
@@ -71,11 +70,11 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
     private String eventId;
 
     private CompositeDisposable compositeDisposable;
-    private ProgramModel programModel;
-    private CategoryComboModel catCombo;
+    private Program programModel;
+    private CategoryCombo catCombo;
     private String programId;
     private String programStageId;
-    private List<OrganisationUnitModel> orgUnits;
+    private List<OrganisationUnit> orgUnits;
 
     public EventInitialPresenter(@NonNull EventSummaryRepository eventSummaryRepository,
                                  @NonNull EventInitialRepository eventInitialRepository,
@@ -175,8 +174,8 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        orgUnits -> {
-                            this.orgUnits = orgUnits;
+                        orgUnitsResult -> {
+                            this.orgUnits = orgUnitsResult;
                             view.addTree(OrgUnitUtils.renderTree(view.getContext(), orgUnits, false));
                         },
                         throwable -> view.renderError(throwable.getMessage())
@@ -196,7 +195,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
     }
 
     @Override
-    public List<OrganisationUnitModel> getOrgUnits() {
+    public List<OrganisationUnit> getOrgUnits() {
         return orgUnits;
     }
 
@@ -320,7 +319,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        (eventModel) -> view.onEventUpdated(eventModel.uid()),
+                        eventModel -> view.onEventUpdated(eventModel.uid()),
                         error -> displayMessage(error.getLocalizedMessage())
 
                 ));
@@ -333,7 +332,6 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
 
     @Override
     public void onOrgUnitButtonClick() {
-//        view.openDrawer();
         view.showOrgUnitSelector(orgUnits);
     }
 
@@ -460,7 +458,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 RuleActionShowWarning showWarning = (RuleActionShowWarning) ruleAction;
                 FieldViewModel model = fieldViewModels.get(showWarning.field());
 
-                if (model != null && model instanceof EditTextViewModel) {
+                if (model instanceof EditTextViewModel) {
                     fieldViewModels.put(showWarning.field(),
                             ((EditTextViewModel) model).withWarning(showWarning.content()));
                 }
@@ -468,7 +466,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 RuleActionShowError showError = (RuleActionShowError) ruleAction;
                 FieldViewModel model = fieldViewModels.get(showError.field());
 
-                if (model != null && model instanceof EditTextViewModel) {
+                if (model instanceof EditTextViewModel) {
                     fieldViewModels.put(showError.field(),
                             ((EditTextViewModel) model).withError(showError.content()));
                 }

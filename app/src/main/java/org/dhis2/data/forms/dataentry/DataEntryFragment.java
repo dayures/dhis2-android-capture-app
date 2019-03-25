@@ -1,9 +1,6 @@
 package org.dhis2.data.forms.dataentry;
 
 import android.content.Context;
-
-import androidx.appcompat.app.AlertDialog;
-import androidx.databinding.ObservableBoolean;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,11 +16,10 @@ import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.general.FragmentGlobalAbstract;
 import org.dhis2.utils.OnDialogClickListener;
 import org.dhis2.utils.custom_views.OptionSetDialog;
-import org.dhis2.utils.Preconditions;
-import org.dhis2.utils.custom_views.OptionSetDialog;
 import org.dhis2.utils.custom_views.OptionSetPopUp;
-import org.hisp.dhis.android.core.option.OptionModel;
+import org.hisp.dhis.android.core.option.Option;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -31,6 +27,7 @@ import javax.inject.Inject;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
 import androidx.databinding.ObservableBoolean;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -62,18 +59,22 @@ public final class DataEntryFragment extends FragmentGlobalAbstract implements D
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NotNull Context context) {
         super.onAttach(context);
         formFragment = ((ActivityGlobalAbstract) context).getSupportFragmentManager().getFragments().get(0);
-        DataEntryArguments args = Preconditions.isNull(getArguments()
-                .getParcelable(ARGUMENTS), "dataEntryArguments == null");
 
-        this.section = args.section();
+        if (getArguments() != null) {
+            DataEntryArguments args = getArguments().getParcelable(ARGUMENTS);
 
-        ((App) context.getApplicationContext())
-                .formComponent()
-                .plus(new DataEntryModule(context, args), new DataEntryStoreModule(args))
-                .inject(this);
+            if (args != null) {
+                this.section = args.section();
+
+                ((App) context.getApplicationContext())
+                        .formComponent()
+                        .plus(new DataEntryModule(context, args), new DataEntryStoreModule(args))
+                        .inject(this);
+            }
+        }
     }
 
     public String getSection() {
@@ -103,11 +104,6 @@ public final class DataEntryFragment extends FragmentGlobalAbstract implements D
     public void onPause() {
         super.onPause();
         dataEntryPresenter.onDetach();
-    }
-
-    @Override
-    public void onDestroyView() {
-        super.onDestroyView();
     }
 
     @NonNull
@@ -145,21 +141,25 @@ public final class DataEntryFragment extends FragmentGlobalAbstract implements D
     }
 
     private void setUpRecyclerView() {
-        DataEntryArguments arguments = getArguments().getParcelable(ARGUMENTS);
-        dataEntryAdapter = new DataEntryAdapter(LayoutInflater.from(getActivity()),
-                getChildFragmentManager(), arguments,
-                dataEntryPresenter.getOrgUnits(),
-                new ObservableBoolean(true));
+        if (getArguments() != null) {
+            DataEntryArguments arguments = getArguments().getParcelable(ARGUMENTS);
+            if (arguments != null) {
+                dataEntryAdapter = new DataEntryAdapter(LayoutInflater.from(getActivity()),
+                        getChildFragmentManager(),
+                        arguments,
+                        dataEntryPresenter.getOrgUnits(),
+                        new ObservableBoolean(true));
 
-        RecyclerView.LayoutManager layoutManager;
-        if (arguments.renderType() != null && arguments.renderType().equals(ProgramStageSectionRenderingType.MATRIX.name())) {
-            layoutManager = new GridLayoutManager(getActivity(), 2);
-        } else
-            layoutManager = new LinearLayoutManager(getActivity(),
-                    RecyclerView.VERTICAL, false);
-        recyclerView.setAdapter(dataEntryAdapter);
-        recyclerView.setLayoutManager(layoutManager);
-
+                RecyclerView.LayoutManager layoutManager;
+                if (arguments.renderType() != null && arguments.renderType().equals(ProgramStageSectionRenderingType.MATRIX.name())) {
+                    layoutManager = new GridLayoutManager(getActivity(), 2);
+                } else
+                    layoutManager = new LinearLayoutManager(getActivity(),
+                            RecyclerView.VERTICAL, false);
+                recyclerView.setAdapter(dataEntryAdapter);
+                recyclerView.setLayoutManager(layoutManager);
+            }
+        }
     }
 
     public boolean checkErrors() {
@@ -167,7 +167,7 @@ public final class DataEntryFragment extends FragmentGlobalAbstract implements D
     }
 
     @Override
-    public void setListOptions(List<OptionModel> options) {
+    public void setListOptions(List<Option> options) {
         if (OptionSetDialog.isCreated())
             OptionSetDialog.newInstance().setOptions(options);
         else if (OptionSetPopUp.isCreated())

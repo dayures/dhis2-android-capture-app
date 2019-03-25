@@ -2,29 +2,30 @@ package org.dhis2.utils.custom_views.orgUnitCascade;
 
 import android.app.Dialog;
 import android.content.DialogInterface;
-import androidx.databinding.DataBindingUtil;
 import android.os.Bundle;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import com.google.android.material.chip.Chip;
-import androidx.fragment.app.DialogFragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 
+import com.google.android.material.chip.Chip;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 
 import org.dhis2.R;
 import org.dhis2.data.tuples.Quintet;
 import org.dhis2.databinding.DialogCascadeOrgunitBinding;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.DialogFragment;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
@@ -35,7 +36,7 @@ import timber.log.Timber;
  */
 
 public class OrgUnitCascadeDialog extends DialogFragment {
-    DialogCascadeOrgunitBinding binding;
+    private DialogCascadeOrgunitBinding binding;
 
     private String title;
     private CascadeOrgUnitCallbacks callbacks;
@@ -55,27 +56,27 @@ public class OrgUnitCascadeDialog extends DialogFragment {
         return this;
     }
 
-    public OrgUnitCascadeDialog setSelectedOrgUnit(String orgUnitUid){
+    public OrgUnitCascadeDialog setSelectedOrgUnit(String orgUnitUid) {
         this.selectedOrgUnit = orgUnitUid;
         return this;
     }
 
-    public OrgUnitCascadeDialog setOrgUnits(List<OrganisationUnitModel> orgUnits) {
+    public OrgUnitCascadeDialog setOrgUnits(List<OrganisationUnit> orgUnits) {
         this.orgUnits = new ArrayList<>();
         this.paths = new HashMap<>();
         List<String> orgUnitsUid = new ArrayList<>();
 
         if (orgUnits != null) {
-            for (OrganisationUnitModel orgUnit : orgUnits) { //Users OrgUnits
+            for (OrganisationUnit orgUnit : orgUnits) { //Users OrgUnits
                 this.orgUnits.add(Quintet.create(orgUnit.uid(),
                         orgUnit.displayName(),
-                        orgUnit.parent() != null ? orgUnit.parent() : "",
+                        orgUnit.parent() != null ? orgUnit.parent().uid() : "",
                         orgUnit.level(),
                         true));//OrgUnit Uid, OrgUnit Name, Parent Uid, Level, CanBeSelected
                 orgUnitsUid.add(orgUnit.uid());
             }
 
-            for (OrganisationUnitModel orgUnit : orgUnits) { //Path OrgUnits
+            for (OrganisationUnit orgUnit : orgUnits) { //Path OrgUnits
                 paths.put(orgUnit.uid(), orgUnit.path());
                 String[] uidPath = orgUnit.path().split("/");
                 String[] namePath = orgUnit.displayNamePath().split("/");
@@ -94,7 +95,7 @@ public class OrgUnitCascadeDialog extends DialogFragment {
     }
 
     @Override
-    public void onCancel(DialogInterface dialog) {
+    public void onCancel(@NotNull DialogInterface dialog) {
         super.onCancel(dialog);
         callbacks.onDialogCancelled();
     }
@@ -172,10 +173,10 @@ public class OrgUnitCascadeDialog extends DialogFragment {
             }
         });
 
-        if (selectedOrgUnit != null){
-            for (Quintet<String, String, String, Integer, Boolean> orgUnit : orgUnits){
-                if (orgUnit.val0().equals(selectedOrgUnit)){
-                    adapter.setOrgUnit(orgUnit,paths.get(orgUnit.val0()));
+        if (selectedOrgUnit != null) {
+            for (Quintet<String, String, String, Integer, Boolean> orgUnit : orgUnits) {
+                if (orgUnit.val0().equals(selectedOrgUnit)) {
+                    adapter.setOrgUnit(orgUnit, paths.get(orgUnit.val0()));
                     adapter.notifyDataSetChanged();
                     break;
                 }

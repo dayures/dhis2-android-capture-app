@@ -1,13 +1,12 @@
 package org.dhis2.data.forms.dataentry;
 
 
-import androidx.annotation.NonNull;
-import androidx.annotation.UiThread;
-
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.UiThread;
 import io.reactivex.Observable;
 
 interface DataEntryPresenter {
@@ -18,7 +17,7 @@ interface DataEntryPresenter {
     void onDetach();
 
     @NonNull
-    Observable<List<OrganisationUnitModel>> getOrgUnits();
+    Observable<List<OrganisationUnit>> getOrgUnits();
 
 
 }

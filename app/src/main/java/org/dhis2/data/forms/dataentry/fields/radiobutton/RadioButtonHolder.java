@@ -20,17 +20,17 @@ public class RadioButtonHolder extends FormViewHolder {
 
     private final FlowableProcessor<RowAction> processor;
 
-    final RadioGroup radioGroup;
-    final FormYesNoBinding binding;
+    private final RadioGroup radioGroup;
+    private final FormYesNoBinding yesNoBinding;
     private final View clearButton;
 
-    RadioButtonViewModel viewModel;
+    private RadioButtonViewModel viewModel;
 
     RadioButtonHolder(ViewGroup parent, FormYesNoBinding binding, FlowableProcessor<RowAction> processor) {
         super(binding);
         radioGroup = binding.customYesNo.getRadioGroup();
         clearButton = binding.customYesNo.getClearButton();
-        this.binding = binding;
+        this.yesNoBinding = binding;
         this.processor = processor;
     }
 
@@ -42,29 +42,29 @@ public class RadioButtonHolder extends FormViewHolder {
 
         radioGroup.setOnCheckedChangeListener(null);
         descriptionText = viewModel.description();
-        binding.setDescription(descriptionText);
+        yesNoBinding.setDescription(descriptionText);
         label = new StringBuilder(checkBoxViewModel.label());
-        binding.customYesNo.setValueType(checkBoxViewModel.valueType());
+        yesNoBinding.customYesNo.setValueType(checkBoxViewModel.valueType());
         if (checkBoxViewModel.mandatory())
             label.append("*");
-        binding.setLabel(label.toString());
-        binding.setValueType(checkBoxViewModel.valueType());
+        yesNoBinding.setLabel(label.toString());
+        yesNoBinding.setValueType(checkBoxViewModel.valueType());
         if (checkBoxViewModel.value() != null && Boolean.valueOf(checkBoxViewModel.value()))
-            binding.customYesNo.getRadioGroup().check(R.id.yes);
+            yesNoBinding.customYesNo.getRadioGroup().check(R.id.yes);
         else if (checkBoxViewModel.value() != null)
-            binding.customYesNo.getRadioGroup().check(R.id.no);
+            yesNoBinding.customYesNo.getRadioGroup().check(R.id.no);
         else
-            binding.customYesNo.getRadioGroup().clearCheck();
+            yesNoBinding.customYesNo.getRadioGroup().clearCheck();
 
         if (checkBoxViewModel.warning() != null) {
-            binding.warningError.setVisibility(View.VISIBLE);
-            binding.warningError.setText(checkBoxViewModel.warning());
+            yesNoBinding.warningError.setVisibility(View.VISIBLE);
+            yesNoBinding.warningError.setText(checkBoxViewModel.warning());
         } else if (checkBoxViewModel.error() != null) {
-            binding.warningError.setVisibility(View.VISIBLE);
-            binding.warningError.setText(checkBoxViewModel.error());
+            yesNoBinding.warningError.setVisibility(View.VISIBLE);
+            yesNoBinding.warningError.setText(checkBoxViewModel.error());
         } else {
-            binding.warningError.setVisibility(View.GONE);
-            binding.warningError.setText(null);
+            yesNoBinding.warningError.setVisibility(View.GONE);
+            yesNoBinding.warningError.setText(null);
         }
 
         for (int i = 0; i < radioGroup.getChildCount(); i++) {
@@ -87,7 +87,6 @@ public class RadioButtonHolder extends FormViewHolder {
                     rowAction = RowAction.create(checkBoxViewModel.uid(), null);
                     break;
             }
-//            binding.customYesNo.nextFocus(binding.customYesNo);
             processor.onNext(rowAction);
         });
 
@@ -102,5 +101,6 @@ public class RadioButtonHolder extends FormViewHolder {
     }
 
     public void dispose() {
+        // unused
     }
 }

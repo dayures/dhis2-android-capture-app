@@ -17,10 +17,8 @@ import org.dhis2.utils.Constants;
 import org.dhis2.utils.custom_views.OptionSetDialog;
 import org.dhis2.utils.custom_views.OptionSetOnClickListener;
 import org.dhis2.utils.custom_views.OptionSetPopUp;
-import org.hisp.dhis.android.core.option.OptionModel;
+import org.hisp.dhis.android.core.option.Option;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
-
-import java.util.Map;
 
 import androidx.appcompat.widget.PopupMenu;
 import androidx.databinding.ViewDataBinding;
@@ -45,7 +43,6 @@ public class SpinnerHolder extends FormViewHolder implements View.OnClickListene
 
     private SpinnerViewModel viewModel;
     private int numberOfOptions = 0;
-    private Map<String, OptionModel> options;
 
     SpinnerHolder(ViewDataBinding mBinding, FlowableProcessor<RowAction> processor, FlowableProcessor<Trio<String, String, Integer>> processorOptionSet, String renderType, boolean isSearchMode) {
         super(mBinding);
@@ -102,6 +99,7 @@ public class SpinnerHolder extends FormViewHolder implements View.OnClickListene
     }
 
     public void dispose() {
+        // unused
     }
 
     @Override
@@ -131,7 +129,7 @@ public class SpinnerHolder extends FormViewHolder implements View.OnClickListene
     }
 
     @Override
-    public void onSelectOption(OptionModel option) {
+    public void onSelectOption(Option option) {
         setValueOption(option.displayName(), option.code());
         OptionSetDialog.newInstance().dismiss();
     }
@@ -140,7 +138,7 @@ public class SpinnerHolder extends FormViewHolder implements View.OnClickListene
     @Override
     public boolean onMenuItemClick(MenuItem item) {
         if (OptionSetPopUp.getInstance().getOptions() != null && item.getTitle() != null) {
-            OptionModel selectedOption = OptionSetPopUp.getInstance().getOptions().get(item.getTitle().toString());
+            Option selectedOption = OptionSetPopUp.getInstance().getOptions().get(item.getTitle().toString());
             if (selectedOption != null) {
                 setValueOption(selectedOption.displayName(), selectedOption.code());
             }

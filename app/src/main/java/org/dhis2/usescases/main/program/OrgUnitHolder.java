@@ -48,7 +48,7 @@ public class OrgUnitHolder extends TreeNode.BaseNodeViewHolder<OrganisationUnitM
         textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize);
         textView.setText(value.displayName());
         checkBox = view.findViewById(R.id.checkbox);
-        checkBox.setChecked(isMultiSelection & node.isSelectable());
+        checkBox.setChecked(isMultiSelection && node.isSelectable());
 
         imageView.setOnClickListener(v -> {
             if (node.isExpanded())

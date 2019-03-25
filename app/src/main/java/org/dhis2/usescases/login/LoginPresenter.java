@@ -47,6 +47,7 @@ public class LoginPresenter implements LoginContracts.Presenter {
         this.configurationRepository = configurationRepository;
     }
 
+    @SuppressWarnings("squid:S2583")
     @Override
     public void init(LoginContracts.View view) {
         this.view = view;

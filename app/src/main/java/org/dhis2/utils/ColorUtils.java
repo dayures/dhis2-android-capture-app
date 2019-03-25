@@ -40,7 +40,7 @@ public class ColorUtils {
 
         int colorToReturn = Color.BLACK;
 
-        if (!isEmpty(hexColor)) {
+        if (hexColor != null && !hexColor.isEmpty()) {
             if (hexColor.length() == 4) {//Color is formatted as #fff
                 char r = hexColor.charAt(1);
                 char g = hexColor.charAt(2);
@@ -49,7 +49,7 @@ public class ColorUtils {
             }
             colorToReturn = Color.parseColor(hexColor);
         }
-        if (isEmpty(hexColor) || colorToReturn == Color.BLACK || colorToReturn == Color.WHITE) {
+        if (hexColor == null || isEmpty(hexColor) || colorToReturn == Color.BLACK || colorToReturn == Color.WHITE) {
             colorToReturn = defaultPrimaryColor;
         }
 

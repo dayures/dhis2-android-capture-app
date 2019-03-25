@@ -11,7 +11,7 @@ import com.unnamed.b.atv.view.AndroidTreeView;
 
 import org.dhis2.R;
 import org.dhis2.usescases.main.program.OrgUnitHolder;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,9 +20,7 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ViewDataBinding;
 import io.reactivex.Observable;
-import io.reactivex.disposables.CompositeDisposable;
 
 /**
  * QUADRAM. Created by ppajuelo on 18/04/2018.
@@ -31,9 +29,6 @@ import io.reactivex.disposables.CompositeDisposable;
 public class OrgUnitButton extends RelativeLayout {
 
     private LayoutInflater inflater;
-    private boolean isBgTransparent;
-    private CompositeDisposable disposable;
-    private ViewDataBinding binding;
     private Button button;
 
     public OrgUnitButton(Context context) {
@@ -68,35 +63,33 @@ public class OrgUnitButton extends RelativeLayout {
 
     private void init(Context context) {
         inflater = LayoutInflater.from(context);
-        disposable = new CompositeDisposable();
         setLayout();
 
     }
 
     public void setIsBgTransparent(boolean isBgTransparent) {
-        this.isBgTransparent = isBgTransparent;
         setLayout();
     }
 
     private void setLayout() {
-        binding = DataBindingUtil.inflate(inflater, R.layout.form_org_unit, this, true);
+        DataBindingUtil.inflate(inflater, R.layout.form_org_unit, this, true);
         button = findViewById(R.id.button_org_unit);
     }
 
-    public Observable<AndroidTreeView> renderTree(@NonNull List<OrganisationUnitModel> myOrgs) {
+    public Observable<AndroidTreeView> renderTree(@NonNull List<OrganisationUnit> myOrgs) {
 
         HashMap<Integer, ArrayList<TreeNode>> subLists = new HashMap<>();
 
-        List<OrganisationUnitModel> allOrgs = new ArrayList<>();
+        List<OrganisationUnit> allOrgs = new ArrayList<>();
         allOrgs.addAll(myOrgs);
-        for (OrganisationUnitModel myorg : myOrgs) {
+        for (OrganisationUnit myorg : myOrgs) {
             String[] pathName = myorg.displayNamePath().split("/");
             String[] pathUid = myorg.path().split("/");
             for (int i = myorg.level() - 1; i > 0; i--) {
-                OrganisationUnitModel orgToAdd = OrganisationUnitModel.builder()
+                OrganisationUnit orgToAdd = OrganisationUnit.builder()
                         .uid(pathUid[i])
                         .level(i)
-                        .parent(pathUid[i - 1])
+//                        .parent(pathUid[i - 1])
                         .name(pathName[i])
                         .displayName(pathName[i])
                         .displayShortName(pathName[i])
@@ -113,7 +106,7 @@ public class OrgUnitButton extends RelativeLayout {
         }
 
         //Separamos las orunits en listas por nivel
-        for (OrganisationUnitModel orgs : allOrgs) {
+        for (OrganisationUnit orgs : allOrgs) {
             ArrayList<TreeNode> sublist = subLists.get(orgs.level());
             TreeNode treeNode = new TreeNode(orgs).setViewHolder(new OrgUnitHolder(getContext(), true));
             treeNode.setSelectable(orgs.path() != null);
@@ -127,7 +120,7 @@ public class OrgUnitButton extends RelativeLayout {
         for (int level = myOrgs.get(0).level(); level > 1; level--) {
             for (TreeNode treeNode : subLists.get(level - 1)) {
                 for (TreeNode treeNodeLevel : subLists.get(level)) {
-                    if (((OrganisationUnitModel) treeNodeLevel.getValue()).parent().equals(((OrganisationUnitModel) treeNode.getValue()).uid()))
+                    if (((OrganisationUnit) treeNodeLevel.getValue()).parent().equals(((OrganisationUnit) treeNode.getValue()).uid()))
                         treeNode.addChild(treeNodeLevel);
                 }
             }

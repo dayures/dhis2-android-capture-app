@@ -11,16 +11,20 @@ import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactoryImpl;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.utils.DateUtils;
+import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
+import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
-import org.hisp.dhis.android.core.common.ValueTypeDeviceRenderingModel;
+import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.program.ProgramStageSectionModel;
@@ -211,9 +215,9 @@ public class EventRepository implements FormRepository {
 
     @NonNull
     @Override
-    public Flowable<Pair<ProgramModel, String>> reportDate() {
+    public Flowable<Pair<Program, String>> reportDate() {
         return briteDatabase.createQuery(ProgramModel.TABLE, SELECT_PROGRAM, eventUid == null ? "" : eventUid)
-                .mapToOne(ProgramModel::create)
+                .mapToOne(Program::create)
                 .map(programModel -> Pair.create(programModel, ""))
                 .toFlowable(BackpressureStrategy.LATEST)
                 .distinctUntilChanged();
@@ -221,18 +225,18 @@ public class EventRepository implements FormRepository {
 
     @NonNull
     @Override
-    public Flowable<Pair<ProgramModel, String>> incidentDate() {
+    public Flowable<Pair<Program, String>> incidentDate() {
         return briteDatabase.createQuery(ProgramModel.TABLE, SELECT_PROGRAM, eventUid == null ? "" : eventUid)
-                .mapToOne(ProgramModel::create)
+                .mapToOne(Program::create)
                 .map(programModel -> Pair.create(programModel, ""))
                 .toFlowable(BackpressureStrategy.LATEST)
                 .distinctUntilChanged();
     }
 
     @Override
-    public Flowable<ProgramModel> getAllowDatesInFuture() {
+    public Flowable<Program> getAllowDatesInFuture() {
         return briteDatabase.createQuery(ProgramModel.TABLE, SELECT_PROGRAM_FROM_EVENT, eventUid == null ? "" : eventUid)
-                .mapToOne(ProgramModel::create)
+                .mapToOne(Program::create)
                 .toFlowable(BackpressureStrategy.LATEST);
     }
 
@@ -340,11 +344,11 @@ public class EventRepository implements FormRepository {
 
     @Override
     public void deleteEvent() {
-        String DELETE_WHERE_RELATIONSHIP = String.format(
+        String deleteWhereRelationship = String.format(
                 "%s.%s = ",
                 EventModel.TABLE, EventModel.Columns.UID);
         String id = eventUid == null ? "" : eventUid;
-        briteDatabase.delete(EventModel.TABLE, DELETE_WHERE_RELATIONSHIP + "'" + id + "'");
+        briteDatabase.delete(EventModel.TABLE, deleteWhereRelationship + "'" + id + "'");
     }
 
     @Override
@@ -355,26 +359,26 @@ public class EventRepository implements FormRepository {
     @NonNull
     @Override
     public Observable<String> getTrackedEntityInstanceUid() {
-        String SELECT_TE = "SELECT " + EventModel.TABLE + "." + EventModel.Columns.TRACKED_ENTITY_INSTANCE +
+        String selectTe = "SELECT " + EventModel.TABLE + "." + EventModel.Columns.TRACKED_ENTITY_INSTANCE +
                 " FROM " + EventModel.TABLE +
                 " WHERE " + EventModel.Columns.UID + " = ? LIMIT 1";
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, SELECT_TE, eventUid == null ? "" : eventUid).mapToOne(cursor -> cursor.getString(0));
+        return briteDatabase.createQuery(EnrollmentModel.TABLE, selectTe, eventUid == null ? "" : eventUid).mapToOne(cursor -> cursor.getString(0));
     }
 
     @Override
-    public Observable<Trio<Boolean, CategoryComboModel, List<CategoryOptionComboModel>>> getProgramCategoryCombo() {
+    public Observable<Trio<Boolean, CategoryCombo, List<CategoryOptionCombo>>> getProgramCategoryCombo() {
         return briteDatabase.createQuery(EventModel.TABLE, "SELECT * FROM Event WHERE Event.uid = ?", eventUid)
-                .mapToOne(EventModel::create)
+                .mapToOne(Event::create)
                 .flatMap(eventModel -> briteDatabase.createQuery(CategoryComboModel.TABLE, "SELECT CategoryCombo.* FROM CategoryCombo " +
                         "JOIN Program ON Program.categoryCombo = CategoryCombo.uid WHERE Program.uid = ?", eventModel.program())
-                        .mapToOne(CategoryComboModel::create)
+                        .mapToOne(CategoryCombo::create)
                         .flatMap(categoryComboModel ->
                                 briteDatabase.createQuery(CategoryOptionComboModel.TABLE, "SELECT * FROM CategoryOptionCombo " +
                                         "WHERE categoryCombo = ?", categoryComboModel.uid())
-                                        .mapToList(CategoryOptionComboModel::create)
+                                        .mapToList(CategoryOptionCombo::create)
                                         .map(categoryOptionComboModels -> {
                                             boolean eventHastOptionSelected = false;
-                                            for (CategoryOptionComboModel options : categoryOptionComboModels) {
+                                            for (CategoryOptionCombo options : categoryOptionComboModels) {
                                                 if (eventModel.attributeOptionCombo() != null && eventModel.attributeOptionCombo().equals(options.uid()))
                                                     eventHastOptionSelected = true;
                                             }
@@ -386,7 +390,7 @@ public class EventRepository implements FormRepository {
     }
 
     @Override
-    public void saveCategoryOption(CategoryOptionComboModel selectedOption) {
+    public void saveCategoryOption(CategoryOptionCombo selectedOption) {
         ContentValues event = new ContentValues();
         event.put(EventModel.Columns.ATTRIBUTE_OPTION_COMBO, selectedOption.uid());
         event.put(EventModel.Columns.STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
@@ -403,11 +407,11 @@ public class EventRepository implements FormRepository {
     }
 
     @Override
-    public Observable<OrganisationUnitModel> getOrgUnitDates() {
+    public Observable<OrganisationUnit> getOrgUnitDates() {
         return briteDatabase.createQuery("SELECT * FROM OrganisationUnit " +
                 "JOIN Event ON Event.organisationUnit = OrganisationUnit.uid " +
                 "WHERE Event.uid = ?", eventUid)
-                .mapToOne(OrganisationUnitModel::create);
+                .mapToOne(OrganisationUnit::create);
     }
 
     @NonNull
@@ -430,17 +434,16 @@ public class EventRepository implements FormRepository {
 
         int optionCount = 0;
         try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSetUid)) {
-            if (countCursor != null) {
-                if (countCursor.moveToFirst())
-                    optionCount = countCursor.getInt(0);
+            if (countCursor != null && countCursor.moveToFirst()) {
+                optionCount = countCursor.getInt(0);
             }
         } catch (Exception e) {
             Timber.e(e);
         }
-        ValueTypeDeviceRenderingModel fieldRendering = null;
+        ValueTypeDeviceRendering fieldRendering = null;
         try (Cursor rendering = briteDatabase.query("SELECT * FROM ValueTypeDeviceRendering WHERE uid = ?", uid)) {
             if (rendering != null && rendering.moveToFirst()) {
-                fieldRendering = ValueTypeDeviceRenderingModel.create(rendering);
+                fieldRendering = ValueTypeDeviceRendering.create(rendering);
             }
         }
 
@@ -454,10 +457,10 @@ public class EventRepository implements FormRepository {
                 "",
                 "",
                 "");
-        ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
+        ObjectStyle objectStyle = ObjectStyle.builder().build();
         try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
             if (objStyleCursor.moveToFirst())
-                objectStyle = ObjectStyleModel.create(objStyleCursor);
+                objectStyle = ObjectStyle.create(objStyleCursor);
         }
         return fieldFactory.create(uid, isEmpty(formLabel) ? label : formLabel, valueType,
                 mandatory, optionSetUid, dataValue, section, allowFutureDates,
@@ -467,7 +470,7 @@ public class EventRepository implements FormRepository {
     @NonNull
     private Flowable<String> eventProgram() {
         return briteDatabase.createQuery(EventModel.TABLE, SELECT_PROGRAM, eventUid == null ? "" : eventUid)
-                .mapToOne(ProgramModel::create)
+                .mapToOne(Program::create)
                 .map(programModel -> {
                     programUid = programModel.uid();
                     return programUid;

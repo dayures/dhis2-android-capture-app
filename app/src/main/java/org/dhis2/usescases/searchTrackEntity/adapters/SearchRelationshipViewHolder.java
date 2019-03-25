@@ -1,17 +1,15 @@
 package org.dhis2.usescases.searchTrackEntity.adapters;
 
-import androidx.recyclerview.widget.RecyclerView;
-
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.databinding.ItemSearchRelationshipTrackedEntityBinding;
 import org.dhis2.usescases.searchTrackEntity.SearchTEContractsModule;
-
-import org.hisp.dhis.android.core.relationship.RelationshipTypeModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
+import org.hisp.dhis.android.core.relationship.RelationshipType;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.disposables.CompositeDisposable;
 
 /**
@@ -25,8 +23,8 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
     private SearchTEContractsModule.Presenter presenter;
     private SearchTeiModel trackedEntityInstanceModel;
 
-    private RelationshipTypeModel relationshipType;
-    private List<RelationshipTypeModel> relationshipTypes = new ArrayList<>();
+    private RelationshipType relationshipType;
+    private List<RelationshipType> relationshipTypes = new ArrayList<>();
 
     SearchRelationshipViewHolder(ItemSearchRelationshipTrackedEntityBinding binding) {
         super(binding.getRoot());
@@ -55,7 +53,7 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
 
         binding.executePendingBindings();
 
-        itemView.setOnClickListener(view->presenter.addRelationship(trackedEntityInstanceModel.getTei().uid(),trackedEntityInstanceModel.isOnline()));
+        itemView.setOnClickListener(view -> presenter.addRelationship(trackedEntityInstanceModel.getTei().uid(), trackedEntityInstanceModel.isOnline()));
 
 
     }
@@ -83,10 +81,8 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
         });
     }*/
 
-    private void setTEIData(List<TrackedEntityAttributeValueModel> trackedEntityAttributeValueModels) {
+    private void setTEIData(List<TrackedEntityAttributeValue> trackedEntityAttributeValueModels) {
         binding.setAttribute(trackedEntityAttributeValueModels);
         binding.executePendingBindings();
     }
-
-
 }

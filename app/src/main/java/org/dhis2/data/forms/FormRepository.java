@@ -5,14 +5,12 @@ import com.google.android.gms.maps.model.LatLng;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.rules.RuleEngine;
 
-import java.util.Date;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -27,11 +25,11 @@ public interface FormRepository {
     Flowable<String> title();
 
     @NonNull
-    Flowable<Pair<ProgramModel, String>> reportDate();
+    Flowable<Pair<Program, String>> reportDate();
 
-    Flowable<Pair<ProgramModel, String>> incidentDate();
+    Flowable<Pair<Program, String>> incidentDate();
 
-    Flowable<ProgramModel> getAllowDatesInFuture();
+    Flowable<Program> getAllowDatesInFuture();
 
     @NonNull
     Flowable<RuleEngine> ruleEngine();
@@ -74,11 +72,11 @@ public interface FormRepository {
     @NonNull
     Observable<String> getTrackedEntityInstanceUid();
 
-    Observable<Trio<Boolean, CategoryComboModel, List<CategoryOptionComboModel>>> getProgramCategoryCombo();
+    Observable<Trio<Boolean, CategoryCombo, List<CategoryOptionCombo>>> getProgramCategoryCombo();
 
-    void saveCategoryOption(CategoryOptionComboModel selectedOption);
+    void saveCategoryOption(CategoryOptionCombo selectedOption);
 
     Observable<Boolean> captureCoodinates();
 
-    Observable<OrganisationUnitModel> getOrgUnitDates();
+    Observable<OrganisationUnit> getOrgUnitDates();
 }

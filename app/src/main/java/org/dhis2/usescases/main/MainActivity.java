@@ -35,10 +35,10 @@ import androidx.databinding.ObservableInt;
 import androidx.fragment.app.Fragment;
 import io.reactivex.functions.Consumer;
 
-
 public class MainActivity extends ActivityGlobalAbstract implements MainContracts.View {
 
-    public ActivityMainBinding binding;
+    private ActivityMainBinding binding;
+
     @Inject
     MainContracts.Presenter presenter;
 

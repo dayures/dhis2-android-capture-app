@@ -1,9 +1,9 @@
 package org.dhis2.data.forms;
 
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.UiThread;
-
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 
 interface FormPresenter {
 
@@ -19,5 +19,5 @@ interface FormPresenter {
 
     void deleteCascade();
 
-    void saveCategoryOption(CategoryOptionComboModel selectedOption);
+    void saveCategoryOption(CategoryOptionCombo selectedOption);
 }

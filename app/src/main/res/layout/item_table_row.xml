@@ -6,7 +6,7 @@
 
         <variable
             name="tei"
-            type="org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel" />
+            type="org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance" />
 
         <variable
             name="position"

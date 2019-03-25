@@ -10,8 +10,11 @@ import org.dhis2.data.tuples.Pair;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.event.EventStatus;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.util.Calendar;
@@ -206,12 +209,12 @@ public final class AttributeValueStore implements DataEntryStore {
 
             try (Cursor teiCursor = briteDatabase.query(SELECT_TEI, enrollment)) {
                 if (teiCursor.moveToFirst())
-                    teiUid = TrackedEntityInstanceModel.create(teiCursor).uid();
+                    teiUid = TrackedEntityInstance.create(teiCursor).uid();
             }
 
             if (teiUid != null) {
-                TrackedEntityAttributeValueModel attributeValueModel =
-                        TrackedEntityAttributeValueModel.builder()
+                TrackedEntityAttributeValue attributeValueModel =
+                        TrackedEntityAttributeValue.builder()
                                 .created(date)
                                 .lastUpdated(date)
                                 .trackedEntityAttribute(attribute)
@@ -226,8 +229,8 @@ public final class AttributeValueStore implements DataEntryStore {
             Date created = Calendar.getInstance().getTime();
             String eventUid = eventUid(attribute);
             if (!isEmpty(eventUid)) {
-                TrackedEntityDataValueModel dataValueModel =
-                        TrackedEntityDataValueModel.builder()
+                TrackedEntityDataValue dataValueModel =
+                        TrackedEntityDataValue.builder()
                                 .created(created)
                                 .lastUpdated(created)
                                 .dataElement(attribute)
@@ -300,7 +303,7 @@ public final class AttributeValueStore implements DataEntryStore {
     @NonNull
     private Flowable<Long> updateEnrollment(long status) {
         return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, SELECT_TEI, enrollment)
-                .mapToOne(TrackedEntityInstanceModel::create).take(1).toFlowable(BackpressureStrategy.LATEST)
+                .mapToOne(TrackedEntityInstance::create).take(1).toFlowable(BackpressureStrategy.LATEST)
                 .switchMap(tei -> {
                     if (State.SYNCED.equals(tei.state()) || State.TO_DELETE.equals(tei.state()) ||
                             State.ERROR.equals(tei.state())) {

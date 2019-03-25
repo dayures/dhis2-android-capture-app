@@ -5,11 +5,11 @@ import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.usescases.searchTrackEntity.adapters.SearchTeiModel;
-import org.hisp.dhis.android.core.option.OptionModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityTypeModel;
+import org.hisp.dhis.android.core.option.Option;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.program.Program;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityType;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,11 +26,11 @@ import io.reactivex.functions.Consumer;
 public class SearchTEContractsModule {
 
     public interface View extends AbstractActivityContracts.View {
-        void setForm(List<TrackedEntityAttributeModel> trackedEntityAttributeModels, @Nullable ProgramModel program, HashMap<String, String> queryData);
+        void setForm(List<TrackedEntityAttribute> trackedEntityAttributeModels, @Nullable Program program, HashMap<String, String> queryData);
 
         Consumer<Pair<List<SearchTeiModel>, String>> swapTeiListData();
 
-        void setPrograms(List<ProgramModel> programModels);
+        void setPrograms(List<Program> programModels);
 
         void clearList(String uid);
 
@@ -50,7 +50,7 @@ public class SearchTEContractsModule {
 
         String fromRelationshipTEI();
 
-        void setListOptions(List<OptionModel> options);
+        void setListOptions(List<Option> options);
     }
 
     public interface Presenter {
@@ -59,7 +59,7 @@ public class SearchTEContractsModule {
 
         void onDestroy();
 
-        void setProgram(ProgramModel programSelected);
+        void setProgram(Program programSelected);
 
         void onBackClick();
 
@@ -71,23 +71,23 @@ public class SearchTEContractsModule {
 
         void enroll(String programUid, String uid);
 
-        void onTEIClick(String TEIuid, boolean isOnline);
+        void onTEIClick(String teiUid, boolean isOnline);
 
         void getTrakedEntities();
 
-        TrackedEntityTypeModel getTrackedEntityName();
+        TrackedEntityType getTrackedEntityName();
 
-        ProgramModel getProgramModel();
+        Program getProgramModel();
 
-        void addRelationship(String TEIuid, String relationshipTypeUid, boolean online);
+        void addRelationship(String teiUid, String relationshipTypeUid, boolean online);
 
-        void addRelationship(String TEIuid, boolean online);
+        void addRelationship(String teiUid, boolean online);
 
         void downloadTei(String teiUid);
 
-        void downloadTeiForRelationship(String TEIuid, String relationshipTypeUid);
+        void downloadTeiForRelationship(String teiUid, String relationshipTypeUid);
 
-        Observable<List<OrganisationUnitModel>> getOrgUnits();
+        Observable<List<OrganisationUnit>> getOrgUnits();
 
         String getProgramColor(String uid);
     }

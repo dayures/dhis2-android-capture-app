@@ -1,10 +1,6 @@
 package org.dhis2.data.forms.dataentry;
 
 import android.content.Context;
-import androidx.databinding.DataBindingUtil;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,22 +9,27 @@ import android.widget.ArrayAdapter;
 
 import org.dhis2.R;
 import org.dhis2.databinding.SpinnerProgramLayoutBinding;
-
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.program.Program;
 
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.databinding.DataBindingUtil;
 
 /**
  * x
  * Created by ppajuelo on 07/11/2017-sdfghsdfh .
  */
 
-public class ProgramAdapter extends ArrayAdapter<ProgramModel> {
+public class ProgramAdapter extends ArrayAdapter<Program> {
 
-    private List<ProgramModel> options;
+    private List<Program> options;
     private String trackedEntityName;
 
-    public ProgramAdapter(@NonNull Context context, int resource, int textViewResourceId, @NonNull List<ProgramModel> objects, String trackedEntityName) {
+    public ProgramAdapter(@NonNull Context context, int resource, int textViewResourceId, @NonNull List<Program> objects,
+                          String trackedEntityName) {
         super(context, resource, textViewResourceId, objects);
         this.options = objects;
         this.trackedEntityName = trackedEntityName;

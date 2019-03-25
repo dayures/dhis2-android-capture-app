@@ -20,15 +20,15 @@ import org.dhis2.R;
 import org.dhis2.usescases.programEventDetail.ProgramEventViewModel;
 import org.dhis2.utils.CatComboAdapter;
 import org.dhis2.utils.DateUtils;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.State;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
-import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
-import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.Program;
+import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -47,6 +47,10 @@ import timber.log.Timber;
  */
 
 public class Bindings {
+
+    private Bindings() {
+        // hide public constructor
+    }
 
     @BindingAdapter("elevation")
     public static void setElevation(View view, float elevation) {
@@ -87,9 +91,8 @@ public class Bindings {
     public static void setDrawableEnd(TextView textView, Drawable drawable) {
         textView.setCompoundDrawablesWithIntrinsicBounds(null, null, drawable, null);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            if (drawable instanceof AnimatedVectorDrawable)
-                ((AnimatedVectorDrawable) drawable).start();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && drawable instanceof AnimatedVectorDrawable) {
+            ((AnimatedVectorDrawable) drawable).start();
         }
     }
 
@@ -111,8 +114,11 @@ public class Bindings {
             ((GridLayoutManager) recyclerView.getLayoutManager()).setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
                 @Override
                 public int getSpanSize(int position) {
-                    int itemViewType = recyclerView.getAdapter().getItemViewType(position);
-                    return (itemViewType == 4 || itemViewType == 8) ? 2 : 1;
+                    if (recyclerView.getAdapter() != null) {
+                        int itemViewType = recyclerView.getAdapter().getItemViewType(position);
+                        return (itemViewType == 4 || itemViewType == 8) ? 2 : 1;
+                    }
+                    return 0;
                 }
             });
         }
@@ -174,132 +180,161 @@ public class Bindings {
         view.setText(text);
     }
 
+    private static void setActiveEventIcon(EventStatus status, ImageView view, Event event,
+                                           ProgramStage eventProgramStage, Program program) {
+        switch (status) {
+            case ACTIVE:
+                if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), eventProgramStage.periodType() != null ? eventProgramStage.periodType() : program.expiryPeriodType())) {
+                    view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_eye_red));
+                } else {
+                    view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_edit));
+                }
+                break;
+            case OVERDUE:
+            case COMPLETED:
+            case SKIPPED:
+                view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_visibility));
+                break;
+            case SCHEDULE:
+                view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_edit));
+                break;
+            case VISITED:
+                view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_edit));
+                break;
+            default:
+                view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_edit));
+                break;
+        }
+    }
+
+    private static void setEventIconCases(EventStatus status, EnrollmentStatus enrollmentStatus,
+                                          ImageView view, Event event,
+                                          ProgramStage eventProgramStage, Program program) {
+        if (enrollmentStatus == EnrollmentStatus.ACTIVE) {
+            setActiveEventIcon(status, view, event, eventProgramStage, program);
+        } else if (enrollmentStatus == EnrollmentStatus.COMPLETED) {
+            view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_visibility));
+        } else { //EnrollmentStatus = CANCELLED
+            view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_visibility));
+        }
+    }
+
     @BindingAdapter(value = {"eventStatusIcon", "enrollmentStatusIcon", "eventProgramStage", "eventProgram"}, requireAll = false)
-    public static void setEventIcon(ImageView view, EventModel event, EnrollmentModel enrollmentModel, ProgramStageModel eventProgramStage, ProgramModel program) {
+    public static void setEventIcon(ImageView view, Event event, Enrollment enrollmentModel,
+                                    ProgramStage eventProgramStage, Program program) {
         if (event != null) {
             EventStatus status = event.status();
-            EnrollmentStatus enrollmentStatus = enrollmentModel.enrollmentStatus();
+            EnrollmentStatus enrollmentStatus = enrollmentModel.status();
             if (status == null)
                 status = EventStatus.ACTIVE;
             if (enrollmentStatus == null)
                 enrollmentStatus = EnrollmentStatus.ACTIVE;
 
-            if (enrollmentStatus == EnrollmentStatus.ACTIVE) {
-                switch (status) {
-                    case ACTIVE:
-                        if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), eventProgramStage.periodType() != null ? eventProgramStage.periodType() : program.expiryPeriodType())) {
-                            view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_eye_red));
-                        } else {
-                            view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_edit));
-                        }
-                        break;
-                    case OVERDUE:
-                    case COMPLETED:
-                    case SKIPPED:
-                        view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_visibility));
-                        break;
-                    case SCHEDULE:
-                        view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_edit));
-                        break;
-                    case VISITED:
-                        view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_edit));
-                        break;
-                    default:
-                        view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_edit));
-                        break;
+            setEventIconCases(status, enrollmentStatus, view, event, eventProgramStage, program);
+
+        }
+    }
+
+    private static void setActiveEventText(EventStatus status, TextView view, Event event,
+                                           ProgramStage eventProgramStage, Program program) {
+        switch (status) {
+            case ACTIVE:
+                if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), eventProgramStage.periodType() != null ? eventProgramStage.periodType() : program.expiryPeriodType())) {
+                    view.setText(view.getContext().getString(R.string.event_expired));
+                } else {
+                    view.setText(view.getContext().getString(R.string.event_open));
                 }
-            } else if (enrollmentStatus == EnrollmentStatus.COMPLETED) {
-                view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_visibility));
-            } else { //EnrollmentStatus = CANCELLED
-                view.setImageDrawable(ContextCompat.getDrawable(view.getContext(), R.drawable.ic_visibility));
-            }
+                break;
+            case COMPLETED:
+                if (DateUtils.getInstance().isEventExpired(null, event.completedDate(), program.completeEventsExpiryDays())) {
+                    view.setText(view.getContext().getString(R.string.event_expired));
+                } else {
+                    view.setText(view.getContext().getString(R.string.event_completed));
+                }
+                break;
+            case SCHEDULE:
+                if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), eventProgramStage.periodType() != null ? eventProgramStage.periodType() : program.expiryPeriodType())) {
+                    view.setText(view.getContext().getString(R.string.event_expired));
+                } else {
+                    view.setText(view.getContext().getString(R.string.event_schedule));
+                }
+                break;
+            case SKIPPED:
+                view.setText(view.getContext().getString(R.string.event_skipped));
+                break;
+            case OVERDUE:
+                view.setText(R.string.event_overdue);
+                break;
+            default:
+                view.setText(view.getContext().getString(R.string.read_only));
+                break;
+        }
+    }
+
+    private static void setEventTextCases(EventStatus status, EnrollmentStatus enrollmentStatus, TextView view,
+                                          Event event, ProgramStage eventProgramStage, Program program) {
+        if (enrollmentStatus == EnrollmentStatus.ACTIVE) {
+            setActiveEventText(status, view, event, eventProgramStage, program);
+        } else if (enrollmentStatus == EnrollmentStatus.COMPLETED) {
+            view.setText(view.getContext().getString(R.string.program_completed));
+        } else { //EnrollmentStatus = CANCELLED
+            view.setText(view.getContext().getString(R.string.program_inactive));
         }
     }
 
     @BindingAdapter(value = {"eventStatusText", "enrollmentStatus", "eventProgramStage", "eventProgram"})
-    public static void setEventText(TextView view, EventModel event, EnrollmentModel enrollmentModel, ProgramStageModel eventProgramStage, ProgramModel program) {
+    public static void setEventText(TextView view, Event event, Enrollment enrollmentModel,
+                                    ProgramStage eventProgramStage, Program program) {
         if (event != null) {
             EventStatus status = event.status();
-            EnrollmentStatus enrollmentStatus = enrollmentModel.enrollmentStatus();
+            EnrollmentStatus enrollmentStatus = enrollmentModel.status();
             if (status == null)
                 status = EventStatus.ACTIVE;
             if (enrollmentStatus == null)
                 enrollmentStatus = EnrollmentStatus.ACTIVE;
 
-
-            if (enrollmentStatus == EnrollmentStatus.ACTIVE) {
-                switch (status) {
-                    case ACTIVE:
-                        if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), eventProgramStage.periodType() != null ? eventProgramStage.periodType() : program.expiryPeriodType())) {
-                            view.setText(view.getContext().getString(R.string.event_expired));
-                        } else {
-                            view.setText(view.getContext().getString(R.string.event_open));
-                        }
-                        break;
-                    case COMPLETED:
-                        if (DateUtils.getInstance().isEventExpired(null, event.completedDate(), program.completeEventsExpiryDays())) {
-                            view.setText(view.getContext().getString(R.string.event_expired));
-                        } else {
-                            view.setText(view.getContext().getString(R.string.event_completed));
-                        }
-                        break;
-                    case SCHEDULE:
-                        if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), eventProgramStage.periodType() != null ? eventProgramStage.periodType() : program.expiryPeriodType())) {
-                            view.setText(view.getContext().getString(R.string.event_expired));
-                        } else {
-                            view.setText(view.getContext().getString(R.string.event_schedule));
-                        }
-                        break;
-                    case SKIPPED:
-                        view.setText(view.getContext().getString(R.string.event_skipped));
-                        break;
-                    case OVERDUE:
-                        view.setText(R.string.event_overdue);
-                        break;
-                    default:
-                        view.setText(view.getContext().getString(R.string.read_only));
-                        break;
-                }
-            } else if (enrollmentStatus == EnrollmentStatus.COMPLETED) {
-                view.setText(view.getContext().getString(R.string.program_completed));
-            } else { //EnrollmentStatus = CANCELLED
-                view.setText(view.getContext().getString(R.string.program_inactive));
-            }
+            setEventTextCases(status, enrollmentStatus, view, event, eventProgramStage, program);
         }
     }
 
+    private static int setEventColorCases(View view, Event event, ProgramStage programStage, Program program) {
+        int bgColor;
+        switch (event.status()) {
+            case ACTIVE:
+                if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), programStage.periodType() != null ? programStage.periodType() : program.expiryPeriodType())) {
+                    bgColor = R.drawable.item_event_dark_gray_ripple;
+                } else
+                    bgColor = R.drawable.item_event_yellow_ripple;
+                break;
+            case COMPLETED:
+                if (DateUtils.getInstance().isEventExpired(null, event.completedDate(), program.completeEventsExpiryDays())) {
+                    bgColor = R.drawable.item_event_dark_gray_ripple;
+                } else
+                    bgColor = R.drawable.item_event_gray_ripple;
+                break;
+            case SCHEDULE:
+                if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), programStage.periodType() != null ? programStage.periodType() : program.expiryPeriodType())) {
+                    bgColor = R.drawable.item_event_dark_gray_ripple;
+                } else
+                    bgColor = R.drawable.item_event_green_ripple;
+                break;
+            case VISITED:
+            case SKIPPED:
+            default:
+                bgColor = R.drawable.item_event_red_ripple;
+                break;
+        }
+        return bgColor;
+    }
+
     @BindingAdapter(value = {"eventColor", "eventProgramStage", "eventProgram"})
-    public static void setEventColor(View view, EventModel event, ProgramStageModel programStage, ProgramModel program) {
+    public static void setEventColor(View view, Event event, ProgramStage programStage, Program program) {
         if (event != null) {
             int bgColor;
             if (DateUtils.getInstance().isEventExpired(null, event.completedDate(), program.completeEventsExpiryDays())) {
                 bgColor = R.drawable.item_event_dark_gray_ripple;
             } else if (event.status() != null) {
-                switch (event.status()) {
-                    case ACTIVE:
-                        if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), programStage.periodType() != null ? programStage.periodType() : program.expiryPeriodType())) {
-                            bgColor = R.drawable.item_event_dark_gray_ripple;
-                        } else
-                            bgColor = R.drawable.item_event_yellow_ripple;
-                        break;
-                    case COMPLETED:
-                        if (DateUtils.getInstance().isEventExpired(null, event.completedDate(), program.completeEventsExpiryDays())) {
-                            bgColor = R.drawable.item_event_dark_gray_ripple;
-                        } else
-                            bgColor = R.drawable.item_event_gray_ripple;
-                        break;
-                    case SCHEDULE:
-                        if (DateUtils.getInstance().hasExpired(event, program.expiryDays(), program.completeEventsExpiryDays(), programStage.periodType() != null ? programStage.periodType() : program.expiryPeriodType())) {
-                            bgColor = R.drawable.item_event_dark_gray_ripple;
-                        } else
-                            bgColor = R.drawable.item_event_green_ripple;
-                        break;
-                    case VISITED:
-                    case SKIPPED:
-                    default:
-                        bgColor = R.drawable.item_event_red_ripple;
-                        break;
-                }
+                bgColor = setEventColorCases(view, event, programStage, program);
             } else {
                 bgColor = R.drawable.item_event_red_ripple;
             }
@@ -355,7 +390,6 @@ public class Bindings {
                     imageView.setImageResource(R.drawable.ic_eye_grey);
                 break;
             default:
-                // TODO CRIS: HERE CHECK THE EVENT APPROVAL
                 imageView.setImageResource(R.drawable.ic_eye_green);
                 break;
 
@@ -411,7 +445,7 @@ public class Bindings {
     }
 
     @BindingAdapter("spinnerOptions")
-    public static void setSpinnerOptions(Spinner spinner, List<CategoryOptionComboModel> options) {
+    public static void setSpinnerOptions(Spinner spinner, List<CategoryOptionCombo> options) {
         CatComboAdapter adapter = new CatComboAdapter(spinner.getContext(),
                 R.layout.spinner_layout,
                 R.id.spinner_text,
@@ -447,10 +481,14 @@ public class Bindings {
                 b = c;
         }
 
-        double L = 0.2126d * r + 0.7152d * g + 0.0722d * b;
+        r = r == null ? 0 : r;
+        g = g == null ? 0 : g;
+        b = b == null ? 0 : b;
+
+        double l = 0.2126d * r + 0.7152d * g + 0.0722d * b;
 
 
-        if (L > 0.179d)
+        if (l > 0.179d)
             tintedColor = "#000000"; // bright colors - black font
         else
             tintedColor = "#FFFFFF"; // dark colors - white font
@@ -466,7 +504,7 @@ public class Bindings {
         }
     }
 
-    public static void setObjectStyle(View view, View itemView, ObjectStyleModel objectStyle) {
+    public static void setObjectStyle(View view, View itemView, ObjectStyle objectStyle) {
         if (objectStyle.icon() != null) {
             Resources resources = view.getContext().getResources();
             String iconName = objectStyle.icon().startsWith("ic_") ? objectStyle.icon() : "ic_" + objectStyle.icon();
@@ -485,18 +523,13 @@ public class Bindings {
 
     @BindingAdapter("imageBackground")
     public static void setImageBackground(ImageView imageView, Drawable drawable) {
-
         TypedValue typedValue = new TypedValue();
         TypedArray a = imageView.getContext().obtainStyledAttributes(typedValue.data, new int[]{R.attr.colorPrimaryDark});
-        TypedArray b = imageView.getContext().obtainStyledAttributes(typedValue.data, new int[]{R.attr.colorPrimaryLight});
         int colorPrimaryDark = a.getColor(0, 0);
-        int colorPrimaryLight = b.getColor(0, 0);
+        a.recycle();
 
         int px = (int) (1 * Resources.getSystem().getDisplayMetrics().density);
         ((GradientDrawable) drawable.mutate()).setStroke(px, colorPrimaryDark);
-        //((GradientDrawable) drawable.mutate()).setColor(colorPrimaryLight);
-
         imageView.setBackground(drawable);
-
     }
 }

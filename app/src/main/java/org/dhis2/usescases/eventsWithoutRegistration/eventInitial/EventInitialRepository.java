@@ -1,40 +1,40 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventInitial;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.util.Date;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.reactivex.Observable;
 
 /**
  * QUADRAM. Created by Cristian E. on 02/11/2017.
  */
-
+@SuppressWarnings("squid:S00107")
 public interface EventInitialRepository {
 
     @NonNull
-    Observable<EventModel> event(String eventId);
+    Observable<Event> event(String eventId);
 
     @NonNull
-    Observable<List<OrganisationUnitModel>> orgUnits(String programId);
+    Observable<List<OrganisationUnit>> orgUnits(String programId);
 
     @NonNull
-    Observable<CategoryComboModel> catComboModel(String programUid);
+    Observable<CategoryCombo> catComboModel(String programUid);
 
     @NonNull
-    Observable<List<CategoryOptionComboModel>> catCombo(String programUid);
+    Observable<List<CategoryOptionCombo>> catCombo(String programUid);
 
     @NonNull
-    Observable<List<OrganisationUnitModel>> filteredOrgUnits(String date, String programId);
+    Observable<List<OrganisationUnit>> filteredOrgUnits(String date, String programId);
 
     Observable<String> createEvent(String enrollmentUid, @Nullable String trackedEntityInstanceUid,
                                    @NonNull Context context, @NonNull String program,
@@ -51,19 +51,19 @@ public interface EventInitialRepository {
     Observable<String> updateTrackedEntityInstance(String eventId, String trackedEntityInstanceUid, String orgUnitUid);
 
     @NonNull
-    Observable<EventModel> newlyCreatedEvent(long rowId);
+    Observable<Event> newlyCreatedEvent(long rowId);
 
     @NonNull
-    Observable<ProgramStageModel> programStage(String programUid);
+    Observable<ProgramStage> programStage(String programUid);
 
     @NonNull
-    Observable<ProgramStageModel> programStageWithId(String programStageUid);
+    Observable<ProgramStage> programStageWithId(String programStageUid);
 
     @NonNull
-    Observable<EventModel> editEvent(String trackedEntityInstance, String eventUid, String date, String orgUnitUid, String catComboUid, String catOptionCombo, String latitude, String longitude);
+    Observable<Event> editEvent(String trackedEntityInstance, String eventUid, String date, String orgUnitUid, String catComboUid, String catOptionCombo, String latitude, String longitude);
 
     @NonNull
-    Observable<List<EventModel>> getEventsFromProgramStage(String programUid, String enrollmentUid, String programStageUid);
+    Observable<List<Event>> getEventsFromProgramStage(String programUid, String enrollmentUid, String programStageUid);
 
     Observable<Boolean> accessDataWrite(String programId);
 

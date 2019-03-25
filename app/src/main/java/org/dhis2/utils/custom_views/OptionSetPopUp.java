@@ -6,10 +6,11 @@ import android.view.View;
 
 import org.dhis2.data.forms.dataentry.fields.spinner.SpinnerViewModel;
 import org.dhis2.data.tuples.Trio;
-import org.hisp.dhis.android.core.option.OptionModel;
+import org.hisp.dhis.android.core.option.Option;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import androidx.appcompat.widget.PopupMenu;
 import io.reactivex.processors.FlowableProcessor;
@@ -20,7 +21,7 @@ import io.reactivex.processors.FlowableProcessor;
 public class OptionSetPopUp {
 
     private static OptionSetPopUp instance;
-    private HashMap<String, OptionModel> optionsMap;
+    private HashMap<String, Option> optionsMap;
     private FlowableProcessor<Trio<String, String, Integer>> processor;
     private SpinnerViewModel optionSet;
     private Context context;
@@ -33,22 +34,22 @@ public class OptionSetPopUp {
         return instance;
     }
 
-    public static Boolean isCreated(){
+    public static Boolean isCreated() {
         return instance != null;
     }
 
-    public void setOptions(List<OptionModel> options) {
+    public void setOptions(List<Option> options) {
         optionsMap = new HashMap<>();
         PopupMenu menu = new PopupMenu(context, anchor);
         menu.setOnMenuItemClickListener(listener);
-        for (OptionModel optionModel : options) {
+        for (Option optionModel : options) {
             optionsMap.put(optionModel.displayName(), optionModel);
             menu.getMenu().add(Menu.NONE, Menu.NONE, options.indexOf(optionModel) + 1, optionModel.displayName());
         }
         menu.show();
     }
 
-    public HashMap<String, OptionModel> getOptions() {
+    public Map<String, Option> getOptions() {
         return optionsMap;
     }
 
@@ -75,6 +76,10 @@ public class OptionSetPopUp {
     }
 
     public void dismiss() {
+        dismissInstance();
+    }
+
+    private static void dismissInstance() {
         instance = null;
     }
 }

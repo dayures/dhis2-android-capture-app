@@ -26,10 +26,10 @@ import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.custom_views.CategoryComboDialog;
 import org.dhis2.utils.custom_views.CustomDialog;
 import org.dhis2.utils.custom_views.OrgUnitDialog;
-import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.program.Program;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -90,7 +90,8 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
     public void setData(EventDetailModel eventDetailModel, MetadataRepository metadataRepository) {
         if (eventDetailModel.getEventModel().status() != EventStatus.SCHEDULE && eventDetailModel.getEventModel().eventDate() != null) {
             Intent intent2 = new Intent(this, EventCaptureActivity.class);
-            intent2.putExtras(EventCaptureActivity.getActivityBundle(eventDetailModel.getEventModel().uid(), eventDetailModel.getEventModel().program()));
+            intent2.putExtras(EventCaptureActivity.getActivityBundle(eventDetailModel.getEventModel().uid(),
+                    eventDetailModel.getEventModel().program()));
             startActivity(intent2, null);
             finish();
         } else {
@@ -134,8 +135,8 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
     }
 
     @Override
-    public void isEventExpired(ProgramModel program) {
-        EventModel event = eventDetailModel.getEventModel();
+    public void isEventExpired(Program program) {
+        Event event = eventDetailModel.getEventModel();
         if (event.status() == EventStatus.COMPLETED &&
                 DateUtils.getInstance().hasExpired(eventDetailModel.getEventModel(), program.expiryDays(), program.completeEventsExpiryDays(), program.expiryPeriodType())) {
             // TODO implement event expiration logic
@@ -144,7 +145,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
 
     @Override
     public void setDataEditable() {
-        if (binding.getStage().accessDataWrite()) {
+        if (binding.getStage().access().data().write()) {
             isEditable.set(!isEditable.get());
         } else
             displayMessage(null);
@@ -197,7 +198,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
     }
 
     @Override
-    public void setSelectedOrgUnit(OrganisationUnitModel selectedOrgUnit) {
+    public void setSelectedOrgUnit(OrganisationUnit selectedOrgUnit) {
         binding.orgUnit.setText(selectedOrgUnit.displayName());
         //TODO: Save org unit change
     }
@@ -311,7 +312,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
             }
             return false;
         });
-        popupMenu.getMenu().getItem(1).setVisible(binding.getStage().accessDataWrite() && eventDetailModel.isEnrollmentActive());
+        popupMenu.getMenu().getItem(1).setVisible(binding.getStage().access().data().write() && eventDetailModel.isEnrollmentActive());
         popupMenu.show();
     }
 }

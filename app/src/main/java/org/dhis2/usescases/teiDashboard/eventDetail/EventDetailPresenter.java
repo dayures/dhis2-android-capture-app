@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.content.DialogInterface;
 import android.os.Handler;
-import android.util.Log;
 import android.view.View;
 
 import org.dhis2.R;
@@ -15,12 +14,12 @@ import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.OnDialogClickListener;
 import org.dhis2.utils.custom_views.OrgUnitDialog;
 import org.dhis2.utils.custom_views.PeriodDialog;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.State;
-import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.period.PeriodType;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -90,7 +89,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                                     eventDetailModel = data;
                                     view.setData(data, metadataRepository);
                                 },
-                                throwable -> Log.d("ERROR", throwable.getMessage()))
+                                Timber::e)
 
         );
     }
@@ -131,9 +130,9 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
     }
 
     @Override
-    public void eventStatus(View buttonView, EventModel eventModel, ProgramStageModel stageModel) {
+    public void eventStatus(View buttonView, Event eventModel, ProgramStage stageModel) {
 
-        if (stageModel.accessDataWrite()) {
+        if (stageModel.access().data().write()) {
             FormFragment formFragment = (FormFragment) view.getAbstractActivity().getSupportFragmentManager().getFragments().get(0);
             formFragment.getDatesLayout().getRootView().requestFocus();
             new Handler().postDelayed(() -> {
@@ -161,7 +160,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
 
                                     @Override
                                     public void onNegativeClick(AlertDialog alertDialog) {
-
+                                        // do nothing
                                     }
                                 });
                                 dialog.show();
@@ -179,7 +178,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
             view.displayMessage(null);
     }
 
-    private void updateEventStatus(EventModel eventModel) {
+    private void updateEventStatus(Event eventModel) {
         dataEntryStore.updateEventStatus(eventModel);
         changedEventStatus = true;
     }
@@ -209,7 +208,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
     @Override
     public void onOrgUnitClick() {
 
-        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstace().setMultiSelection(false);
+        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setTitle("Event Org Unit")
                 .setPossitiveListener(v -> {
                     view.setSelectedOrgUnit(orgUnitDialog.getSelectedOrgUnitModel());
@@ -249,7 +248,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
     }
 
     @Override
-    public void changeCatOption(CategoryOptionComboModel selectedOption) {
+    public void changeCatOption(CategoryOptionCombo selectedOption) {
         eventDetailRepository.saveCatOption(selectedOption);
     }
 
@@ -271,7 +270,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                     String result = DateUtils.uiDateFormat().format(selectedDate);
                     view.setDate(result);
 
-                    if (eventDetailModel.getProgramStage().accessDataWrite()) {
+                    if (eventDetailModel.getProgramStage().access().data().write()) {
                         dataEntryStore.updateEvent(selectedDate, eventDetailModel.getEventModel());
                     }
                 }),
@@ -282,12 +281,11 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
             dateDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
         }
 
-        if (eventDetailModel.getProgram().expiryPeriodType() != null) {// eventDetailModel.orgUnitOpeningDate() != null) {
+        if (eventDetailModel.getProgram().expiryPeriodType() != null) {
             Date minDate = DateUtils.getInstance().expDate(null,
                     eventDetailModel.getProgram().expiryDays() != null ? eventDetailModel.getProgram().expiryDays() : 0,
                     eventDetailModel.getProgram().expiryPeriodType());
             dateDialog.getDatePicker().setMinDate(minDate.getTime());
-            //dateDialog.getDatePicker().setMinDate(eventDetailModel.orgUnitOpeningDate().getTime());
         }
 
         if (eventDetailModel.orgUnitClosingDate() != null)
@@ -305,7 +303,7 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                     String result = DateUtils.uiDateFormat().format(selectedDate);
                     view.setDate(result);
 
-                    if (eventDetailModel.getProgramStage().accessDataWrite()) {
+                    if (eventDetailModel.getProgramStage().access().data().write()) {
                         dataEntryStore.updateEvent(selectedDate, eventDetailModel.getEventModel());
                     }
                 });

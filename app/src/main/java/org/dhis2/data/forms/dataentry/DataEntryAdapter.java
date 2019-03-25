@@ -28,7 +28,7 @@ import org.dhis2.data.forms.dataentry.fields.unsupported.UnsupportedRow;
 import org.dhis2.data.forms.dataentry.fields.unsupported.UnsupportedViewModel;
 import org.dhis2.data.tuples.Trio;
 import org.hisp.dhis.android.core.common.ValueType;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -82,7 +82,7 @@ public final class DataEntryAdapter extends Adapter {
     public DataEntryAdapter(@NonNull LayoutInflater layoutInflater,
                             @NonNull FragmentManager fragmentManager,
                             @NonNull DataEntryArguments dataEntryArguments,
-                            @NonNull Observable<List<OrganisationUnitModel>> orgUnits,
+                            @NonNull Observable<List<OrganisationUnit>> orgUnits,
                             ObservableBoolean isEditable) { //TODO: Add isEditable to all fields and test if can be changed on the fly
         setHasStableIds(true);
         rows = new ArrayList<>();
@@ -94,15 +94,15 @@ public final class DataEntryAdapter extends Adapter {
         this.dataEntryArguments = dataEntryArguments;
 
         rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable));
-        rows.add(BUTTON, new FileRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
+        rows.add(BUTTON, new FileRow(layoutInflater, processor, true));
+        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, true));
         rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, currentPosition, processorOptionSet, true, dataEntryArguments.renderType()));
-        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true, dataEntryArguments.renderType()));
-        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true, dataEntryArguments.renderType()));
-        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true, dataEntryArguments.renderType()));
-        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
+        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, true));
+        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true));
+        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true));
+        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true));
+        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, currentPosition, true));
+        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, true));
         rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType()));
         rows.add(IMAGE, new ImageRow(layoutInflater, processor, currentPosition, dataEntryArguments.renderType()));
         rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
@@ -112,7 +112,7 @@ public final class DataEntryAdapter extends Adapter {
     public DataEntryAdapter(@NonNull LayoutInflater layoutInflater,
                             @NonNull FragmentManager fragmentManager,
                             @NonNull DataEntryArguments dataEntryArguments,
-                            @NonNull Observable<List<OrganisationUnitModel>> orgUnits,
+                            @NonNull Observable<List<OrganisationUnit>> orgUnits,
                             ObservableBoolean isEditable,
                             @NonNull FlowableProcessor<RowAction> processor,
                             @NonNull FlowableProcessor<Trio<String, String, Integer>> processorOptSet) { //TODO: Add isEditable to all fields and test if can be changed on the fly
@@ -126,15 +126,15 @@ public final class DataEntryAdapter extends Adapter {
         this.dataEntryArguments = dataEntryArguments;
 
         rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable));
-        rows.add(BUTTON, new FileRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
+        rows.add(BUTTON, new FileRow(layoutInflater, processor, true));
+        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, true));
         rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, currentPosition, processorOptionSet, true, dataEntryArguments.renderType()));
-        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true, dataEntryArguments.renderType()));
-        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true, dataEntryArguments.renderType()));
-        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true, dataEntryArguments.renderType()));
-        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
+        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, true));
+        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true));
+        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true));
+        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true));
+        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, currentPosition, true));
+        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, true));
         rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType()));
         rows.add(IMAGE, new ImageRow(layoutInflater, processor, currentPosition, dataEntryArguments.renderType()));
         rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));

@@ -2,7 +2,6 @@ package org.dhis2.usescases.login;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.text.InputType;
 import android.view.View;
 import android.view.WindowManager;
@@ -32,6 +31,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -97,7 +97,7 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
             Writer writer = new StringWriter();
             char[] buffer = new char[1024];
             try (InputStream is = getResources().openRawResource(testingCredentialsIdentifier)) {
-                Reader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+                Reader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
                 int n;
                 while ((n = reader.read(buffer)) != -1) {
                     writer.write(buffer, 0, n);
@@ -233,12 +233,12 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
 
             @Override
             public void onEmpty() {
-
+                // unused
             }
 
             @Override
             public void onPinChange(int pinLength, String intermediatePin) {
-
+                // unused
             }
         });
         binding.pinLayout.getRoot().setVisibility(View.VISIBLE);
@@ -328,16 +328,6 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
             super.onBackPressed();
             finish();
         }
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
-        super.onSaveInstanceState(outState, outPersistentState);
-    }
-
-    @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState, PersistableBundle persistentState) {
-        super.onRestoreInstanceState(savedInstanceState, persistentState);
     }
 
     @Override

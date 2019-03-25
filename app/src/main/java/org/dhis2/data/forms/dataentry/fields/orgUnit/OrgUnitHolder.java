@@ -1,19 +1,21 @@
 package org.dhis2.data.forms.dataentry.fields.orgUnit;
 
-import androidx.databinding.ViewDataBinding;
-import com.google.android.material.textfield.TextInputLayout;
-import androidx.fragment.app.FragmentManager;
 import android.view.View;
+
+import com.google.android.material.textfield.TextInputLayout;
 
 import org.dhis2.R;
 import org.dhis2.data.forms.dataentry.fields.FormViewHolder;
 import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.utils.custom_views.TextInputAutoCompleteTextView;
 import org.dhis2.utils.custom_views.orgUnitCascade.OrgUnitCascadeDialog;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 
 import java.util.List;
 
+import androidx.databinding.ViewDataBinding;
+import androidx.fragment.app.FragmentManager;
 import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.processors.FlowableProcessor;
@@ -27,14 +29,14 @@ import timber.log.Timber;
 public class OrgUnitHolder extends FormViewHolder {
     private final TextInputAutoCompleteTextView editText;
     private final TextInputLayout inputLayout;
-    private final Observable<List<OrganisationUnitModel>> orgUnitsObservable;
-    private List<OrganisationUnitModel> orgUnits;
+    private final Observable<List<OrganisationUnit>> orgUnitsObservable;
+    private List<OrganisationUnit> orgUnits;
     private OrgUnitCascadeDialog orgUnitDialog;
     private CompositeDisposable compositeDisposable;
     private OrgUnitViewModel model;
-    private String selectedOrgUnit;
 
-    OrgUnitHolder(FragmentManager fm, ViewDataBinding binding, FlowableProcessor<RowAction> processor, Observable<List<OrganisationUnitModel>> orgUnits) {
+    OrgUnitHolder(FragmentManager fm, ViewDataBinding binding, FlowableProcessor<RowAction> processor,
+                  Observable<List<OrganisationUnit>> orgUnits) {
         super(binding);
         compositeDisposable = new CompositeDisposable();
         this.editText = binding.getRoot().findViewById(R.id.input_editText);
@@ -51,7 +53,6 @@ public class OrgUnitHolder extends FormViewHolder {
                     .setCallbacks(new OrgUnitCascadeDialog.CascadeOrgUnitCallbacks() {
                         @Override
                         public void textChangedConsumer(String selectedOrgUnitUid, String selectedOrgUnitName) {
-                            selectedOrgUnit = selectedOrgUnitUid;
                             processor.onNext(RowAction.create(model.uid(), selectedOrgUnitUid));
                             editText.setText(selectedOrgUnitName);
                             orgUnitDialog.dismiss();
@@ -109,7 +110,7 @@ public class OrgUnitHolder extends FormViewHolder {
     private String getOrgUnitName(String value) {
         String orgUnitName = null;
         if (orgUnits != null) {
-            for (OrganisationUnitModel orgUnit : orgUnits) {
+            for (OrganisationUnit orgUnit : orgUnits) {
                 if (orgUnit.uid().equals(value))
                     orgUnitName = orgUnit.displayName();
             }

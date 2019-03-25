@@ -1,13 +1,14 @@
 package org.dhis2.usescases.qrCodes;
 
+import org.dhis2.data.qr.QRCodeGenerator;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.List;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
-
-import org.dhis2.data.qr.QRCodeGenerator;
-
-import java.util.List;
 
 public class QrAdapter extends FragmentStatePagerAdapter {
 
@@ -19,6 +20,7 @@ public class QrAdapter extends FragmentStatePagerAdapter {
         this.bitmaps = bitmaps;
     }
 
+    @NotNull
     @Override
     public Fragment getItem(int position) {
         return QrFragment.create(QRCodeGenerator.transform(bitmaps.get(position).getQrType(), bitmaps.get(position).getQrJson()));

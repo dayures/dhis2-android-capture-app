@@ -41,7 +41,7 @@ public class ErrorDialog extends DialogFragment {
     private String title;
     private List<D2Error> data = new ArrayList<>();
     private DividerItemDecoration divider;
-    public static String TAG = "ERROR_DIALOG";
+    public static final String TAG = "ERROR_DIALOG";
     private String shareTitle;
     private String shareMessageTitle;
     private ObservableBoolean sharing = new ObservableBoolean(false);

@@ -1,16 +1,16 @@
 package org.dhis2.data.forms;
 
+import org.dhis2.data.forms.dataentry.DataEntryArguments;
+import org.dhis2.data.forms.dataentry.DataEntryFragment;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
-import android.util.Log;
-
-import org.dhis2.data.forms.dataentry.DataEntryArguments;
-import org.dhis2.data.forms.dataentry.DataEntryFragment;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class FormSectionAdapter extends FragmentStatePagerAdapter {
 
@@ -26,6 +26,7 @@ public class FormSectionAdapter extends FragmentStatePagerAdapter {
         this.fm = fragmentManager;
     }
 
+    @NotNull
     @Override
     public Fragment getItem(int position) {
         FormSectionViewModel viewModel = formSectionViewModelList.get(position);
@@ -35,7 +36,7 @@ public class FormSectionAdapter extends FragmentStatePagerAdapter {
                     .forEnrollment(viewModel.uid()));
         } else if (viewModel.type().equals(FormSectionViewModel.Type.PROGRAM_STAGE)) {
             return DataEntryFragment.create(DataEntryArguments
-                    .forEvent(viewModel.uid(),viewModel.renderType()));
+                    .forEvent(viewModel.uid(), viewModel.renderType()));
         } else if (viewModel.type().equals(FormSectionViewModel.Type.SECTION)) {
             return DataEntryFragment.create(DataEntryArguments
                     .forEventSection(viewModel.uid(), viewModel.sectionUid(), viewModel.renderType()));
@@ -76,16 +77,13 @@ public class FormSectionAdapter extends FragmentStatePagerAdapter {
 
         if (sections.size() == models.size()) //If previous sections size = new sections size we check if each section is the same
             for (String section : newSections) {
-                if (section!=null && !section.equals(sections.get(0)))
+                if (section != null && !section.equals(sections.get(0)))
                     differentSections = true;
             }
         else
             differentSections = true;
 
         if (differentSections || sections.isEmpty()) {
-
-            Log.d("FM_TEST", fm.getFragments().size() + " ");
-
             formSectionViewModelList.clear();
             sections.clear();
             formSectionViewModelList.addAll(models);

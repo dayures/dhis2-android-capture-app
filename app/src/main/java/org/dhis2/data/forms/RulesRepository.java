@@ -11,7 +11,9 @@ import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramRuleActionModel;
 import org.hisp.dhis.android.core.program.ProgramRuleActionType;
@@ -51,10 +53,8 @@ import org.hisp.dhis.rules.models.RuleVariablePreviousEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.annotation.Nonnull;
 
@@ -271,26 +271,6 @@ public final class RulesRepository {
     }
 
     @NonNull
-    private static List<Rule> mapActionsToRules(
-            @NonNull List<Quartet<String, String, Integer, String>> rawRules,
-            @NonNull Map<String, Collection<RuleAction>> ruleActions) {
-        List<Rule> rules = new ArrayList<>();
-
-        for (Quartet<String, String, Integer, String> rawRule : rawRules) {
-            Collection<RuleAction> actions = ruleActions.get(rawRule.val0());
-
-            if (actions == null) {
-                actions = new ArrayList<>();
-            }
-
-           /* rules.add(Rule.create(rawRule.val1(), rawRule.val2(),
-                    rawRule.val3(), new ArrayList<>(actions)));*/
-        }
-
-        return rules;
-    }
-
-    @NonNull
     private static List<Rule> mapActionsToRulesNew(
             @NonNull List<Quartet<String, String, Integer, String>> rawRules, //ProgramRule uid, stage, priority and condition
             @NonNull List<Pair<String, RuleAction>> ruleActions) {
@@ -304,9 +284,6 @@ public final class RulesRepository {
                     pairActions.add(pair.val1());
             }
 
-            /*if (actions == null) {
-                actions = new ArrayList<>();
-            }*/
             rules.add(Rule.create(rawRule.val1(), rawRule.val2(),
                     rawRule.val3(), new ArrayList<>(pairActions), rawRule.val0())); //TODO: Change val0 to Rule Name
         }
@@ -450,6 +427,7 @@ public final class RulesRepository {
         return create(actionType, programStage, section, attribute, dataElement, location, content, data, option, optionGroup);
     }
 
+    @SuppressWarnings("squid:S00107")
     @NonNull
     public static RuleAction create(ProgramRuleActionType actionType, String programStage, String section, String attribute,
                                     String dataElement, String location, String content, String data, String option, String optionGroup) {
@@ -529,10 +507,10 @@ public final class RulesRepository {
 
     public Flowable<List<RuleEvent>> otherEvents(String eventUidToEvaluate) {
         return briteDatabase.createQuery(EventModel.TABLE, "SELECT * FROM Event WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
-                .mapToOne(EventModel::create)
+                .mapToOne(Event::create)
                 .flatMap(eventModel ->
                         briteDatabase.createQuery(ProgramModel.TABLE, "SELECT Program.* FROM Program JOIN Event ON Event.program = Program.uid WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
-                                .mapToOne(ProgramModel::create).flatMap(programModel ->
+                                .mapToOne(Program::create).flatMap(programModel ->
                                 briteDatabase.createQuery(EventModel.TABLE, eventModel.enrollment() == null ? QUERY_OTHER_EVENTS : QUERY_OTHER_EVENTS_ENROLLMENTS,
                                         eventModel.enrollment() == null ? programModel.uid() : eventModel.enrollment(),
                                         eventUidToEvaluate == null ? "" : eventUidToEvaluate,
@@ -596,7 +574,7 @@ public final class RulesRepository {
                     String orgUnit = cursor.getString(5);
                     String orgUnitCode = getOrgUnitCode(orgUnit);
                     String programStageName = cursor.getString(6);
-                    RuleEvent.Status status = cursor.getString(2).equals(RuleEvent.Status.VISITED.toString())? RuleEvent.Status.ACTIVE : RuleEvent.Status.valueOf(cursor.getString(2)); //TODO: WHAT?
+                    RuleEvent.Status status = cursor.getString(2).equals(RuleEvent.Status.VISITED.toString()) ? RuleEvent.Status.ACTIVE : RuleEvent.Status.valueOf(cursor.getString(2)); //TODO: WHAT?
 
                     try (Cursor dataValueCursor = briteDatabase.query(QUERY_VALUES, eventUid)) {
                         if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
@@ -635,9 +613,9 @@ public final class RulesRepository {
 
     public Flowable<RuleEnrollment> enrollment(String eventUid) {
         return briteDatabase.createQuery(EventModel.TABLE, "SELECT Event.*, Program.displayName FROM Event JOIN Program ON Program.uid = Event.program WHERE Event.uid = ? LIMIT 1", eventUid == null ? "" : eventUid)
-                .mapToOne(cursor -> Pair.create(EventModel.create(cursor), cursor.getString(cursor.getColumnIndex("displayName"))))
+                .mapToOne(cursor -> Pair.create(Event.create(cursor), cursor.getString(cursor.getColumnIndex("displayName"))))
                 .flatMap(pair -> {
-                            EventModel eventModel = pair.val0();
+                            Event eventModel = pair.val0();
                             String programName = pair.val1();
 
                             String ouCode = getOrgUnitCode(eventModel.organisationUnit());

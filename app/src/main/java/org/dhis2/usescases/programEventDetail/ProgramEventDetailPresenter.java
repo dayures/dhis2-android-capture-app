@@ -6,18 +6,18 @@ import com.unnamed.b.atv.model.TreeNode;
 
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.tuples.Pair;
-import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureActivity;
 import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.OrgUnitUtils;
 import org.dhis2.utils.Period;
+import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.DatePeriod;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.program.Program;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,7 +25,6 @@ import java.util.List;
 
 import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
-import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -47,18 +46,18 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
     private final ProgramEventDetailRepository eventRepository;
     private final MetadataRepository metaRepository;
     private ProgramEventDetailContract.View view;
-    protected ProgramModel program;
+    protected Program program;
     protected String programId;
     private CompositeDisposable compositeDisposable;
-    private CategoryOptionComboModel categoryOptionComboModel;
-    private List<OrganisationUnitModel> orgUnits = new ArrayList<>();
+    private CategoryOptionCombo categoryOptionComboModel;
+    private List<OrganisationUnit> orgUnits = new ArrayList<>();
     private FlowableProcessor<Pair<TreeNode, String>> parentOrgUnit;
     private FlowableProcessor<Pair<List<DatePeriod>, List<String>>> programQueries;
     private List<DatePeriod> currentDateFilter;
     private List<String> currentOrgUnitFilter;
 
     //Search fields
-    private CategoryComboModel mCatCombo;
+    private CategoryCombo mCatCombo;
     private List<Date> dates;
     private String orgUnitQuery;
     private Period currentPeriod;
@@ -103,7 +102,7 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
                 .subscribe(
                         programModel -> {
                             view.setProgram(programModel);
-                            view.setWritePermission(programModel.accessDataWrite());
+                            view.setWritePermission(programModel.access().data().write());
                             getCatCombo(programModel);
                         },
                         Timber::d)
@@ -133,12 +132,12 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
 
     }
 
-    private void getCatCombo(ProgramModel programModel) {
-        compositeDisposable.add(metaRepository.getCategoryComboWithId(programModel.categoryCombo())
+    private void getCatCombo(Program programModel) {
+        compositeDisposable.add(metaRepository.getCategoryComboWithId(programModel.categoryCombo().uid())
                 .filter(categoryComboModel -> categoryComboModel != null && !categoryComboModel.isDefault() && !categoryComboModel.uid().equals(CategoryComboModel.DEFAULT_UID))
                 .flatMap(catCombo -> {
                     this.mCatCombo = catCombo;
-                    return eventRepository.catCombo(programModel.categoryCombo());
+                    return eventRepository.catCombo(programModel.categoryCombo().uid());
                 })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
@@ -188,13 +187,12 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
     }
 
     @Override
-    public void setProgram(ProgramModel program) {
-
+    public void setProgram(Program program) {
         this.program = program;
     }
 
     @Override
-    public List<OrganisationUnitModel> getOrgUnits() {
+    public List<OrganisationUnit> getOrgUnits() {
         return this.orgUnits;
     }
 
@@ -212,7 +210,7 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
     }
 
     @Override
-    public void onCatComboSelected(CategoryOptionComboModel categoryOptionComboModel) {
+    public void onCatComboSelected(CategoryOptionCombo categoryOptionComboModel) {
         this.categoryOptionComboModel = categoryOptionComboModel;
 
     }
@@ -236,7 +234,7 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
     }
 
     @Override
-    public Observable<List<String>> getEventDataValueNew(EventModel event) {
+    public Observable<List<String>> getEventDataValueNew(Event event) {
         return eventRepository.eventDataValuesNew(event);
     }
 

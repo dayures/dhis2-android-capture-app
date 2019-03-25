@@ -21,9 +21,8 @@ import org.dhis2.utils.DialogClickListener;
 import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.custom_views.CustomDialog;
 import org.dhis2.utils.custom_views.ProgressBarAnimation;
-import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.event.EventStatus;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.program.Program;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -57,7 +56,6 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     @Inject
     EventSummaryContract.Presenter presenter;
     private ActivityEventSummaryBinding binding;
-    private int completionPercent;
     private int totalFields;
     private int totalCompletedFields;
     private int fieldsToCompleteBeforeClosing;
@@ -67,8 +65,8 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     private boolean canComplete = true;
     private CustomDialog dialog;
     private boolean fieldsWithErrors;
-    private EventModel eventModel;
-    private ProgramModel programModel;
+    private Event eventModel;
+    private Program programModel;
     private ArrayList<String> sectionsToHide;
 
     @Override
@@ -103,7 +101,7 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public void setProgram(@NonNull ProgramModel program) {
+    public void setProgram(@NonNull Program program) {
         binding.setName(program.displayName());
         programModel = program;
     }
@@ -143,13 +141,13 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public void onStatusChanged(EventModel event) {
+    public void onStatusChanged(Event event) {
         Toast.makeText(this, getString(R.string.event_updated), Toast.LENGTH_SHORT).show();
         new Handler().postDelayed(this::finish, 1000);
     }
 
     @Override
-    public void setActionButton(EventModel eventModel) {
+    public void setActionButton(Event eventModel) {
         this.eventModel = eventModel;
 
     }
@@ -191,10 +189,9 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     @Override
     public void accessDataWrite(Boolean canWrite) {
 
-        if (DateUtils.getInstance().isEventExpired(null, eventModel.completedDate(), programModel.completeEventsExpiryDays())){
+        if (DateUtils.getInstance().isEventExpired(null, eventModel.completedDate(), programModel.completeEventsExpiryDays())) {
             binding.actionButton.setVisibility(View.GONE);
-        }
-        else {
+        } else {
             switch (eventModel.status()) {
                 case ACTIVE:
                     binding.actionButton.setText(getString(R.string.complete_and_close));
@@ -212,6 +209,8 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
                 case COMPLETED:
                     binding.actionButton.setText(getString(R.string.re_open));
                     binding.actionButton.setVisibility(canWrite ? View.VISIBLE : View.GONE);
+                    break;
+                default:
                     break;
             }
         }
@@ -261,12 +260,12 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
 
                 StringBuilder missingString = new StringBuilder(missingMandatoryFields.isEmpty() ? "" : "These fields are mandatory. Please check their values to be able to complete the event.");
                 for (String missinField : missingMandatoryFields) {
-                    missingString.append(String.format("\n- %s", missinField));
+                    missingString.append(String.format("%n- %s", missinField));
                 }
 
                 StringBuilder errorString = new StringBuilder(errorFields.isEmpty() ? "" : "These fields contain errors. Please check their values to be able to complete the event.");
                 for (String errorField : errorFields) {
-                    errorString.append(String.format("\n- %s", errorField));
+                    errorString.append(String.format("%n- %s", errorField));
                 }
 
                 String finalMessage = missingString.append("\n").append(errorString.toString()).toString();
@@ -280,7 +279,7 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
 
         binding.summaryHeader.setText(String.format(getString(R.string.event_summary_header), String.valueOf(totalCompletedFields), String.valueOf(totalFields)));
         float completionPerone = (float) totalCompletedFields / (float) totalFields;
-        completionPercent = (int) (completionPerone * 100);
+        int completionPercent = (int) (completionPerone * 100);
         ProgressBarAnimation gainAnim = new ProgressBarAnimation(binding.progressGains, 0, completionPercent, false, this);
         gainAnim.setDuration(PROGRESS_TIME);
         binding.progressGains.startAnimation(gainAnim);

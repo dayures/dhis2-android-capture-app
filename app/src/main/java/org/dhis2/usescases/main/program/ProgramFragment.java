@@ -25,6 +25,7 @@ import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.Period;
 import org.dhis2.utils.custom_views.RxDateDialog;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.jetbrains.annotations.NotNull;
 
@@ -68,7 +69,6 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
     ProgramContract.Presenter presenter;
 
     private Period currentPeriod = NONE;
-    private StringBuilder orgUnitFilter = new StringBuilder();
 
     private AndroidTreeView treeView;
 
@@ -133,9 +133,6 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
 
     //endregion
 
-    public void setOrgUnitFilter(StringBuilder orgUnitFilter) {
-        this.orgUnitFilter = orgUnitFilter;
-    }
 
     @SuppressLint({"CheckResult", "RxLeakedSubscription"})
     @Override
@@ -192,6 +189,8 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
                                 text = yearFormat.format(date.get(0));
                                 chosenDateYear = date;
                                 break;
+                            default:
+                                break;
                         }
                         binding.buttonPeriodText.setText(text);
                         presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(selectedDates, currentPeriod));
@@ -219,7 +218,7 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
         return currentPeriod;
     }
 
-    public boolean areFiltersApplied(){
+    public boolean areFiltersApplied() {
         return presenter.areFiltersApplied();
     }
 
@@ -250,6 +249,8 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
                 case YEARLY:
                     currentPeriod = NONE;
                     drawable = ContextCompat.getDrawable(context, R.drawable.ic_view_none);
+                    break;
+                default:
                     break;
             }
             if (binding.programRecycler.getAdapter() != null) {
@@ -366,7 +367,7 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
                         }
                     }
                     if (node.getChildren().isEmpty())
-                        presenter.onExpandOrgUnitNode(node, ((OrganisationUnitModel) node.getValue()).uid());
+                        presenter.onExpandOrgUnitNode(node, ((OrganisationUnit) node.getValue()).uid());
                     else
                         node.setExpanded(node.isExpanded());
                 }

@@ -1,14 +1,11 @@
 package org.dhis2.data.forms.dataentry;
 
-import androidx.annotation.NonNull;
-
-
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
-
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
 import io.reactivex.Observable;
 
 public interface DataEntryRepository {
@@ -18,7 +15,7 @@ public interface DataEntryRepository {
 
     List<FieldViewModel> fieldList();
 
-    Observable<List<OrganisationUnitModel>> getOrgUnits();
+    Observable<List<OrganisationUnit>> getOrgUnits();
 
     void assign(String field, String content);
 }

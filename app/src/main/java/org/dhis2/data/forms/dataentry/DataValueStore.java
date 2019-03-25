@@ -10,11 +10,15 @@ import org.dhis2.data.user.UserRepository;
 import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
-import org.hisp.dhis.android.core.user.UserCredentialsModel;
+import org.hisp.dhis.android.core.user.UserCredentials;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -38,7 +42,7 @@ public final class DataValueStore implements DataEntryStore {
     @NonNull
     private final BriteDatabase briteDatabase;
     @NonNull
-    private final Flowable<UserCredentialsModel> userCredentials;
+    private final Flowable<UserCredentials> userCredentials;
 
     @NonNull
     private final String eventUid;
@@ -63,7 +67,7 @@ public final class DataValueStore implements DataEntryStore {
                     String currentValue = currentValue(uid, userCredentialAndType.val1());
                     return !Objects.equals(currentValue, value);
                 })
-                .switchMap((userCredentialAndType) -> {
+                .switchMap(userCredentialAndType -> {
                     if (value == null)
                         return Flowable.just(delete(uid, userCredentialAndType.val1()));
 
@@ -156,8 +160,8 @@ public final class DataValueStore implements DataEntryStore {
     private long insert(@NonNull String uid, @Nullable String value, @NonNull String storedBy, valueType valueType) {
         Date created = Calendar.getInstance().getTime();
         if (valueType == DATA_ELEMENT) {
-            TrackedEntityDataValueModel dataValueModel =
-                    TrackedEntityDataValueModel.builder()
+            TrackedEntityDataValue dataValueModel =
+                    TrackedEntityDataValue.builder()
                             .created(created)
                             .lastUpdated(created)
                             .dataElement(uid)
@@ -178,8 +182,8 @@ public final class DataValueStore implements DataEntryStore {
                 }
             }
 
-            TrackedEntityAttributeValueModel attributeValueModel =
-                    TrackedEntityAttributeValueModel.builder()
+            TrackedEntityAttributeValue attributeValueModel =
+                    TrackedEntityAttributeValue.builder()
                             .created(created)
                             .lastUpdated(created)
                             .trackedEntityAttribute(uid)
@@ -216,7 +220,7 @@ public final class DataValueStore implements DataEntryStore {
 
     private Flowable<Long> updateEvent(long status) {
         return briteDatabase.createQuery(EventModel.TABLE, SELECT_EVENT, eventUid)
-                .mapToOne(EventModel::create).take(1).toFlowable(BackpressureStrategy.LATEST)
+                .mapToOne(Event::create).take(1).toFlowable(BackpressureStrategy.LATEST)
                 .switchMap(eventModel -> {
                     if (State.SYNCED.equals(eventModel.state()) || State.TO_DELETE.equals(eventModel.state()) ||
                             State.ERROR.equals(eventModel.state())) {
@@ -233,11 +237,11 @@ public final class DataValueStore implements DataEntryStore {
                     }
 
                     if (eventModel.enrollment() != null) {
-                        TrackedEntityInstanceModel tei = null;
+                        TrackedEntityInstance tei = null;
                         try (Cursor teiCursor = briteDatabase.query("SELECT TrackedEntityInstance .* FROM TrackedEntityInstance " +
                                 "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityInstance.uid WHERE Enrollment.uid = ?", eventModel.enrollment())) {
                             if (teiCursor.moveToFirst())
-                                tei = TrackedEntityInstanceModel.create(teiCursor);
+                                tei = TrackedEntityInstance.create(teiCursor);
                         } finally {
                             if (tei != null) {
                                 ContentValues cv = tei.toContentValues();

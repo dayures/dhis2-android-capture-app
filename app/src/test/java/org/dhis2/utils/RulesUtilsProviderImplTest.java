@@ -1,16 +1,11 @@
 package org.dhis2.utils;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactoryImpl;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
+import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.ValueType;
-import org.hisp.dhis.rules.models.RuleActionDisplayKeyValuePair;
 import org.hisp.dhis.rules.models.RuleActionDisplayText;
 import org.hisp.dhis.rules.models.RuleActionHideField;
-import org.hisp.dhis.rules.models.RuleActionHideSection;
 import org.hisp.dhis.rules.models.RuleActionShowError;
 import org.hisp.dhis.rules.models.RuleActionShowWarning;
 import org.hisp.dhis.rules.models.RuleEffect;
@@ -21,6 +16,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import static com.google.common.truth.Truth.assertThat;
 
 
@@ -29,7 +27,7 @@ import static com.google.common.truth.Truth.assertThat;
  */
 public class RulesUtilsProviderImplTest {
 
-    String testUid = "XXXXXX";
+    private String testUid = "XXXXXX";
     private RulesUtilsProviderImpl ruleUtils = new RulesUtilsProviderImpl(new CodeGeneratorImpl());
     private FieldViewModelFactoryImpl fieldFactory = new FieldViewModelFactoryImpl(
             "",
@@ -44,76 +42,74 @@ public class RulesUtilsProviderImplTest {
 
     private List<RuleEffect> testRuleEffects = new ArrayList<>();
 
-    HashMap<String, FieldViewModel> testFieldViewModels = new HashMap<>();
+    private HashMap<String, FieldViewModel> testFieldViewModels = new HashMap<>();
 
-    RulesActionCallbacks actionCallbacks = new RulesActionCallbacks() {
+    private RulesActionCallbacks actionCallbacks = new RulesActionCallbacks() {
 
         @Override
         public void setCalculatedValue(String calculatedValueVariable, String value) {
-
+            // unused
         }
 
         @Override
         public void setShowError(@NonNull RuleActionShowError showError, FieldViewModel model) {
-
+            // unused
         }
 
         @Override
         public void unsupportedRuleAction() {
-
+            // unused
         }
 
         @Override
         public void save(@NonNull String uid, @Nullable String value) {
-
+            // unused
         }
 
         @Override
         public void setDisplayKeyValue(String label, String value) {
-
+            // unused
         }
 
         @Override
         public void sethideSection(String sectionUid) {
-
+            // unused
         }
 
         @Override
         public void setMessageOnComplete(String content, boolean canComplete) {
-
+            // unused
         }
 
         @Override
         public void setHideProgramStage(String programStageUid) {
-
+            // unused
         }
 
         @Override
         public void setOptionToHide(String optionUid) {
-
+            // unused
         }
 
         @Override
         public void setOptionGroupToHide(String optionGroupUid) {
-
+            // unused
         }
     };
 
-    private  void putFieldViewModel(){
+    private void putFieldViewModel() {
         testFieldViewModels.put(testUid, fieldFactory.create(testUid, "label",
                 ValueType.TEXT, false, "optionSet", "test", "section",
-                null, true, null, null, null,1, ObjectStyleModel.builder().build()));
+                null, true, null, null, null, 1,
+                ObjectStyle.builder().build()));
     }
 
     @Test
     public void showWarningRuleActionTest() {
-
-        HashMap<String, FieldViewModel> testFieldViewModels = new HashMap<>();
-        String testUid = "XXXXXX";
         testFieldViewModels.put(testUid, fieldFactory.create(testUid, "label",
                 ValueType.TEXT, false, "", "test", null,
-                null, true, null, null, null,null,null));
-      
+                null, true, null, null, null, null, null));
+
         putFieldViewModel();
 
         testRuleEffects.add(RuleEffect.create(

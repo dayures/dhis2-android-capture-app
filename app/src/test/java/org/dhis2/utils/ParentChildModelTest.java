@@ -1,6 +1,6 @@
 package org.dhis2.utils;
 
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -14,35 +14,35 @@ public class ParentChildModelTest {
 
     @Test
     public void testCreateParentChildModel() {
-        OrganisationUnitModel orgToAdd1 = OrganisationUnitModel.builder()
+        OrganisationUnit orgToAdd1 = OrganisationUnit.builder()
                 .uid("XXXX1")
                 .level(1)
-                .parent("XXXX2")
+//                .parent("XXXX2")
                 .name("Path name")
                 .displayName("Display name")
                 .displayShortName("Display short name")
                 .build();
 
-        OrganisationUnitModel orgToAdd2 = OrganisationUnitModel.builder()
+        OrganisationUnit orgToAdd2 = OrganisationUnit.builder()
                 .uid("XXXX3")
                 .level(1)
-                .parent("XXXX4")
+//                .parent("XXXX4")
                 .name("Path name")
                 .displayName("Display name")
                 .displayShortName("Display short name")
                 .build();
 
-        ParentChildModel<OrganisationUnitModel> orgUnitParent1 =
+        ParentChildModel<OrganisationUnit> orgUnitParent1 =
                 ParentChildModel.create(orgToAdd1, new ArrayList<>(), true);
 
-        ParentChildModel<OrganisationUnitModel> orgUnitParent2 =
+        ParentChildModel<OrganisationUnit> orgUnitParent2 =
                 ParentChildModel.create(orgToAdd2, new ArrayList<>(), true);
 
-        List<ParentChildModel<OrganisationUnitModel>> parentChildModels = new ArrayList<>();
+        List<ParentChildModel<OrganisationUnit>> parentChildModels = new ArrayList<>();
         parentChildModels.add(orgUnitParent1);
         parentChildModels.add(orgUnitParent2);
 
-        ParentChildModel<OrganisationUnitModel> orgUnitParent3 =
+        ParentChildModel<OrganisationUnit> orgUnitParent3 =
                 ParentChildModel.create(orgToAdd2, parentChildModels, true);
 
 

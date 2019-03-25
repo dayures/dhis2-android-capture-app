@@ -7,8 +7,9 @@ import com.squareup.sqlbrite2.BriteDatabase;
 import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.datavalue.DataValueModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.period.PeriodModel;
+import org.hisp.dhis.android.core.period.Period;
 import org.hisp.dhis.android.core.period.PeriodType;
 
 import java.util.List;
@@ -43,15 +44,16 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
 
     @NonNull
     @Override
-    public Observable<List<OrganisationUnitModel>> orgUnits() {
-        String SELECT_ORG_UNITS = "SELECT * FROM " + OrganisationUnitModel.TABLE;
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, SELECT_ORG_UNITS)
-                .mapToList(OrganisationUnitModel::create);
+    public Observable<List<OrganisationUnit>> orgUnits() {
+        String selectOrgUnits = "SELECT * FROM " + OrganisationUnitModel.TABLE;
+        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, selectOrgUnits)
+                .mapToList(OrganisationUnit::create);
     }
 
     @Override
-    public Flowable<List<DataSetDetailModel>> dataSetGroups(String dataSetUid, List<String> orgUnits, PeriodType selectedPeriodType, int page) {
-        String SQL = GET_DATA_SETS;
+    public Flowable<List<DataSetDetailModel>> dataSetGroups(String dataSetUid, List<String> orgUnits,
+                                                            PeriodType selectedPeriodType, int page) {
+        String sql = GET_DATA_SETS;
         String orgUnitFilter = "";
         if (orgUnits != null && !orgUnits.isEmpty()) {
             StringBuilder orgUnitUids = new StringBuilder("");
@@ -64,9 +66,9 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
             orgUnitFilter = String.format(DATA_SETS_ORG_UNIT_FILTER, orgUnitFilter);
         }
 
-        SQL = String.format(SQL, orgUnitFilter);
+        sql = String.format(sql, orgUnitFilter);
 
-        return briteDatabase.createQuery(DataValueModel.TABLE, SQL, dataSetUid)
+        return briteDatabase.createQuery(DataValueModel.TABLE, sql, dataSetUid)
                 .mapToList(cursor -> {
                     String organisationUnitUid = cursor.getString(0);
                     String period = cursor.getString(1);
@@ -84,8 +86,9 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
 
                     try (Cursor periodCursor = briteDatabase.query("SELECT Period.* FROM Period WHERE Period.periodId = ?", period)) {
                         if (periodCursor != null && periodCursor.moveToFirst()) {
-                            PeriodModel periodModel = PeriodModel.create(periodCursor);
-                            periodName = DateUtils.getInstance().getPeriodUIString(periodModel.periodType(), periodModel.startDate(), Locale.getDefault());
+                            Period periodModel = Period.create(periodCursor);
+                            periodName = DateUtils.getInstance().getPeriodUIString(periodModel.periodType(),
+                                    periodModel.startDate(), Locale.getDefault());
                         }
                     }
 
@@ -114,6 +117,8 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
                                         break;
                                     case TO_UPDATE:
                                         toUpdate = State.TO_UPDATE;
+                                        break;
+                                    default:
                                         break;
                                 }
                                 cursor.moveToNext();

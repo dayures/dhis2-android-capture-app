@@ -3,10 +3,15 @@ package org.dhis2.usescases.datasets.dataSetTable;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.utils.DateUtils;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.dataelement.DataElement;
 import org.hisp.dhis.android.core.dataelement.DataElementModel;
+import org.hisp.dhis.android.core.dataset.DataSet;
 import org.hisp.dhis.android.core.dataset.DataSetModel;
+import org.hisp.dhis.android.core.datavalue.DataValue;
 import org.hisp.dhis.android.core.datavalue.DataValueModel;
+import org.hisp.dhis.android.core.period.Period;
 import org.hisp.dhis.android.core.period.PeriodModel;
 import org.hisp.dhis.android.core.period.PeriodType;
 
@@ -21,7 +26,7 @@ import io.reactivex.Observable;
 
 public class DataSetTableRepositoryImpl implements DataSetTableRepository {
 
-    private final String DATA_ELEMENTS = "SELECT " +
+    private static final String DATA_ELEMENTS = "SELECT " +
             "DataElement.*," +
             "DataSetSection.sectionName," +
             "DataSetSection.sectionOrder " +
@@ -39,12 +44,12 @@ public class DataSetTableRepositoryImpl implements DataSetTableRepository {
             "WHERE DataSetDataElementLink.dataSet = ? " +
             "ORDER BY DataSetSection.sectionOrder";
 
-    private final String PERIOD_CODE = "SELECT Period.* FROM Period WHERE Period.periodType = ? AND Period.startDate = ? LIMIT 1";
-    private final String DATA_VALUES = "SELECT * FROM DataValue " +
+    private static final String PERIOD_CODE = "SELECT Period.* FROM Period WHERE Period.periodType = ? AND Period.startDate = ? LIMIT 1";
+    private static final String DATA_VALUES = "SELECT * FROM DataValue " +
             "WHERE DataValue.organisationUnit = ? " +
             "AND DataValue.categoryOptionCombo = ? " +
             "AND DataValue.period = ?";
-    private final String DATA_SET = "SELECT DataSet.* FROM DataSet WHERE DataSet.uid = ?";
+    private static final String DATA_SET = "SELECT DataSet.* FROM DataSet WHERE DataSet.uid = ?";
 
     private final BriteDatabase briteDatabase;
     private final String dataSetUid;
@@ -55,9 +60,9 @@ public class DataSetTableRepositoryImpl implements DataSetTableRepository {
     }
 
     @Override
-    public Flowable<DataSetModel> getDataSet() {
+    public Flowable<DataSet> getDataSet() {
         return briteDatabase.createQuery(DataSetModel.TABLE, DATA_SET, dataSetUid)
-                .mapToOne(cursor -> DataSetModel.builder()
+                .mapToOne(cursor -> DataSet.builder()
                         .uid(cursor.getString(cursor.getColumnIndex(DataSetModel.Columns.UID)))
                         .code(cursor.getString(cursor.getColumnIndex(DataSetModel.Columns.CODE)))
                         .name(cursor.getString(cursor.getColumnIndex(DataSetModel.Columns.NAME)))
@@ -88,11 +93,11 @@ public class DataSetTableRepositoryImpl implements DataSetTableRepository {
     }
 
     @Override
-    public Flowable<Map<String, List<DataElementModel>>> getDataElements() {
-        Map<String, List<DataElementModel>> map = new HashMap<>();
+    public Flowable<Map<String, List<DataElement>>> getDataElements() {
+        Map<String, List<DataElement>> map = new HashMap<>();
         return briteDatabase.createQuery(DataElementModel.TABLE, DATA_ELEMENTS, dataSetUid)
                 .mapToList(cursor -> {
-                    DataElementModel dataElementModel = DataElementModel.create(cursor);
+                    DataElement dataElementModel = DataElement.create(cursor);
                     String section = cursor.getString(cursor.getColumnIndex("sectionName"));
                     if (section == null)
                         section = "NO_SECTION";
@@ -107,32 +112,32 @@ public class DataSetTableRepositoryImpl implements DataSetTableRepository {
     }
 
     @Override
-    public Flowable<Map<String, List<CategoryOptionComboModel>>> getCatOptions() {
+    public Flowable<Map<String, List<CategoryOptionCombo>>> getCatOptions() {
         String query = "SELECT CategoryOptionCombo.* FROM CategoryOptionCombo " +
                 "JOIN DataElement ON DataElement.categoryCombo = CategoryOptionCombo.categoryCombo " +
                 "JOIN DataSetDataElementLink ON DataSetDataElementLink.dataElement = DataElement.uid " +
                 "WHERE DataSetDataElementLink.dataSet = ? " +
                 "GROUP BY CategoryOptionCombo.uid";
-        Map<String, List<CategoryOptionComboModel>> map = new HashMap<>();
+        Map<String, List<CategoryOptionCombo>> map = new HashMap<>();
 
         return briteDatabase.createQuery(CategoryOptionComboModel.TABLE, query, dataSetUid)
                 .mapToList(cursor -> {
-                    CategoryOptionComboModel catOptionCombo = CategoryOptionComboModel.create(cursor);
+                    CategoryOptionCombo catOptionCombo = CategoryOptionCombo.create(cursor);
                     if (map.get(catOptionCombo.categoryCombo()) == null) {
-                        map.put(catOptionCombo.categoryCombo(), new ArrayList<>());
+                        map.put(catOptionCombo.categoryCombo().uid(), new ArrayList<>());
                     }
-                    map.get(catOptionCombo.categoryCombo()).add(catOptionCombo);
+                    map.get(catOptionCombo.categoryCombo().uid()).add(catOptionCombo);
                     return catOptionCombo;
                 }).flatMap(categoryOptionComboModels -> Observable.just(map)).toFlowable(BackpressureStrategy.LATEST);
     }
 
     @Override
-    public Flowable<List<DataValueModel>> getDataValues(String orgUnitUid, String periodType, String initPeriodType, String catOptionComb) {
+    public Flowable<List<DataValue>> getDataValues(String orgUnitUid, String periodType, String initPeriodType, String catOptionComb) {
         return briteDatabase.createQuery(PeriodModel.TABLE, PERIOD_CODE, periodType, initPeriodType)
-                .mapToOne(PeriodModel::create)
+                .mapToOne(Period::create)
                 .flatMap(periodModel -> briteDatabase.createQuery(DataValueModel.TABLE, DATA_VALUES, periodModel.periodId())
                         .mapToList(cursor -> {
-                            return DataValueModel.builder()
+                            return DataValue.builder()
                                     .build();
                         })).toFlowable(BackpressureStrategy.LATEST);
     }

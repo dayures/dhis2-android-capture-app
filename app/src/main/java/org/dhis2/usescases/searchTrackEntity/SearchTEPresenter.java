@@ -5,7 +5,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 
 import org.dhis2.R;
@@ -466,7 +465,7 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
     public void enroll(String programUid, String uid) {
         selectedEnrollmentDate = Calendar.getInstance().getTime();
 
-        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstace().setMultiSelection(false);
+        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setTitle("Enrollment Org Unit")
                 .setPossitiveListener(v -> {
                     if (orgUnitDialog.getSelectedOrgUnit() != null)

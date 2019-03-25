@@ -33,10 +33,10 @@ import org.dhis2.utils.DialogClickListener;
 import org.dhis2.utils.custom_views.CategoryComboDialog;
 import org.dhis2.utils.custom_views.CoordinatesView;
 import org.dhis2.utils.custom_views.CustomDialog;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
-import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.rules.models.RuleActionErrorOnCompletion;
 import org.hisp.dhis.rules.models.RuleActionShowError;
 import org.hisp.dhis.rules.models.RuleActionWarningOnCompletion;
@@ -104,7 +104,6 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
     private Date openingDate;
     private Date closingDate;
     private boolean mandatoryDelete = true;
-    private Context context;
 
 
     public View getDatesLayout() {
@@ -245,7 +244,6 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
     @Override
     public void onAttach(@NotNull Context context) {
         super.onAttach(context);
-        this.context = context;
         if (getArguments() != null && getActivity() != null) {
             FormViewArguments arguments = getArguments().getParcelable(FORM_VIEW_ARGUMENTS);
             if (arguments != null) {
@@ -256,12 +254,6 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
 
             this.isEnrollment = getArguments().getBoolean(IS_ENROLLMENT);
         }
-    }
-
-    @Override
-    public void onDetach() {
-        context = null;
-        super.onDetach();
     }
 
     @Override
@@ -309,7 +301,7 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
 
     @NonNull
     @Override
-    public Consumer<Pair<ProgramModel, String>> renderReportDate() {
+    public Consumer<Pair<Program, String>> renderReportDate() {
         return programModelAndDate -> {
             reportDate.setText(programModelAndDate.val1());
             reportDateLayout.setHint(programModelAndDate.val0().enrollmentDateLabel());
@@ -318,7 +310,7 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
 
     @NonNull
     @Override
-    public Consumer<Pair<ProgramModel, String>> renderIncidentDate() {
+    public Consumer<Pair<Program, String>> renderIncidentDate() {
         return programModelAndDate -> {
             incidentDateLayout.setHint(programModelAndDate.val0().incidentDateLabel());
             incidentDateLayout.setVisibility(View.VISIBLE);
@@ -409,24 +401,20 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
         });
 
         reportDate.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                if (getFragmentManager() != null) {
-                    DatePickerDialogFragment dialog = DatePickerDialogFragment.create(reportAllowFutureDates);
-                    dialog.setOpeningClosingDates(openingDate, closingDate);
-                    dialog.show(getFragmentManager());
-                    dialog.setFormattedOnDateSetListener(publishReportDateChange());
-                }
+            if (hasFocus && getFragmentManager() != null) {
+                DatePickerDialogFragment dialog = DatePickerDialogFragment.create(reportAllowFutureDates);
+                dialog.setOpeningClosingDates(openingDate, closingDate);
+                dialog.show(getFragmentManager());
+                dialog.setFormattedOnDateSetListener(publishReportDateChange());
             }
         });
 
         incidentDate.setOnFocusChangeListener((v, hasFocus) -> {
-            if (hasFocus) {
-                if (getFragmentManager() != null) {
-                    DatePickerDialogFragment dialog = DatePickerDialogFragment.create(incidentAllowFutureDates);
-                    dialog.setOpeningClosingDates(openingDate, closingDate);
-                    dialog.show(getFragmentManager());
-                    dialog.setFormattedOnDateSetListener(publishIncidentDateChange());
-                }
+            if (hasFocus && getFragmentManager() != null) {
+                DatePickerDialogFragment dialog = DatePickerDialogFragment.create(incidentAllowFutureDates);
+                dialog.setOpeningClosingDates(openingDate, closingDate);
+                dialog.show(getFragmentManager());
+                dialog.setFormattedOnDateSetListener(publishIncidentDateChange());
             }
         });
     }
@@ -660,7 +648,8 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
     }
 
     @Override
-    public void showCatComboDialog(CategoryComboModel categoryComboModel, List<CategoryOptionComboModel> categoryOptionComboModels) {
-        new CategoryComboDialog(getAbstracContext(), categoryComboModel, categoryOptionComboModels, 123, selectedOption -> formPresenter.saveCategoryOption(selectedOption)).show();
+    public void showCatComboDialog(CategoryCombo categoryComboModel, List<CategoryOptionCombo> categoryOptionComboModels) {
+        new CategoryComboDialog(getAbstracContext(), categoryComboModel, categoryOptionComboModels, 123,
+                selectedOption -> formPresenter.saveCategoryOption(selectedOption)).show();
     }
 }

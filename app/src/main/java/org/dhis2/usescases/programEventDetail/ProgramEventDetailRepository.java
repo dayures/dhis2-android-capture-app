@@ -1,9 +1,9 @@
 package org.dhis2.usescases.programEventDetail;
 
 import org.dhis2.utils.Period;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.DatePeriod;
 
 import java.util.Date;
@@ -20,21 +20,22 @@ import io.reactivex.Observable;
 public interface ProgramEventDetailRepository {
 
     @NonNull
-    Flowable<List<ProgramEventViewModel>> filteredProgramEvents(String programUid, List<Date> dates, Period period, CategoryOptionComboModel categoryOptionComboModel, String orgUnitQuery, int page);
+    Flowable<List<ProgramEventViewModel>> filteredProgramEvents(String programUid, List<Date> dates, Period period,
+                                                                CategoryOptionCombo categoryOptionComboModel, String orgUnitQuery, int page);
 
     @NonNull
     Flowable<List<ProgramEventViewModel>> filteredProgramEvents(List<DatePeriod> dateFilter, List<String> orgUnitFilter, int page);
 
     @NonNull
-    Observable<List<OrganisationUnitModel>> orgUnits();
+    Observable<List<OrganisationUnit>> orgUnits();
 
     @NonNull
-    Observable<List<OrganisationUnitModel>> orgUnits(String parentUid);
+    Observable<List<OrganisationUnit>> orgUnits(String parentUid);
 
     @NonNull
-    Observable<List<CategoryOptionComboModel>> catCombo(String programUid);
+    Observable<List<CategoryOptionCombo>> catCombo(String programUid);
 
-    Observable<List<String>> eventDataValuesNew(EventModel eventModel);
+    Observable<List<String>> eventDataValuesNew(Event eventModel);
 
     Observable<Boolean> writePermission(String programId);
 }

@@ -2,14 +2,11 @@ package org.dhis2.usescases.teiDashboard.eventDetail;
 
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.utils.DateUtils;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageDataElementModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
-import org.hisp.dhis.android.core.program.ProgramStageSectionModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.program.Program;
+import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.util.Date;
 import java.util.List;
@@ -22,19 +19,19 @@ import androidx.databinding.BaseObservable;
 
 public class EventDetailModel extends BaseObservable {
 
-    private final ProgramStageModel programStage;
-    private final List<CategoryOptionComboModel> optionComboList;
-    private final ProgramModel programModel;
+    private final ProgramStage programStage;
+    private final List<CategoryOptionCombo> optionComboList;
+    private final Program programModel;
     private final String catComboName;
     private final boolean isEnrollmentActive;
-    private EventModel eventModel;
-    private final OrganisationUnitModel orgUnit;
+    private Event eventModel;
+    private final OrganisationUnit orgUnit;
 
-    EventDetailModel(EventModel eventModel,
-                     ProgramStageModel programStage,
-                     OrganisationUnitModel orgUnit,
-                     Pair<String, List<CategoryOptionComboModel>> optionComboList,
-                     ProgramModel programModel,
+    EventDetailModel(Event eventModel,
+                     ProgramStage programStage,
+                     OrganisationUnit orgUnit,
+                     Pair<String, List<CategoryOptionCombo>> optionComboList,
+                     Program programModel,
                      boolean isEnrollmentActive) {
         this.eventModel = eventModel;
         this.programStage = programStage;
@@ -46,11 +43,11 @@ public class EventDetailModel extends BaseObservable {
 
     }
 
-    EventModel getEventModel() {
+    Event getEventModel() {
         return eventModel;
     }
 
-    public ProgramStageModel getProgramStage() {
+    public ProgramStage getProgramStage() {
         return programStage;
     }
 
@@ -70,7 +67,7 @@ public class EventDetailModel extends BaseObservable {
         return orgUnit.displayName();
     }
 
-    public List<CategoryOptionComboModel> getOptionComboList() {
+    public List<CategoryOptionCombo> getOptionComboList() {
         return optionComboList;
     }
 
@@ -81,7 +78,7 @@ public class EventDetailModel extends BaseObservable {
     public String getEventCatComboOptionName() {
         String eventCatComboOptionName = null;
 
-        for (CategoryOptionComboModel option : optionComboList) {
+        for (CategoryOptionCombo option : optionComboList) {
             if (option.uid().equals(eventModel.attributeOptionCombo()))
                 eventCatComboOptionName = option.name();
         }
@@ -93,7 +90,7 @@ public class EventDetailModel extends BaseObservable {
         return isEnrollmentActive;
     }
 
-    public ProgramModel getProgram() {
+    public Program getProgram() {
         return programModel;
     }
 }

@@ -19,7 +19,7 @@ import org.dhis2.utils.RulesUtilsProvider;
 import org.dhis2.utils.custom_views.OptionSetDialog;
 import org.dhis2.utils.custom_views.OptionSetPopUp;
 import org.hisp.dhis.android.core.event.EventStatus;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.rules.models.RuleActionShowError;
 import org.hisp.dhis.rules.models.RuleEffect;
 
@@ -209,8 +209,8 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                                             fieldMap.put(fieldViewModel.programStageSection(), new ArrayList<>());
                                         fieldMap.get(fieldViewModel.programStageSection()).add(fieldViewModel);
                                     }
-                                    if(fieldMap.containsKey(null) && fieldMap.containsKey(section))
-                                        for(FieldViewModel fieldViewModel : fieldMap.get(null))
+                                    if (fieldMap.containsKey(null) && fieldMap.containsKey(section))
+                                        for (FieldViewModel fieldViewModel : fieldMap.get(null))
                                             fieldMap.get(section).add(fieldViewModel);
 
                                     List<FieldViewModel> fieldsToShow = fieldMap.get(section.equals("NO_SECTION") ? null : section);
@@ -322,11 +322,12 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
 
                                 List<FormSectionViewModel> finalSectionList = getFinalSections();
 
+                                String sectionUid = finalSectionList.get(position).sectionUid() != null ?
+                                        finalSectionList.get(position).sectionUid() :
+                                        "NO_SECTION";
+
                                 return Flowable.just(finalSectionList.size() > 0 ?
-                                        finalSectionList.get(position).sectionUid() != null ?
-                                                finalSectionList.get(position).sectionUid() :
-                                                "NO_SECTION" :
-                                        "NO_SECTION");
+                                        sectionUid : "NO_SECTION");
                             })
                             .observeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -419,7 +420,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
         view.clearFocus();
 
         new Handler().postDelayed(
-                () -> changeSection(),
+                this::changeSection,
                 1000);
 
     }
@@ -441,7 +442,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                         Observable.just(completeMessage != null ? completeMessage : "")
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .filter(completeMessage -> !isEmpty(completeMessage))
+                                .filter(completeMessageResult -> !isEmpty(completeMessageResult))
                                 .subscribe(
                                         data -> view.showMessageOnComplete(canComplete, completeMessage),
                                         Timber::e,
@@ -489,7 +490,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     }
 
     @Override
-    public Observable<List<OrganisationUnitModel>> getOrgUnits() {
+    public Observable<List<OrganisationUnit>> getOrgUnits() {
         return metadataRepository.getOrganisationUnits();
     }
 
@@ -509,7 +510,6 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
 
         EventCaptureFormFragment.getInstance().showSectionSelector();
         if (!currentSection.get().equals(sectionUid) && position != -1) {
-
             goToSection(sectionUid);
         }
     }
@@ -628,7 +628,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
 
     @Override
     public void setCalculatedValue(String calculatedValueVariable, String value) {
-
+        // unused
     }
 
     @Override

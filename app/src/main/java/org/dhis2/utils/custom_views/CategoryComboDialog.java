@@ -2,9 +2,6 @@ package org.dhis2.utils.custom_views;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import androidx.databinding.DataBindingUtil;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
@@ -13,10 +10,14 @@ import android.widget.AdapterView;
 import org.dhis2.R;
 import org.dhis2.databinding.CatComboDialogBinding;
 import org.dhis2.utils.CatComboAdapter2;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
 
 /**
  * QUADRAM. Created by frodriguez on 5/4/2018.
@@ -24,16 +25,17 @@ import java.util.List;
 
 public class CategoryComboDialog extends AlertDialog {
 
-    private final List<CategoryOptionComboModel> options;
+    private final List<CategoryOptionCombo> options;
     private final String catComboName;
     private Context context;
     private AlertDialog dialog;
     private int requestCode;
     private OnCatOptionSelected listener;
     private String title;
+
     public CategoryComboDialog(@NonNull Context context,
-                               @NonNull CategoryComboModel categoryComboModel,
-                               List<CategoryOptionComboModel> options,
+                               @NonNull CategoryCombo categoryComboModel,
+                               List<CategoryOptionCombo> options,
                                int requestCode,
                                @Nullable OnCatOptionSelected listener) {
         super(context);
@@ -46,7 +48,8 @@ public class CategoryComboDialog extends AlertDialog {
         setCancelable(false);
     }
 
-    public CategoryComboDialog(Context context, String catComboName, List<CategoryOptionComboModel> options, int requestCode, OnCatOptionSelected listener, String title) {
+    public CategoryComboDialog(Context context, String catComboName, List<CategoryOptionCombo> options,
+                               int requestCode, OnCatOptionSelected listener, String title) {
         super(context);
         this.context = context;
         this.catComboName = catComboName;
@@ -91,7 +94,7 @@ public class CategoryComboDialog extends AlertDialog {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-
+                // do nothing
             }
         });
 
@@ -109,6 +112,6 @@ public class CategoryComboDialog extends AlertDialog {
     }
 
     public interface OnCatOptionSelected {
-        void onCatOptionSelected(CategoryOptionComboModel selectedOption);
+        void onCatOptionSelected(CategoryOptionCombo selectedOption);
     }
 }

@@ -2,14 +2,9 @@ package org.dhis2.usescases.datasets.datasetDetail;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
-import androidx.databinding.DataBindingUtil;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.res.ResourcesCompat;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
 
@@ -22,12 +17,12 @@ import org.dhis2.databinding.ActivityDatasetDetailBinding;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.main.program.OrgUnitHolder;
 import org.dhis2.utils.CatComboAdapter;
-import org.dhis2.utils.custom_views.RxDateDialog;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.Period;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.dhis2.utils.custom_views.RxDateDialog;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -38,6 +33,11 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
+import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
+import androidx.core.view.GravityCompat;
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.DividerItemDecoration;
 import io.reactivex.Flowable;
 import io.reactivex.processors.PublishProcessor;
 import timber.log.Timber;
@@ -66,7 +66,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
     @Inject
     DataSetDetailContract.Presenter presenter;
 
-    private static PublishProcessor<Integer> currentPage;
+    private PublishProcessor<Integer> currentPage;
     DataSetDetailAdapter adapter;
 
     @Override
@@ -126,10 +126,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
             treeView.expandAll();
 
         treeView.setDefaultNodeClickListener((node, value) -> {
-            if (treeView.getSelected().size() == 1 && !node.isSelected()) {
-                ((OrgUnitHolder) node.getViewHolder()).update();
-                binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
-            } else if (treeView.getSelected().size() > 1) {
+            if ((treeView.getSelected().size() == 1 && !node.isSelected()) || (treeView.getSelected().size() > 1)) {
                 ((OrgUnitHolder) node.getViewHolder()).update();
                 binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
             }
@@ -140,10 +137,10 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
 
     @Override
     public void openDrawer() {
-        if (!binding.drawerLayout.isDrawerOpen(Gravity.END))
-            binding.drawerLayout.openDrawer(Gravity.END);
+        if (!binding.drawerLayout.isDrawerOpen(GravityCompat.END))
+            binding.drawerLayout.openDrawer(GravityCompat.END);
         else
-            binding.drawerLayout.closeDrawer(Gravity.END);
+            binding.drawerLayout.closeDrawer(GravityCompat.END);
     }
 
     @Override
@@ -172,6 +169,8 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
             case YEARLY:
                 currentPeriod = NONE;
                 drawable = ContextCompat.getDrawable(getContext(), R.drawable.ic_view_none);
+                break;
+            default:
                 break;
         }
         binding.buttonTime.setImageDrawable(drawable);
@@ -216,6 +215,8 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                 if (!chosenDateYear.isEmpty() && chosenDateYear.size() > 1) textToShow += "... ";
                 // TODO
                 presenter.getDataSetWithDates(chosenDateYear, currentPeriod, orgUnitFilter.toString());
+                break;
+            default:
                 break;
         }
 
@@ -305,13 +306,13 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
     }
 
     @Override
-    public void setCatComboOptions(CategoryComboModel catCombo, List<CategoryOptionComboModel> catComboList) {
-        if (catCombo.uid().equals(CategoryComboModel.DEFAULT_UID) || catComboList == null || catComboList.isEmpty()) {
+    public void setCatComboOptions(CategoryCombo catCombo, List<CategoryOptionCombo> catComboList) {
+        if (catCombo.uid().equals(CategoryCombo.DEFAULT_UID) || catComboList == null || catComboList.isEmpty()) {
             binding.catCombo.setVisibility(View.GONE);
             binding.catCombo.setVisibility(View.GONE);
         } else {
             binding.catCombo.setVisibility(View.VISIBLE);
-            CatComboAdapter adapter = new CatComboAdapter(this,
+            CatComboAdapter catComboAdapter = new CatComboAdapter(this,
                     R.layout.spinner_layout,
                     R.id.spinner_text,
                     catComboList,
@@ -319,7 +320,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                     R.color.white_faf);
 
             binding.catCombo.setVisibility(View.VISIBLE);
-            binding.catCombo.setAdapter(adapter);
+            binding.catCombo.setAdapter(catComboAdapter);
 
             binding.catCombo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                 @Override
@@ -329,7 +330,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
                         presenter.clearCatComboFilters(orgUnitFilter.toString());
                     } else {
                         isFilteredByCatCombo = true;
-                        presenter.onCatComboSelected(adapter.getItem(position - 1), orgUnitFilter.toString());
+                        presenter.onCatComboSelected(catComboAdapter.getItem(position - 1), orgUnitFilter.toString());
                     }
                 }
 
@@ -359,7 +360,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
         orgUnitFilter = new StringBuilder();
         for (int i = 0; i < treeView.getSelected().size(); i++) {
             orgUnitFilter.append("'");
-            orgUnitFilter.append(((OrganisationUnitModel) treeView.getSelected().get(i).getValue()).uid());
+            orgUnitFilter.append(((OrganisationUnit) treeView.getSelected().get(i).getValue()).uid());
             orgUnitFilter.append("'");
             if (i < treeView.getSelected().size() - 1)
                 orgUnitFilter.append(", ");
@@ -388,6 +389,8 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
             case YEARLY:
                 // TODO
                 presenter.getDataSetWithDates(chosenDateYear, currentPeriod, orgUnitFilter.toString());
+                break;
+            default:
                 break;
         }
     }

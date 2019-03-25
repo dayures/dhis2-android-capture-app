@@ -4,9 +4,9 @@ import com.unnamed.b.atv.model.TreeNode;
 
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.utils.Period;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 
 import java.util.Date;
 import java.util.List;
@@ -28,7 +28,7 @@ public class DataSetDetailContract {
 
         void renderError(String message);
 
-        void setCatComboOptions(CategoryComboModel catCombo, List<CategoryOptionComboModel> catComboList);
+        void setCatComboOptions(CategoryCombo catCombo, List<CategoryOptionCombo> catComboList);
 
         void setOrgUnitFilter(StringBuilder orgUnitFilter);
 
@@ -56,13 +56,13 @@ public class DataSetDetailContract {
 
         void onBackClick();
 
-        void onCatComboSelected(CategoryOptionComboModel categoryOptionComboModel, String orgUnitQuery);
+        void onCatComboSelected(CategoryOptionCombo categoryOptionComboModel, String orgUnitQuery);
 
         void clearCatComboFilters(String orgUnitQuery);
 
         void onDataSetClick(String eventId, String orgUnit);
 
-        List<OrganisationUnitModel> getOrgUnits();
+        List<OrganisationUnit> getOrgUnits();
 
         void showFilter();
 

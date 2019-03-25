@@ -97,9 +97,9 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
 
     @NonNull
     private Flowable<RuleEvent> queryEvent(@NonNull List<RuleDataValue> dataValues) {
-        return briteDatabase.createQuery(EventModel.TABLE, QUERY_EVENT, eventUid == null ? "" : eventUid)
+        return briteDatabase.createQuery(EventModel.TABLE, QUERY_EVENT, eventUid)
                 .mapToOne(cursor -> {
-                    String eventUid = cursor.getString(0);
+                    String eventUidAux = cursor.getString(0);
                     String programStageUid = cursor.getString(1);
                     RuleEvent.Status status = RuleEvent.Status.valueOf(cursor.getString(2));
                     Date eventDate = parseDate(cursor.getString(3));
@@ -109,7 +109,7 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
                     String programStageName = cursor.getString(6);
 
                     return RuleEvent.builder()
-                            .event(eventUid)
+                            .event(eventUidAux)
                             .programStage(programStageUid)
                             .programStageName(programStageName)
                             .status(status)
@@ -137,13 +137,13 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
     @NonNull
     private Flowable<List<RuleDataValue>> queryDataValues() {
         return briteDatabase.createQuery(Arrays.asList(EventModel.TABLE,
-                TrackedEntityDataValueModel.TABLE), QUERY_VALUES, eventUid == null ? "" : eventUid)
+                TrackedEntityDataValueModel.TABLE), QUERY_VALUES, eventUid)
                 .mapToList(cursor -> {
                     Date eventDate = DateUtils.databaseDateFormat().parse(cursor.getString(0));
                     String programStage = cursor.getString(1);
                     String dataElement = cursor.getString(2);
                     String value = cursor.getString(3) != null ? cursor.getString(3) : "";
-                    Boolean useCode = cursor.getInt(4) == 1;
+                    boolean useCode = cursor.getInt(4) == 1;
                     String optionCode = cursor.getString(5);
                     String optionName = cursor.getString(6);
                     if (!isEmpty(optionCode) && !isEmpty(optionName))

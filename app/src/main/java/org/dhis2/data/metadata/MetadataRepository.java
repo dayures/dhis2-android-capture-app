@@ -1,20 +1,20 @@
 package org.dhis2.data.metadata;
 
 import org.dhis2.data.tuples.Pair;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryModel;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
+import org.hisp.dhis.android.core.category.Category;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.common.ObjectStyle;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.maintenance.D2Error;
-import org.hisp.dhis.android.core.option.OptionModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
-import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttributeModel;
-import org.hisp.dhis.android.core.resource.ResourceModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityTypeModel;
+import org.hisp.dhis.android.core.option.Option;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.program.Program;
+import org.hisp.dhis.android.core.program.ProgramStage;
+import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttribute;
+import org.hisp.dhis.android.core.resource.Resource;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityType;
 
 import java.util.List;
 import java.util.Map;
@@ -32,15 +32,15 @@ import io.reactivex.Observable;
 public interface MetadataRepository {
 
     /*PROGRAMS*/
-    Observable<List<ProgramModel>> getTeiActivePrograms(String teiUid);
+    Observable<List<Program>> getTeiActivePrograms(String teiUid);
 
-    Observable<ProgramModel> getProgramWithId(String programUid);
+    Observable<Program> getProgramWithId(String programUid);
 
     /*TRACKED ENTITY*/
 
-    Observable<TrackedEntityTypeModel> getTrackedEntity(String trackedEntityUid);
+    Observable<TrackedEntityType> getTrackedEntity(String trackedEntityUid);
 
-    Observable<TrackedEntityInstanceModel> getTrackedEntityInstance(String teiUid);
+    Observable<TrackedEntityInstance> getTrackedEntityInstance(String teiUid);
 
     /*CATEGORY OPTION*/
 
@@ -49,62 +49,62 @@ public interface MetadataRepository {
 
     /*CATEGORY OPTION COMBO*/
 
-    Observable<CategoryOptionComboModel> getCategoryOptionComboWithId(String categoryOptionComboId);
+    Observable<CategoryOptionCombo> getCategoryOptionComboWithId(String categoryOptionComboId);
 
-    Observable<List<CategoryOptionComboModel>> getCategoryComboOptions(String categoryComboId);
+    Observable<List<CategoryOptionCombo>> getCategoryComboOptions(String categoryComboId);
 
-    Observable<CategoryModel> getCategoryFromCategoryCombo(String categoryComboId);
+    Observable<Category> getCategoryFromCategoryCombo(String categoryComboId);
 
-    void saveCatOption(String eventUid, CategoryOptionComboModel selectedOption);
+    void saveCatOption(String eventUid, CategoryOptionCombo selectedOption);
 
     /*CATEGORY COMBO*/
 
-    Observable<CategoryComboModel> getCategoryComboWithId(String categoryComboId);
+    Observable<CategoryCombo> getCategoryComboWithId(String categoryComboId);
 
     /*ORG UNIT*/
 
-    Observable<OrganisationUnitModel> getOrganisationUnit(String orgUnitUid);
+    Observable<OrganisationUnit> getOrganisationUnit(String orgUnitUid);
 
-    Observable<OrganisationUnitModel> getTeiOrgUnit(String teiUid);
+    Observable<OrganisationUnit> getTeiOrgUnit(String teiUid);
 
-    Observable<OrganisationUnitModel> getTeiOrgUnit(@NonNull String teiUid, @Nullable String programUid);
+    Observable<OrganisationUnit> getTeiOrgUnit(@NonNull String teiUid, @Nullable String programUid);
 
     /*PROGRAM TRACKED ENTITY ATTRIBUTE*/
 
-    Observable<List<ProgramTrackedEntityAttributeModel>> getProgramTrackedEntityAttributes(String programUid);
+    Observable<List<ProgramTrackedEntityAttribute>> getProgramTrackedEntityAttributes(String programUid);
 
 
     //ProgramStage
 
     @NonNull
-    Observable<ProgramStageModel> programStage(String programStageId);
+    Observable<ProgramStage> programStage(String programStageId);
 
     /*ENROLLMENTS*/
-    Observable<List<EnrollmentModel>> getTEIEnrollments(String teiUid);
+    Observable<List<Enrollment>> getTEIEnrollments(String teiUid);
 
 
     /*EVENTS*/
 
-    Observable<ProgramModel> getExpiryDateFromEvent(String eventUid);
+    Observable<Program> getExpiryDateFromEvent(String eventUid);
 
     Observable<Boolean> isCompletedEventExpired(String eventUid);
 
 
     /*OPTION SET*/
-    List<OptionModel> optionSet(String optionSetId);
+    List<Option> optionSet(String optionSetId);
 
     /*RESOURCE*/
 
     /*SETINGS*/
     Observable<Pair<String, Integer>> getTheme();
 
-    Observable<ObjectStyleModel> getObjectStyle(String uid);
+    Observable<ObjectStyle> getObjectStyle(String uid);
 
-    Observable<List<OrganisationUnitModel>> getOrganisationUnits();
+    Observable<List<OrganisationUnit>> getOrganisationUnits();
 
 
     @NonNull
-    Observable<List<ResourceModel>> syncState(ProgramModel program);
+    Observable<List<Resource>> syncState(Program program);
 
     Flowable<Pair<Integer, Integer>> getDownloadedData();
 
@@ -112,9 +112,9 @@ public interface MetadataRepository {
 
     List<D2Error> getSyncErrors();
 
-    Observable<List<OptionModel>> searchOptions(String text, String idOptionSet, int page, List<String> optionsToHide, List<String> optionsGroupsToHide);
+    Observable<List<Option>> searchOptions(String text, String idOptionSet, int page, List<String> optionsToHide, List<String> optionsGroupsToHide);
 
-    Observable<Map<String, ObjectStyleModel>> getObjectStylesForPrograms(List<ProgramModel> enrollmentProgramModels);
+    Observable<Map<String, ObjectStyle>> getObjectStylesForPrograms(List<Program> enrollmentProgramModels);
 
-    Flowable<ProgramStageModel> programStageForEvent(String eventId);
+    Flowable<ProgramStage> programStageForEvent(String eventId);
 }

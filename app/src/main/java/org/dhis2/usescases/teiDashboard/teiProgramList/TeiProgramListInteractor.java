@@ -52,7 +52,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
     public void enroll(String programUid, String uid) {
         selectedEnrollmentDate = Calendar.getInstance().getTime();
 
-        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstace().setMultiSelection(false);
+        OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setTitle("Enrollment Org Unit")
                 .setPossitiveListener(v -> {
                     if (orgUnitDialog.getSelectedOrgUnit() != null)

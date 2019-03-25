@@ -1,12 +1,11 @@
 package org.dhis2.usescases.datasets.datasetInitial;
 
 import org.dhis2.usescases.general.AbstractActivityContracts;
-import org.hisp.dhis.android.core.category.CategoryOptionModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.category.CategoryOption;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.PeriodType;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 
 public class DataSetInitialContract {
@@ -23,15 +22,18 @@ public class DataSetInitialContract {
 
         void setData(DataSetInitialModel dataSetInitialModel);
 
-        void showOrgUnitDialog(List<OrganisationUnitModel> data);
+        void showOrgUnitDialog(List<OrganisationUnit> data);
 
         void showPeriodSelector(PeriodType periodType);
 
-        void showCatComboSelector(String catOptionUid, List<CategoryOptionModel> data);
+        void showCatComboSelector(String catOptionUid, List<CategoryOption> data);
 
         String getDataSetUid();
+
         String getSelectedOrgUnit();
+
         Date getSelectedPeriod();
+
         String getSelectedCatOptions();
 
         String getPeriodType();

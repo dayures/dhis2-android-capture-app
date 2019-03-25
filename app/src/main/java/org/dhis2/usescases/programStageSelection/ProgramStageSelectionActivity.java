@@ -15,6 +15,7 @@ import org.dhis2.utils.Constants;
 import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.period.PeriodType;
+import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
 
 import java.util.List;
@@ -49,7 +50,6 @@ public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implem
     ProgramStageSelectionAdapter adapter;
     private String enrollmenId;
     private String programId;
-    private int orientation;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -68,7 +68,7 @@ public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implem
     @Override
     protected void onResume() {
         super.onResume();
-        orientation = Resources.getSystem().getConfiguration().orientation;
+        int orientation = Resources.getSystem().getConfiguration().orientation;
         presenter.getProgramStages(programId, enrollmenId, this); //TODO: enrollment / event path
         int columnCount = (orientation == Configuration.ORIENTATION_LANDSCAPE) ? 3 : 2;
         binding.recyclerView.setLayoutManager(new GridLayoutManager(this, columnCount));
@@ -81,7 +81,7 @@ public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implem
     }
 
     @Override
-    public void setData(List<Pair<ProgramStageModel, ObjectStyleModel>> programStageModels) {
+    public void setData(List<Pair<ProgramStage, ObjectStyle>> programStageModels) {
         if (programStageModels != null && !programStageModels.isEmpty()) {
             adapter.setProgramStageModels(programStageModels);
             adapter.notifyDataSetChanged();

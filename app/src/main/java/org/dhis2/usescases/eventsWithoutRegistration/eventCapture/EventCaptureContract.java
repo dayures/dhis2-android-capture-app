@@ -5,7 +5,7 @@ import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.event.EventStatus;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.rules.models.RuleEffect;
 
 import java.util.Date;
@@ -74,7 +74,7 @@ public class EventCaptureContract {
 
         void onPreviousSection();
 
-        Observable<List<OrganisationUnitModel>> getOrgUnits();
+        Observable<List<OrganisationUnit>> getOrgUnits();
 
         ObservableField<String> getCurrentSection();
 

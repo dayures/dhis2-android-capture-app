@@ -10,6 +10,7 @@ import org.dhis2.data.tuples.Trio;
 import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.common.ValueType;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionAssign;
@@ -167,7 +168,7 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
 
     @NonNull
     @Override
-    public Observable<List<OrganisationUnitModel>> getOrgUnits() {
+    public Observable<List<OrganisationUnit>> getOrgUnits() {
         return dataEntryRepository.getOrgUnits();
     }
 
