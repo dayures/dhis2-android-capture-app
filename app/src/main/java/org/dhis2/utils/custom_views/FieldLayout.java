@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 /**
  * QUADRAM. Created by ppajuelo on 29/01/2019.
  */
+@SuppressWarnings("squid:CommentedOutCodeLine")
 public abstract class FieldLayout extends RelativeLayout {
 
     protected boolean isBgTransparent;

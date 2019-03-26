@@ -212,14 +212,16 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
                                 List<String> filterList = new ArrayList<>();
                                 Date enrollementDate = null;
                                 if (queryData != null) {
-                                    for (String key : queryData.keySet()) {
-                                        if (key.equals(Constants.ENROLLMENT_DATE_UID))
-                                            enrollementDate = DateUtils.uiDateFormat().parse(queryData.get(key));
-                                        else if (!key.equals(Constants.INCIDENT_DATE_UID)) { //TODO: HOW TO INCLUDE INCIDENT DATE IN ONLINE SEARCH
-                                            String value = queryData.get(key);
+                                    for (Map.Entry<String, String> entry : queryData.entrySet()) {
+                                        if (entry.getKey().equals(Constants.ENROLLMENT_DATE_UID))
+                                            enrollementDate = DateUtils.uiDateFormat().parse(entry.getValue());
+                                        else if (!entry.getKey().equals(Constants.INCIDENT_DATE_UID)) { //TODO: HOW TO INCLUDE INCIDENT DATE IN ONLINE SEARCH
+                                            String value = entry.getValue();
                                             if (value.contains("_os_"))
                                                 value = value.split("_os_")[0];
-                                            String queryItem = String.format("%s:%s:%s", key, queryDataEQ.containsKey(key) ? "EQ" : "LIKE", value);
+                                            String queryItem = String.format("%s:%s:%s",
+                                                    entry.getKey(),
+                                                    queryDataEQ.containsKey(entry.getKey()) ? "EQ" : "LIKE", value);
                                             filterList.add(queryItem);
                                         }
                                     }
@@ -530,9 +532,10 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
         }
 
         dateDialog.setTitle(selectedProgram.enrollmentDateLabel());
-        dateDialog.setButton(DialogInterface.BUTTON_NEGATIVE, view.getContext().getString(R.string.date_dialog_clear), (dialog, which) -> {
-            dialog.dismiss();
-        });
+        dateDialog.setButton(
+                DialogInterface.BUTTON_NEGATIVE,
+                view.getContext().getString(R.string.date_dialog_clear),
+                (dialog, which) -> dialog.dismiss());
         dateDialog.show();
     }
 

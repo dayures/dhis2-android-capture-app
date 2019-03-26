@@ -6,15 +6,11 @@ import org.dhis2.data.tuples.Pair;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.utils.Period;
 import org.hisp.dhis.android.core.category.CategoryCombo;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.DatePeriod;
 import org.hisp.dhis.android.core.program.Program;
-import org.hisp.dhis.android.core.program.ProgramModel;
 
 import java.util.Date;
 import java.util.List;

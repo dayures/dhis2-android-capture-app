@@ -74,12 +74,9 @@ final class DataValueStore implements DataEntryStore {
         contentValues.put(EventModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
         String eventStatus = null;
         switch (eventModel.status()) {
+            case SCHEDULE:
             case COMPLETED:
                 eventStatus = EventStatus.ACTIVE.name(); //TODO: should check if visited/skiped/overdue
-                contentValues.putNull(EventModel.Columns.COMPLETE_DATE);
-                break;
-            case SCHEDULE:
-                eventStatus = EventStatus.ACTIVE.name();
                 contentValues.putNull(EventModel.Columns.COMPLETE_DATE);
                 break;
             default:
@@ -108,6 +105,7 @@ final class DataValueStore implements DataEntryStore {
         updateTEi();
     }
 
+    @SuppressWarnings({"squid:S1172", "squid:CommentedOutCodeLine"})
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues(); //TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));

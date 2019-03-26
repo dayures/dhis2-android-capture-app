@@ -297,7 +297,7 @@ public class Bindings {
         }
     }
 
-    private static int setEventColorCases(View view, Event event, ProgramStage programStage, Program program) {
+    private static int setEventColorCases(Event event, ProgramStage programStage, Program program) {
         int bgColor;
         switch (event.status()) {
             case ACTIVE:
@@ -334,7 +334,7 @@ public class Bindings {
             if (DateUtils.getInstance().isEventExpired(null, event.completedDate(), program.completeEventsExpiryDays())) {
                 bgColor = R.drawable.item_event_dark_gray_ripple;
             } else if (event.status() != null) {
-                bgColor = setEventColorCases(view, event, programStage, program);
+                bgColor = setEventColorCases(event, programStage, program);
             } else {
                 bgColor = R.drawable.item_event_red_ripple;
             }

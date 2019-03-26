@@ -118,10 +118,9 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
         binding.sectionSelector.sectionProgress.getProgressDrawable().setColorFilter(ColorUtils.getPrimaryColor(activity, ColorUtils.ColorType.PRIMARY_LIGHT), PorterDuff.Mode.SRC_IN);
     }
 
-    public void setSingleSection(DataEntryArguments arguments, FormSectionViewModel formSectionViewModel) {
+    public void setSingleSection(DataEntryArguments arguments) {
         this.currentSection = "NO_SECTION";
         binding.currentSectionTitle.root.setVisibility(View.GONE);
-
         setUpRecyclerView(arguments);
     }
 
@@ -169,7 +168,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
     }
 
     public void setSectionSelector(List<EventSectionModel> data) {
-        sectionSelectorAdapter.swapData(currentSection, data);
+        sectionSelectorAdapter.swapData(data);
     }
 
     public FlowableProcessor<RowAction> dataEntryFlowable() {
@@ -178,7 +177,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
 
 
     public void showSectionSelector() {
-        if (binding.sectionRecycler.getAdapter().getItemCount() > 1) {
+        if (binding.sectionRecycler.getAdapter() != null && binding.sectionRecycler.getAdapter().getItemCount() > 1) {
             binding.sectionRecycler.setVisibility(binding.sectionRecycler.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
             binding.currentSectionTitle.root.setVisibility(binding.currentSectionTitle.root.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
         }

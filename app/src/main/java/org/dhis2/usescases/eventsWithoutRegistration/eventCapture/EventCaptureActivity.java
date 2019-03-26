@@ -44,7 +44,10 @@ import static org.dhis2.utils.Constants.PROGRAM_UID;
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
  */
-public class EventCaptureActivity extends ActivityGlobalAbstract implements EventCaptureContract.View, View.OnTouchListener, GestureDetector.OnGestureListener {
+
+@SuppressWarnings("squid:MaximumInheritanceDepth")
+public class EventCaptureActivity extends ActivityGlobalAbstract implements EventCaptureContract.View,
+        View.OnTouchListener, GestureDetector.OnGestureListener {
 
     private static final int SWIPE_THRESHOLD = 100;
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
@@ -69,8 +72,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         ((App) getApplicationContext()).userComponent().plus(
                 new EventCaptureModule(
-                        getIntent().getStringExtra(Constants.EVENT_UID),
-                        getIntent().getStringExtra(Constants.PROGRAM_UID)))
+                        getIntent().getStringExtra(Constants.EVENT_UID)))
                 .inject(this);
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_event_capture);

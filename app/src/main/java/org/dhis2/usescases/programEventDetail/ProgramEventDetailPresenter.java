@@ -80,22 +80,6 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
         programQueries = PublishProcessor.create();
         parentOrgUnit = PublishProcessor.create();
 
-        /*Flowable<Trio<List<DatePeriod>, List<String>, Integer>> queryFlowable = Flowable.zip(
-                view.currentPage(),
-                programQueries,
-                (page, pair) -> Trio.create(pair.val0(), pair.val1(), page)
-        );
-
-        compositeDisposable.add(
-                queryFlowable.startWith(Trio.create(currentDateFilter, currentOrgUnitFilter, 0))
-                        .flatMap(datePeriodOrgsPage -> eventRepository.filteredProgramEvents(datePeriodOrgsPage.val0(), datePeriodOrgsPage.val1(), datePeriodOrgsPage.val2()))
-                        .subscribeOn(Schedulers.computation())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                view::setData,
-                                throwable -> view.renderError(throwable.getMessage())
-                        ));*/
-
         compositeDisposable.add(metaRepository.getProgramWithId(programId)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

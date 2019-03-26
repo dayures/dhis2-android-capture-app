@@ -90,12 +90,13 @@ public class ColorUtils {
                 b = c;
         }
 
-        double L = 0.2126d * r + 0.7152d * g + 0.0722d * b;
+        double l = 0.2126d * r + 0.7152d * g + 0.0722d * b;
 
 
-        return (L > 0.179d) ? Color.BLACK : Color.WHITE;
+        return (l > 0.179d) ? Color.BLACK : Color.WHITE;
     }
 
+    @SuppressWarnings("squid:S1479")
     public static int getThemeFromColor(String color) {
 
         if (color == null)

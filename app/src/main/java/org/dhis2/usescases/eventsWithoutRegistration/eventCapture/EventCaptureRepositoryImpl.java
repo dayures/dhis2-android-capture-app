@@ -300,9 +300,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                                     fieldViewModel.uid() + "." + uid, //fist
                                     displayName + "-" + optionCode, ValueType.TEXT, false,
                                     fieldViewModel.optionSet(), fieldViewModel.value(), fieldViewModel.programStageSection(),
-                                    fieldViewModel.allowFutureDate(), fieldViewModel.editable() == null ?
-                                            false :
-                                            fieldViewModel.editable(),
+                                    fieldViewModel.allowFutureDate(),
+                                    fieldViewModel.editable() != null && fieldViewModel.editable(),
                                     renderingType, fieldViewModel.description(), fieldRendering, optionCount, objectStyle));
 
                             cursor.moveToNext();
@@ -775,21 +774,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     }
 
     @NonNull
-    private static Date parseDate(@NonNull String date) {
-        try {
-            return BaseIdentifiableObject.DATE_FORMAT.parse(date);
-        } catch (ParseException parseException) {
-            throw new RuntimeException(parseException);
-        }
-    }
-
-    private HashMap<String, Pair<FormSectionViewModel, Boolean>> switchToMap
-            (List<FormSectionViewModel> list) {
-        HashMap<String, Pair<FormSectionViewModel, Boolean>> sectionsMap = new HashMap<>();
-        for (FormSectionViewModel formSection : list) {
-            sectionsMap.put(formSection.sectionUid(), Pair.create(formSection, true));
-        }
-        return sectionsMap;
+    private static Date parseDate(@NonNull String date) throws ParseException {
+        return BaseIdentifiableObject.DATE_FORMAT.parse(date);
     }
 
     @NonNull

@@ -3,10 +3,8 @@ package org.dhis2.usescases.teiDashboard;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.dagger.PerActivity;
-import org.dhis2.data.dagger.PerFragment;
 import org.dhis2.data.forms.EnrollmentFormRepository;
 import org.dhis2.data.forms.FormRepository;
-import org.dhis2.data.forms.PerForm;
 import org.dhis2.data.forms.RulesRepository;
 import org.dhis2.data.forms.dataentry.EnrollmentRuleEngineRepository;
 import org.dhis2.data.forms.dataentry.RuleEngineRepository;

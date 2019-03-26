@@ -2,7 +2,6 @@ package org.dhis2.data.user;
 
 import com.squareup.sqlbrite2.BriteDatabase;
 
-import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.user.User;
 import org.hisp.dhis.android.core.user.UserCredentials;
 import org.hisp.dhis.android.core.user.UserCredentialsModel;
@@ -19,11 +18,9 @@ public class UserRepositoryImpl implements UserRepository {
             UserCredentialsModel.TABLE + " LIMIT 1";
 
     private final BriteDatabase briteDatabase;
-    private final D2 d2;
 
-    UserRepositoryImpl(@NonNull BriteDatabase briteDatabase, D2 d2) {
+    UserRepositoryImpl(@NonNull BriteDatabase briteDatabase) {
         this.briteDatabase = briteDatabase;
-        this.d2 = d2;
     }
 
     @NonNull

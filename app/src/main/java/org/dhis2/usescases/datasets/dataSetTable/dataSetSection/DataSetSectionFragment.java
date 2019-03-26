@@ -70,7 +70,7 @@ public class DataSetSectionFragment extends FragmentGlobalAbstract {
             List<CategoryOptionCombo> catOptions = presenter.getCatOptionCombos(dataSetSection);
 
             ArrayList<List<String>> cells = new ArrayList<>();
-            for (DataElement de : dataElements) {
+            for (int i = 0; i < dataElements.size(); i++) {
                 ArrayList<String> values = new ArrayList<>();
                 for (CategoryOptionCombo catOpt : catOptions) {
                     values.add(catOpt.uid());

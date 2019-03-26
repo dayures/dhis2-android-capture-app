@@ -202,6 +202,7 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
         return map;
     }
 
+    @SuppressWarnings("squid:CommentedOutCodeLine")
     private void applyRuleEffects(Map<String, FieldViewModel> fieldViewModels, Result<RuleEffect> calcResult) {
 
         for (RuleEffect ruleEffect : calcResult.items()) {
@@ -236,11 +237,10 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
                         displayText.content(), false, ruleEffect.data(), "Information", 1, ValueType.TEXT,
                         null, false, null, null, ObjectStyle.builder().build());
 
-                if (this.currentFieldViewModels == null ||
-                        !this.currentFieldViewModels.containsKey(uid)) {
-                    fieldViewModels.put(uid, textViewModel);
-                } else if (this.currentFieldViewModels.containsKey(uid) &&
-                        !currentFieldViewModels.get(uid).value().equals(textViewModel.value())) {
+                if ((this.currentFieldViewModels == null ||
+                        !this.currentFieldViewModels.containsKey(uid)) ||
+                        (this.currentFieldViewModels.containsKey(uid) &&
+                                !currentFieldViewModels.get(uid).value().equals(textViewModel.value()))) {
                     fieldViewModels.put(uid, textViewModel);
                 }
             } else if (ruleAction instanceof RuleActionHideSection) {
@@ -263,7 +263,7 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
                 }
 
             } else if (ruleAction instanceof RuleActionCreateEvent) {
-                RuleActionCreateEvent createEvent = (RuleActionCreateEvent) ruleAction;
+//                RuleActionCreateEvent createEvent = (RuleActionCreateEvent) ruleAction;
                 //TODO: CREATE event with data from createEvent
             } else if (ruleAction instanceof RuleActionSetMandatoryField) {
                 RuleActionSetMandatoryField mandatoryField = (RuleActionSetMandatoryField) ruleAction;

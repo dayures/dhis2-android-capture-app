@@ -49,17 +49,13 @@ public class RelationshipViewHolder extends RecyclerView.ViewHolder {
                         )
         );
 
-        binding.teiRelationshipLink.setOnClickListener(view -> {
-            presenter.openDashboard(relationshipTEIUid);
-        });
+        binding.teiRelationshipLink.setOnClickListener(view -> presenter.openDashboard(relationshipTEIUid));
 
         binding.setPresenter(presenter);
         binding.setRelationship(relationship);
         String relationshipNameText = from ? relationships.val1().aIsToB() : relationships.val1().bIsToA();
         binding.relationshipName.setText(relationshipNameText != null ? relationshipNameText : relationships.val1().displayName());
         binding.executePendingBindings();
-
-//        presenter.subscribeToRelationshipLabel(relationship, binding.relationshipName);
     }
 
     private void setAttributes(List<TrackedEntityAttributeValue> trackedEntityAttributeValueModels) {

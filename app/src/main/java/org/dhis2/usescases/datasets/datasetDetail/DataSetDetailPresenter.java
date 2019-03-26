@@ -3,12 +3,10 @@ package org.dhis2.usescases.datasets.datasetDetail;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 
-import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.usescases.datasets.datasetInitial.DataSetInitialActivity;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.OrgUnitUtils;
 import org.dhis2.utils.Period;
-import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.PeriodType;
@@ -24,13 +22,11 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
-
+@SuppressWarnings("squid:CommentedOutCodeLine")
 public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
 
     private DataSetDetailRepository dataSetDetailRepository;
     private DataSetDetailContract.View view;
-    private CategoryOptionCombo categoryOptionComboModel;
-    private MetadataRepository metadataRepository;
     private int lastSearchType;
     private Date fromDate;
     private Date toDate;
@@ -38,7 +34,6 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
     private List<Date> dates;
     private CompositeDisposable compositeDisposable;
     private List<OrganisationUnit> orgUnits;
-    private CategoryCombo mCatCombo;
     private List<String> selectedOrgUnits;
     private PeriodType selectedPeriodType;
 
@@ -49,9 +44,8 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
         int DATE_RANGES = 32;
     }
 
-    public DataSetDetailPresenter(DataSetDetailRepository dataSetDetailRepository, MetadataRepository metadataRepository) {
+    public DataSetDetailPresenter(DataSetDetailRepository dataSetDetailRepository) {
         this.dataSetDetailRepository = dataSetDetailRepository;
-        this.metadataRepository = metadataRepository;
         compositeDisposable = new CompositeDisposable();
     }
 
@@ -105,12 +99,12 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
     @Override
     public void onCatComboSelected(CategoryOptionCombo categoryOptionComboModel, String
             orgUnitQuery) {
-        updateFilters(categoryOptionComboModel, orgUnitQuery);
+        updateFilters(orgUnitQuery);
     }
 
     @Override
     public void clearCatComboFilters(String orgUnitQuery) {
-        updateFilters(null, orgUnitQuery);
+        updateFilters(orgUnitQuery);
     }
 
     @Override
@@ -140,9 +134,7 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
                 categoryOptionComboModel)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        list ->view.setData(getPeriodFromType(list)),
-                        Timber::e));*/
+                .subscribe(list -> view.setData(getPeriodFromType(list)), Timber::e));*/
     }
 
     @Override
@@ -160,9 +152,7 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
                 ));
     }
 
-    private void updateFilters(CategoryOptionCombo categoryOptionComboModel, String
-            orgUnitQuery) {
-        this.categoryOptionComboModel = categoryOptionComboModel;
+    private void updateFilters(String orgUnitQuery) {
         switch (lastSearchType) {
             case LastSearchType.DATES:
                 getDataSets(this.fromDate, this.toDate, orgUnitQuery);
@@ -176,12 +166,13 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
         }
     }
 
+    @SuppressWarnings("squid:CommentedOutCodeLine")
     @Override
     public void getDataSetWithDates(List<Date> dates, Period period, String orgUnitQuery) {
         this.dates = dates;
         this.period = period;
         lastSearchType = LastSearchType.DATE_RANGES;
-        //FIXME cuando haya datos para dataset hay que cambiarlo
+        //TODO cuando haya datos para dataset hay que cambiarlo
         //ahora falla por que se va a hacer la select y no puede
        /* compositeDisposable.add(dataSetDetailRepository.filteredDataSet(programId,"","", categoryOptionComboModel)
                 .subscribeOn(Schedulers.io())

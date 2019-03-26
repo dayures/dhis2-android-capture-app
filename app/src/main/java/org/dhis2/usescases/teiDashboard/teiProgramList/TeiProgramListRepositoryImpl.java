@@ -46,7 +46,7 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
         this.codeGenerator = codeGenerator;
     }
 
-    public final String PROGRAM_COLOR_QUERY = String.format(
+    public static final String PROGRAM_COLOR_QUERY = String.format(
             "SELECT %s FROM %S " +
                     "WHERE %s = 'Program' AND %s = ?",
             ObjectStyleModel.Columns.COLOR, ObjectStyleModel.TABLE,

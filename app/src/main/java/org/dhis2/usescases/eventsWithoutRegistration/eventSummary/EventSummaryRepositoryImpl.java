@@ -303,16 +303,10 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
         String lastUpdated = DateUtils.databaseDateFormat().format(DateUtils.getInstance().getToday());
         try (Cursor cursor = briteDatabase.query(EVENT_QUERY, eventUid)) {
             if (cursor != null && cursor.moveToNext()) {
-
                 Event event = Event.create(cursor);
-                cursor.close();
-
                 ContentValues values = event.toContentValues();
                 switch (event.status()) {
                     case ACTIVE:
-                        values.put(EventModel.Columns.STATUS, EventStatus.COMPLETED.name());
-                        values.put(EventModel.Columns.COMPLETE_DATE, lastUpdated);
-                        break;
                     case SKIPPED:
                     case VISITED:
                     case SCHEDULE:
@@ -428,11 +422,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
     }
 
     @NonNull
-    private static Date parseDate(@NonNull String date) {
-        try {
-            return BaseIdentifiableObject.DATE_FORMAT.parse(date);
-        } catch (ParseException parseException) {
-            throw new RuntimeException(parseException);
-        }
+    private static Date parseDate(@NonNull String date) throws ParseException {
+        return BaseIdentifiableObject.DATE_FORMAT.parse(date);
     }
 }

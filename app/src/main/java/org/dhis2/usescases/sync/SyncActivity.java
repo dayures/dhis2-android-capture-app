@@ -29,7 +29,7 @@ import androidx.core.content.ContextCompat;
 import androidx.databinding.DataBindingUtil;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
-
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class SyncActivity extends ActivityGlobalAbstract implements SyncContracts.View {
 
     ActivitySynchronizationBinding binding;

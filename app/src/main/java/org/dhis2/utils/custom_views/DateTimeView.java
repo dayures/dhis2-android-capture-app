@@ -81,7 +81,7 @@ public class DateTimeView extends FieldLayout implements View.OnClickListener, V
 
             if (date == null)
                 try {
-                    if(DateUtils.dateHasNoSeconds(data))
+                    if (DateUtils.dateHasNoSeconds(data))
                         date = DateUtils.databaseDateFormatNoSeconds().parse(data);
                     else
                         date = DateUtils.databaseDateFormatNoMillis().parse(data);
@@ -145,7 +145,7 @@ public class DateTimeView extends FieldLayout implements View.OnClickListener, V
                     selectedCalendar.set(Calendar.YEAR, year1);
                     selectedCalendar.set(Calendar.MONTH, month1);
                     selectedCalendar.set(Calendar.DAY_OF_MONTH, day1);
-                    showTimePicker(view);
+                    showTimePicker();
                 }),
                 year,
                 month,
@@ -157,7 +157,7 @@ public class DateTimeView extends FieldLayout implements View.OnClickListener, V
         dateDialog.show();
     }
 
-    private void showTimePicker(View view) {
+    private void showTimePicker() {
         final Calendar c = Calendar.getInstance();
         int hour = c.get(Calendar.HOUR_OF_DAY);
         int minute = c.get(Calendar.MINUTE);
@@ -171,7 +171,6 @@ public class DateTimeView extends FieldLayout implements View.OnClickListener, V
             String result = dateFormat.format(selectedDate);
             editText.setText(result);
             listener.onDateSelected(selectedDate);
-//            nextFocus(view);
         },
                 hour,
                 minute,

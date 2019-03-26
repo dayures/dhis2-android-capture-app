@@ -313,7 +313,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                                 } else {
                                     DataEntryArguments arguments =
                                             DataEntryArguments.forEvent(formSectionViewModel.uid(), formSectionViewModel.renderType());
-                                    EventCaptureFormFragment.getInstance().setSingleSection(arguments, formSectionViewModel);
+                                    EventCaptureFormFragment.getInstance().setSingleSection(arguments);
                                 }
 
                                 EventCaptureFormFragment.getInstance().setSectionProgress(
@@ -326,7 +326,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                                         finalSectionList.get(position).sectionUid() :
                                         "NO_SECTION";
 
-                                return Flowable.just(finalSectionList.size() > 0 ?
+                                return Flowable.just(!finalSectionList.isEmpty() ?
                                         sectionUid : "NO_SECTION");
                             })
                             .observeOn(Schedulers.io())

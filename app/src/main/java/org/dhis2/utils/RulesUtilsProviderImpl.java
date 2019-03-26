@@ -34,14 +34,8 @@ import androidx.annotation.NonNull;
 
 public class RulesUtilsProviderImpl implements RulesUtilsProvider {
 
-    private final CodeGenerator codeGenerator;
-
     private HashMap<String, FieldViewModel> currentFieldViewModels;
 
-
-    public RulesUtilsProviderImpl(CodeGenerator codeGenerator) {
-        this.codeGenerator = codeGenerator;
-    }
 
     @Override
     public void applyRuleEffects(Map<String, FieldViewModel> fieldViewModels,
@@ -173,7 +167,9 @@ public class RulesUtilsProviderImpl implements RulesUtilsProvider {
         }
     }
 
-    private void createEvent(RuleActionCreateEvent createEvent, Map<String, FieldViewModel> fieldViewModels, RulesActionCallbacks rulesActionCallbacks) {
+    @SuppressWarnings("squid:S1172")
+    private void createEvent(RuleActionCreateEvent createEvent, Map<String, FieldViewModel> fieldViewModels,
+                             RulesActionCallbacks rulesActionCallbacks) {
         //TODO: Create Event
     }
 

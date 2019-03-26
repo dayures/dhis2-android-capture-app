@@ -17,13 +17,11 @@ public class FormSectionAdapter extends FragmentStatePagerAdapter {
     @NonNull
     private final List<FormSectionViewModel> formSectionViewModelList;
     private final List<String> sections;
-    private final FragmentManager fm;
 
     FormSectionAdapter(FragmentManager fragmentManager) {
         super(fragmentManager);
         this.formSectionViewModelList = new ArrayList<>();
         this.sections = new ArrayList<>();
-        this.fm = fragmentManager;
     }
 
     @NotNull

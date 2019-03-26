@@ -30,6 +30,7 @@ import androidx.databinding.DataBindingUtil;
  * QUADRAM. Created by Cristian on 13/02/2018.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class TeiProgramListActivity extends ActivityGlobalAbstract implements TeiProgramListContract.View {
 
     private ActivityTeiProgramListBinding binding;

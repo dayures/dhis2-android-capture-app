@@ -145,7 +145,7 @@ final class ProgramStageRepository implements DataEntryRepository {
 
     @Override
     public List<FieldViewModel> fieldList() {
-        return null;
+        return new ArrayList<>();
     }
 
     private List<FieldViewModel> checkRenderType(List<FieldViewModel> fieldViewModels) {
@@ -174,7 +174,9 @@ final class ProgramStageRepository implements DataEntryRepository {
                                         fieldViewModel.uid() + "." + uid, //fist
                                         displayName + "-" + optionCode, ValueType.TEXT, false,
                                         fieldViewModel.optionSet(), fieldViewModel.value(), fieldViewModel.programStageSection(),
-                                        fieldViewModel.allowFutureDate(), fieldViewModel.editable() == null ? false : fieldViewModel.editable(), renderingType, fieldViewModel.description(), null, optionCount, objectStyle));
+                                        fieldViewModel.allowFutureDate(),
+                                        fieldViewModel.editable() != null && fieldViewModel.editable(),
+                                        renderingType, fieldViewModel.description(), null, optionCount, objectStyle));
 
                                 cursor.moveToNext();
                             }

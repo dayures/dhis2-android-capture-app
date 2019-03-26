@@ -325,44 +325,44 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
     public void promtForTEIMoreQr() {
 
         // IDENTIFICATION
-        String message = getString(R.string.qr_id) + ":\n";
+        StringBuilder message = new StringBuilder(getString(R.string.qr_id)).append(":\n");
         if (teiUid != null) {
-            message = message + teiUid + "\n\n";
+            message.append(teiUid).append("\n\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(message).append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
         // ATTRIBUTES
-        message = message + getString(R.string.qr_attributes) + ":\n";
+        message.append(message).append(getString(R.string.qr_attributes)).append(":\n");
 
         if (attributes != null && !attributes.isEmpty()) {
             for (Trio<String, String, Boolean> attribute : attributes) {
                 if (attribute.val2()) {
-                    message = message + attribute.val1() + "\n";
+                    message.append(message).append(attribute.val1()).append("\n");
                 }
             }
-            message = message + "\n";
+            message.append(message).append("\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(message).append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
         // ENROLLMENT
-        message = message + getString(R.string.qr_enrollment) + ":\n";
+        message.append(message).append(getString(R.string.qr_enrollment)).append(":\n");
 
         if (enrollments != null && !enrollments.isEmpty()) {
             for (Pair<String, Boolean> enrollment : enrollments) {
                 if (enrollment.val1()) {
-                    message = message + enrollment.val0() + "\n";
+                    message.append(message).append(enrollment.val0()).append("\n");
                 }
             }
-            message = message + "\n";
+            message.append(message).append("\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(message).append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
 
         // EVENTS
-        message = message + getString(R.string.qr_events) + ":\n";
+        message.append(message).append(getString(R.string.qr_events)).append(":\n");
 
         if (events != null && !events.isEmpty()) {
             int count = 0;
@@ -371,14 +371,14 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
                     count++;
                 }
             }
-            message = message + count + " " + getString(R.string.events) + "\n\n";
+            message.append(message).append(count).append(" ").append(getString(R.string.events)).append("\n\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(message).append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
 
         // RELATIONSHIPS
-        message = message + getString(R.string.qr_relationships) + ":\n";
+        message.append(message).append(getString(R.string.qr_relationships)).append(":\n");
 
         if (relationships != null && !relationships.isEmpty()) {
             int count = 0;
@@ -387,25 +387,25 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
                     count++;
                 }
             }
-            message = message + count + " " + getString(R.string.relationships) + "\n";
+            message.append(message).append(count).append(" ").append(getString(R.string.relationships)).append("\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(message).append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
         // ATTRIBUTES
-        message = message + getString(R.string.qr_data_values) + ":\n";
+        message.append(message).append(getString(R.string.qr_data_values)).append(":\n");
 
         if (teiEventData != null && !teiEventData.isEmpty()) {
             for (Trio<TrackedEntityDataValue, String, Boolean> attribute : teiEventData) {
-                message = message + attribute.val1() + ":\n" + attribute.val0().value() + "\n\n";
+                message.append(message).append(attribute.val1()).append(":\n").append(attribute.val0().value()).append("\n\n");
             }
-            message = message + "\n";
+            message.append(message).append("\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(message).append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
         // READ MORE
-        message = message + "\n\n" + getString(R.string.read_more_qr);
+        message.append(message).append("\n\n").append(getString(R.string.read_more_qr));
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context, R.style.CustomDialog)
                 .setTitle(getString(R.string.QR_SCANNER))
@@ -430,28 +430,28 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
     public void promtForEventWORegistrationMoreQr() {
 
         // IDENTIFICATION
-        String message = getString(R.string.qr_id) + ":\n";
+        StringBuilder message = new StringBuilder(getString(R.string.qr_id)).append(":\n");
         if (eventUid != null) {
-            message = message + eventUid + "\n\n";
+            message.append(message).append(eventUid).append("\n\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(message).append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
         // ATTRIBUTES
-        message = message + getString(R.string.qr_data_values) + ":\n";
+        message.append(message).append(getString(R.string.qr_data_values)).append(":\n");
 
         if (eventData != null && !eventData.isEmpty()) {
             for (Trio<TrackedEntityDataValue, String, Boolean> attribute : eventData) {
-                message = message + attribute.val1() + ":\n" + attribute.val0().value() + "\n\n";
+                message.append(message).append(attribute.val1()).append(":\n").append(attribute.val0().value()).append("\n\n");
             }
-            message = message + "\n";
+            message.append(message).append("\n");
         } else {
-            message = message + getString(R.string.qr_no_data) + "\n\n";
+            message.append(message).append(getString(R.string.qr_no_data)).append("\n\n");
         }
 
 
         // READ MORE
-        message = message + "\n\n" + getString(R.string.read_more_qr);
+        message.append(message).append("\n\n").append(getString(R.string.read_more_qr));
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context, R.style.CustomDialog)
                 .setTitle(getString(R.string.QR_SCANNER))

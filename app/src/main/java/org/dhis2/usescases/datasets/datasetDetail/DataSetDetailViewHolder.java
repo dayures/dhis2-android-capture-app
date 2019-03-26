@@ -1,28 +1,27 @@
 package org.dhis2.usescases.datasets.datasetDetail;
 
-import androidx.recyclerview.widget.RecyclerView;
-
 import org.dhis2.BR;
 import org.dhis2.databinding.ItemDatasetBinding;
 
-import io.reactivex.disposables.CompositeDisposable;
+import androidx.recyclerview.widget.RecyclerView;
 
-public class DataSetDetailViewHolder extends RecyclerView.ViewHolder{
+@SuppressWarnings("squid:CommentedOutCodeLine")
+public class DataSetDetailViewHolder extends RecyclerView.ViewHolder {
 
     private ItemDatasetBinding binding;
-    private CompositeDisposable disposable;
+//    private CompositeDisposable disposable;
 
     public DataSetDetailViewHolder(ItemDatasetBinding binding) {
         super(binding.getRoot());
         this.binding = binding;
-        disposable = new CompositeDisposable();
+//        disposable = new CompositeDisposable();
     }
 
     public void bind(DataSetDetailContract.Presenter presenter, DataSetDetailModel dataset) {
         binding.setVariable(BR.presenter, presenter);
         binding.setVariable(BR.dataset, dataset);
         binding.executePendingBindings();
-        //FIXME revisar para que sirve esto
+        //TODO revisar para que sirve esto
         /*disposable.add(presenter.getDataSetDataValueNew(dataset)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())

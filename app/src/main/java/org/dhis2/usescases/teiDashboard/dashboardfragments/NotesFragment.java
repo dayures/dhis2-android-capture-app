@@ -36,7 +36,7 @@ public class NotesFragment extends FragmentGlobalAbstract {
     private TeiDashboardContracts.Presenter presenter;
     private ActivityGlobalAbstract activity;
 
-    static public NotesFragment getInstance() {
+    public static NotesFragment getInstance() {
         if (instance == null)
             instance = new NotesFragment();
 
@@ -50,6 +50,7 @@ public class NotesFragment extends FragmentGlobalAbstract {
         presenter = ((TeiDashboardMobileActivity) context).getPresenter();
     }
 
+    @SuppressWarnings("squid:S1301")
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -58,14 +59,16 @@ public class NotesFragment extends FragmentGlobalAbstract {
         presenter.setNoteProcessor(noteAdapter.asFlowable());
         presenter.subscribeToNotes(this);
         binding.notesRecycler.setAdapter(noteAdapter);
-        binding.buttonAdd.setOnClickListener(this::addNote);
-        binding.buttonDelete.setOnClickListener(this::clearNote);
+        binding.buttonAdd.setOnClickListener(view -> addNote());
+        binding.buttonDelete.setOnClickListener(view -> clearNote());
         binding.editNote.setOnTouchListener((v, event) -> {
             if (v.getId() == R.id.edit_note) {
                 v.getParent().requestDisallowInterceptTouchEvent(true);
                 switch (event.getAction() & MotionEvent.ACTION_MASK) {
                     case MotionEvent.ACTION_UP:
                         v.getParent().requestDisallowInterceptTouchEvent(false);
+                        break;
+                    default:
                         break;
                 }
             }
@@ -74,22 +77,20 @@ public class NotesFragment extends FragmentGlobalAbstract {
         return binding.getRoot();
     }
 
-    public void addNote(View view) {
+    public void addNote() {
         if (presenter.hasProgramWritePermission()) {
             noteAdapter.addNote(binding.editNote.getText().toString());
-            clearNote(view);
+            clearNote();
         } else
             activity.displayMessage(getString(R.string.search_access_error));
     }
 
-    public void clearNote(View view) {
+    public void clearNote() {
         binding.editNote.getText().clear();
     }
 
     public Consumer<List<Note>> swapNotes() {
-        return noteModels -> {
-            noteAdapter.setItems(noteModels);
-        };
+        return noteModels -> noteAdapter.setItems(noteModels);
     }
 
 

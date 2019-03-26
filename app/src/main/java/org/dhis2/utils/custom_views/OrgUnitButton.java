@@ -67,10 +67,6 @@ public class OrgUnitButton extends RelativeLayout {
 
     }
 
-    public void setIsBgTransparent(boolean isBgTransparent) {
-        setLayout();
-    }
-
     private void setLayout() {
         DataBindingUtil.inflate(inflater, R.layout.form_org_unit, this, true);
         button = findViewById(R.id.button_org_unit);

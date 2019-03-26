@@ -74,6 +74,7 @@ import timber.log.Timber;
 @BindingMethods({
         @BindingMethod(type = FloatingActionButton.class, attribute = "app:srcCompat", method = "setImageDrawable")
 })
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTEContractsModule.View {
 
     ActivitySearchBinding binding;
@@ -123,7 +124,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
         }
 
         if (fromRelationship) {
-            searchRelationshipAdapter = new SearchRelationshipAdapter(presenter, metadataRepository);
+            searchRelationshipAdapter = new SearchRelationshipAdapter(presenter);
             binding.scrollView.setAdapter(searchRelationshipAdapter);
         } else {
             searchTEAdapter = new SearchTEAdapter(presenter);

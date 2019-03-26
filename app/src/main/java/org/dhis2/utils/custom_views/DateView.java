@@ -38,7 +38,6 @@ public class DateView extends FieldLayout implements View.OnClickListener {
 
     private String label;
     private boolean allowFutureDates;
-    private String description;
     private Date date;
     private TextInputLayout inputLayout;
 
@@ -55,10 +54,6 @@ public class DateView extends FieldLayout implements View.OnClickListener {
     public DateView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         init(context);
-    }
-
-    public void init(Context context) {
-        super.init(context);
     }
 
     @Override
@@ -93,7 +88,6 @@ public class DateView extends FieldLayout implements View.OnClickListener {
     }
 
     public void setDescription(String description) {
-        this.description = description;
         binding.setVariable(BR.description, description);
         binding.executePendingBindings();
     }
@@ -160,7 +154,6 @@ public class DateView extends FieldLayout implements View.OnClickListener {
                     String result = DateUtils.uiDateFormat().format(selectedDate);
                     editText.setText(result);
                     listener.onDateSelected(selectedDate);
-//                    nextFocus(view);
                 }),
                 year,
                 month,

@@ -19,7 +19,7 @@ import androidx.annotation.Nullable;
  */
 
 @AutoValue
-public abstract class EditTextViewModel extends EditTextModel<String> {
+public abstract class EditTextViewModel extends EditTextModel {
 
     @Nullable
     public abstract ValueTypeDeviceRendering fieldRendering();

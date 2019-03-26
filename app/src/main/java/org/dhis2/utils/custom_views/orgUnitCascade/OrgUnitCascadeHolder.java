@@ -1,8 +1,6 @@
 package org.dhis2.utils.custom_views.orgUnitCascade;
 
 import android.content.Context;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.View;
@@ -16,6 +14,9 @@ import org.dhis2.databinding.OrgUnitCascadeLevelItemBinding;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
 
 import static android.text.TextUtils.isEmpty;
 
@@ -54,9 +55,9 @@ class OrgUnitCascadeHolder extends RecyclerView.ViewHolder {
         data.add(String.format(context.getString(R.string.org_unit_select_level), getAdapterPosition() + 1));
 
         String selectedOrgUnitName = null;
-        if(!isEmpty(currentUid))
-            for(Quartet<String, String, String, Boolean> orgUnit : levelOrgUnit)
-                if(orgUnit.val0().equals(currentUid))
+        if (!isEmpty(currentUid))
+            for (Quartet<String, String, String, Boolean> orgUnit : levelOrgUnit)
+                if (orgUnit.val0().equals(currentUid))
                     selectedOrgUnitName = orgUnit.val1();
 
         if (binding.levelText.getText() == null || binding.levelText.getText().toString().isEmpty() || isEmpty(currentUid))
@@ -88,7 +89,7 @@ class OrgUnitCascadeHolder extends RecyclerView.ViewHolder {
                     adapter.setSelectedLevel(
                             getAdapterPosition() + 1,
                             selectedUid,
-                            item.getOrder() <= 0 ? false : trio.val3());
+                            item.getOrder() > 0 && trio.val3());
                 }
             return false;
         });

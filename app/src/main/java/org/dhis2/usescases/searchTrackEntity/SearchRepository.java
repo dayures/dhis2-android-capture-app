@@ -10,6 +10,7 @@ import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -40,7 +41,8 @@ public interface SearchRepository {
                                                                            @Nullable HashMap<String, String> queryData, int listSize);
 
     @NonNull
-    Observable<String> saveToEnroll(@NonNull String teiType, @NonNull String orgUnitUID, @NonNull String programUid, @Nullable String teiUid, HashMap<String, String> queryDatam, Date enrollmentDate);
+    Observable<String> saveToEnroll(@NonNull String teiType, @NonNull String orgUnitUID, @NonNull String programUid,
+                                    @Nullable String teiUid, Map<String, String> queryDatam, Date enrollmentDate);
 
     Observable<List<OrganisationUnit>> getOrgUnits(@Nullable String selectedProgramUid);
 

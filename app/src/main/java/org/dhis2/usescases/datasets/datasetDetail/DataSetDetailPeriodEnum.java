@@ -8,6 +8,7 @@ import org.joda.time.format.DateTimeFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"squid:UnusedPrivateMethod", "squid:S1172", "squid:CommentedOutCodeLine", "squid:S1488"})
 public enum DataSetDetailPeriodEnum {
 
     DAILY("Daily") {

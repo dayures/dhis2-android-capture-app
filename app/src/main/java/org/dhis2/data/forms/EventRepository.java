@@ -96,13 +96,6 @@ public class EventRepository implements FormRepository {
             "  LEFT OUTER JOIN ProgramStageSection ON ProgramStageSection.programStage = Event.programStage\n" +
             "WHERE Event.uid = ? ORDER BY ProgramStageSection.sortOrder";
 
-    private static final String SELECT_EVENT_DATE = "SELECT\n" +
-            "  Event.eventDate, ProgramStage.periodType\n" +
-            "FROM Event\n" +
-            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
-            "WHERE Event.uid = ? " +
-            "LIMIT 1";
-
     private static final String SELECT_EVENT_STATUS = "SELECT\n" +
             "  Event.status\n" +
             "FROM Event\n" +
@@ -490,6 +483,7 @@ public class EventRepository implements FormRepository {
         }
     }
 
+    @SuppressWarnings({"squid:S1172", "squid:CommentedOutCodeLine"})
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues();TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));

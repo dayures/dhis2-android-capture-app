@@ -73,7 +73,7 @@ public final class AttrValueStore implements AttrEntryStore {
                 .defer(() -> {
                     if (checkUnique(uid, value)) {
 
-                        long updated = update(uid, value);
+                        long updated = update(value);
                         if (updated > 0) {
                             return Flowable.just(updated);
                         }
@@ -91,7 +91,7 @@ public final class AttrValueStore implements AttrEntryStore {
     }
 
 
-    private long update(@NonNull String attribute, @Nullable String value) {
+    private long update(@Nullable String value) {
         sqLiteBind(updateStatement, 1, BaseIdentifiableObject.DATE_FORMAT
                 .format(Calendar.getInstance().getTime()));
         sqLiteBind(updateStatement, 2, value == null ? "" : value);

@@ -22,7 +22,7 @@ import io.reactivex.Observable;
 
 public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
 
-    private final static String GET_DATA_SETS = "SELECT " +
+    private static final String GET_DATA_SETS = "SELECT " +
             "DataValue.organisationUnit, " +
             "DataValue.period, " +
             "DataValue.attributeOptionCombo " +
@@ -32,8 +32,7 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
             "WHERE DataSetDataElementLink.dataSet = ? %s " +
             "GROUP BY DataValue.period,DataValue.organisationUnit,DataValue.categoryOptionCombo";
 
-    private final static String DATA_SETS_ORG_UNIT_FILTER = "AND DataValue.organisationUnit IN (%s) ";
-    private final static String DATA_SETS_PERIOD_FILTER = "AND DataValue.period = ? ";
+    private static final String DATA_SETS_ORG_UNIT_FILTER = "AND DataValue.organisationUnit IN (%s) ";
 
     private final BriteDatabase briteDatabase;
 

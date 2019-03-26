@@ -9,12 +9,10 @@ import androidx.recyclerview.widget.RecyclerView;
 public class ReservedValueViewHolder extends RecyclerView.ViewHolder {
 
     private ItemReservedValueBinding binding;
-    private ReservedValueContracts.Presenter presenter;
 
-    public ReservedValueViewHolder(ItemReservedValueBinding binding, ReservedValueContracts.Presenter presenter) {
+    public ReservedValueViewHolder(ItemReservedValueBinding binding) {
         super(binding.getRoot());
         this.binding = binding;
-        this.presenter = presenter;
 
     }
 
@@ -23,5 +21,4 @@ public class ReservedValueViewHolder extends RecyclerView.ViewHolder {
         binding.setVariable(BR.dataElement, dataElement);
         binding.setVariable(BR.presenter, presenter);
     }
-
 }

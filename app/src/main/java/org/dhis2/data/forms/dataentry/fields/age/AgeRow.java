@@ -28,13 +28,6 @@ public class AgeRow implements Row<AgeHolder, AgeViewModel> {
         this.processor = processor;
     }
 
-    public AgeRow(LayoutInflater layoutInflater, FlowableProcessor<RowAction> processor,
-                  @NonNull FlowableProcessor<Integer> currentPosition, boolean isBgTransparent) {
-        this.inflater = layoutInflater;
-        this.isBgTransparent = isBgTransparent;
-        this.processor = processor;
-    }
-
     @NonNull
     @Override
     public AgeHolder onCreate(@NonNull ViewGroup parent) {

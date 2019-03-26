@@ -10,7 +10,6 @@ import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.utils.custom_views.TextInputAutoCompleteTextView;
 import org.dhis2.utils.custom_views.orgUnitCascade.OrgUnitCascadeDialog;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 
 import java.util.List;
 

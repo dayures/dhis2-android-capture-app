@@ -1,10 +1,6 @@
 package org.dhis2.utils.custom_views;
 
 import android.content.Context;
-import androidx.databinding.BindingAdapter;
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ViewDataBinding;
-import com.google.android.material.textfield.TextInputLayout;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
@@ -16,11 +12,16 @@ import android.view.LayoutInflater;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
 
+import com.google.android.material.textfield.TextInputLayout;
+
 import org.dhis2.BR;
 import org.dhis2.R;
 import org.dhis2.utils.TextChangedListener;
-
 import org.hisp.dhis.android.core.common.ValueType;
+
+import androidx.databinding.BindingAdapter;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ViewDataBinding;
 
 /**
  * QUADRAM. Created by frodriguez on 1/17/2018.
@@ -32,7 +33,7 @@ public class CustomTextView extends RelativeLayout implements TextWatcher {
     private EditText editText;
     private static String label;
     private static ValueType valueType;
-    private static ViewDataBinding binding;
+    private ViewDataBinding binding;
 
     private TextChangedListener listener;
 

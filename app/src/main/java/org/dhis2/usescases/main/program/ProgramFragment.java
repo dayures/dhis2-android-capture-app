@@ -26,7 +26,6 @@ import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.Period;
 import org.dhis2.utils.custom_views.RxDateDialog;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.jetbrains.annotations.NotNull;
 
 import java.text.SimpleDateFormat;
@@ -361,10 +360,8 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
 
             treeView.setDefaultNodeClickListener((node, value) -> {
                 if (isAdded()) {
-                    if (treeView != null) {
-                        if ((treeView.getSelected().size() == 1 && !node.isSelected()) || treeView.getSelected().size() > 1) {
-                            binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
-                        }
+                    if (treeView != null && (treeView.getSelected().size() == 1 && !node.isSelected()) || treeView.getSelected().size() > 1) {
+                        binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
                     }
                     if (node.getChildren().isEmpty())
                         presenter.onExpandOrgUnitNode(node, ((OrganisationUnit) node.getValue()).uid());
@@ -431,11 +428,11 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
                 binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
 
                 List<String> orgUnitsUids = new ArrayList<>();
-                for (TreeNode treeNode : treeView.getSelected()) {
-                    orgUnitsUids.add(((OrganisationUnitModel) treeNode.getValue()).uid());
+                for (TreeNode treeNodeIterable : treeView.getSelected()) {
+                    orgUnitsUids.add(((OrganisationUnit) treeNodeIterable.getValue()).uid());
                 }
 
-                if (treeView.getSelected().size() >= 1) {
+                if (!treeView.getSelected().isEmpty()) {
                     binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
                 }
 

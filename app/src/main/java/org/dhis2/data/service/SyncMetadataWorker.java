@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.util.Log;
 
 import com.google.firebase.perf.metrics.AddTrace;
 
@@ -33,8 +32,8 @@ import timber.log.Timber;
 
 public class SyncMetadataWorker extends Worker {
 
-    private final static String metadata_channel = "sync_metadata_notification";
-    private final static int SYNC_METADATA_ID = 26061987;
+    private static final String METADATA_CHANNEL = "sync_metadata_notification";
+    private static final int SYNC_METADATA_ID = 26061987;
 
     @Inject
     SyncPresenter presenter;
@@ -48,7 +47,7 @@ public class SyncMetadataWorker extends Worker {
     @Override
     public void onStopped(boolean cancelled) {
         super.onStopped(cancelled);
-        Log.d(this.getClass().getSimpleName(), "Metadata process finished");
+        Timber.d("Metadata process finished");
     }
 
     @NonNull
@@ -92,18 +91,22 @@ public class SyncMetadataWorker extends Worker {
     private void triggerNotification(int id, String title, String content) {
         NotificationManager notificationManager = (NotificationManager) getApplicationContext().getSystemService(Context.NOTIFICATION_SERVICE);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel mChannel = new NotificationChannel(metadata_channel, "MetadataSync", NotificationManager.IMPORTANCE_HIGH);
-            notificationManager.createNotificationChannel(mChannel);
+            NotificationChannel mChannel = new NotificationChannel(METADATA_CHANNEL, "MetadataSync", NotificationManager.IMPORTANCE_HIGH);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(mChannel);
+            }
         }
         NotificationCompat.Builder notificationBuilder =
-                new NotificationCompat.Builder(getApplicationContext(), metadata_channel)
+                new NotificationCompat.Builder(getApplicationContext(), METADATA_CHANNEL)
                         .setSmallIcon(R.drawable.ic_sync)
                         .setContentTitle(title)
                         .setContentText(content)
                         .setAutoCancel(false)
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
-        notificationManager.notify(id, notificationBuilder.build());
+        if (notificationManager != null) {
+            notificationManager.notify(id, notificationBuilder.build());
+        }
     }
 
     private void cancelNotification() {

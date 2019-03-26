@@ -67,6 +67,7 @@ import static org.dhis2.utils.Period.YEARLY;
  * QUADRAM. Created by Cristian on 13/02/2018.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class ProgramEventDetailActivity extends ActivityGlobalAbstract implements ProgramEventDetailContract.View {
 
     private ActivityProgramEventDetailBinding binding;
@@ -504,8 +505,8 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
             binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
 
             List<String> orgUnitsUids = new ArrayList<>();
-            for (TreeNode treeNode : treeView.getSelected()) {
-                orgUnitsUids.add(((CategoryCombo) treeNode.getValue()).uid());
+            for (TreeNode treeNodeIterator : treeView.getSelected()) {
+                orgUnitsUids.add(((CategoryCombo) treeNodeIterator.getValue()).uid());
             }
 
             if (!treeView.getSelected().isEmpty()) {

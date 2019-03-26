@@ -82,6 +82,7 @@ class FormPresenterImpl implements FormPresenter {
         this.processor = PublishProcessor.create();
     }
 
+    @SuppressWarnings("squid:S1612")
     @Override
     public void onAttach(@NonNull FormView view) {
         isNull(view, "FormView must not be null");
@@ -187,14 +188,6 @@ class FormPresenterImpl implements FormPresenter {
                 .observeOn(schedulerProvider.io()).share();
 
         compositeDisposable.add(enrollmentDoneStream
-                /* .flatMap(data -> checkMandatory().map(mandatoryRequired -> Pair.create(data, mandatoryRequired)))
-                 .observeOn(AndroidSchedulers.mainThread())
-                 .flatMap(data -> {
-                     view.showMandatoryFieldsDialog();
-                     return Observable.just(data);
-                 })
-                 .filter(data -> !data.val1()) //
-                 .map(data -> data.val0())*/
                 .flatMap(formRepository::autoGenerateEvents) //Autogeneration of events
                 .flatMap(data -> formRepository.useFirstStageDuringRegistration()) //Checks if first Stage Should be used
                 .subscribeOn(schedulerProvider.io())

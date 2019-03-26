@@ -192,19 +192,6 @@ public final class AttributeValueStore implements DataEntryStore {
     private long insert(@NonNull String attribute, @NonNull String value, valueType valueType) {
         if (valueType == ATTR) {
             Date date = Calendar.getInstance().getTime();
-            String created = BaseIdentifiableObject.DATE_FORMAT.format(date);
-/*
-
-            sqLiteBind(insertStatement, 1, created == null ? "" : created);
-            sqLiteBind(insertStatement, 2, created == null ? "" : created);
-            sqLiteBind(insertStatement, 3, value == null ? "" : value);
-            sqLiteBind(insertStatement, 4, attribute == null ? "" : attribute);
-            sqLiteBind(insertStatement, 5, enrollment == null ? "" : enrollment);
-
-            long inserted = briteDatabase.executeInsert(
-                    TrackedEntityAttributeValueModel.TABLE, insertStatement);
-            insertStatement.clearBindings();*/
-
             String teiUid = null;
 
             try (Cursor teiCursor = briteDatabase.query(SELECT_TEI, enrollment)) {

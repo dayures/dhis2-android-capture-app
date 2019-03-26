@@ -458,7 +458,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
         ContentValues contentValues = new ContentValues();
         contentValues.put(EnrollmentModel.Columns.FOLLOW_UP, followUp ? "0" : "1");
 
-        int update = briteDatabase.update(EnrollmentModel.TABLE, contentValues, EnrollmentModel.Columns.UID + " = ?", enrollmentUid == null ? "" : enrollmentUid);
+        briteDatabase.update(EnrollmentModel.TABLE, contentValues, EnrollmentModel.Columns.UID + " = ?", enrollmentUid == null ? "" : enrollmentUid);
 
         return !followUp;
     }
@@ -616,6 +616,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                 });
     }
 
+    @SuppressWarnings({"squid:S1172", "squid:CommentedOutCodeLine"})
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues();TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));

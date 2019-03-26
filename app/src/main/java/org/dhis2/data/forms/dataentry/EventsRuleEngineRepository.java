@@ -42,15 +42,6 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
             " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'" +
             "LIMIT 1;";
 
-    /*private static final String QUERY_VALUES = "SELECT " +
-            "  eventDate," +
-            "  programStage," +
-            "  dataElement," +
-            "  value" +
-            " FROM TrackedEntityDataValue " +
-            "  INNER JOIN Event ON TrackedEntityDataValue.event = Event.uid " +
-            " WHERE event = ? AND value IS NOT NULL AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'";*/
-
     private static final String QUERY_VALUES = "SELECT " +
             "  Event.eventDate," +
             "  Event.programStage," +

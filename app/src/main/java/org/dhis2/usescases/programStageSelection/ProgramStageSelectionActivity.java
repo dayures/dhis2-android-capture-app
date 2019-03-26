@@ -13,10 +13,8 @@ import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialAc
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.utils.Constants;
 import org.hisp.dhis.android.core.common.ObjectStyle;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.period.PeriodType;
 import org.hisp.dhis.android.core.program.ProgramStage;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
 
 import java.util.List;
 
@@ -40,6 +38,7 @@ import static org.dhis2.utils.Constants.TRACKED_ENTITY_INSTANCE;
  * QUADRAM. Created by ppajuelo on 31/10/2017.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implements ProgramStageSelectionContract.View {
 
     ActivityProgramStageSelectionBinding binding;
@@ -55,7 +54,7 @@ public class ProgramStageSelectionActivity extends ActivityGlobalAbstract implem
     public void onCreate(@Nullable Bundle savedInstanceState) {
         programId = getIntent().getStringExtra("PROGRAM_UID");
         enrollmenId = getIntent().getStringExtra("ENROLLMENT_UID");
-        String eventCreationType =  getIntent().getStringExtra(EVENT_CREATION_TYPE);
+        String eventCreationType = getIntent().getStringExtra(EVENT_CREATION_TYPE);
         ((App) getApplicationContext()).userComponent().plus(new ProgramStageSelectionModule(programId, enrollmenId, eventCreationType)).inject(this);
         super.onCreate(savedInstanceState);
 

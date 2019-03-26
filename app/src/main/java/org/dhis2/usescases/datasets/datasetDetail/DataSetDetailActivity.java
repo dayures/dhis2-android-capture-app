@@ -48,6 +48,7 @@ import static org.dhis2.utils.Period.NONE;
 import static org.dhis2.utils.Period.WEEKLY;
 import static org.dhis2.utils.Period.YEARLY;
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class DataSetDetailActivity extends ActivityGlobalAbstract implements DataSetDetailContract.View {
 
     private ActivityDatasetDetailBinding binding;

@@ -12,7 +12,6 @@ import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
-import org.hisp.dhis.android.core.category.CategoryOptionComboCategoryOptionLinkModel;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.Coordinates;
@@ -62,12 +61,6 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
             + OrganisationUnitModel.Columns.CLOSED_DATE + " IS NULL OR " +
             " date(" + OrganisationUnitModel.Columns.CLOSED_DATE + ") >= date(?)) " +
             "AND OrganisationUnitProgramLink .program = ?";
-
-    private static final String SELECT_CAT_OPTION_FROM_OPTION_COMBO = String.format(
-            "SELECT %s.%s FROM %s WHERE %s.%s = ?",
-            CategoryOptionComboCategoryOptionLinkModel.TABLE, CategoryOptionComboCategoryOptionLinkModel.Columns.CATEGORY_OPTION, CategoryOptionComboCategoryOptionLinkModel.TABLE,
-            CategoryOptionComboCategoryOptionLinkModel.TABLE, CategoryOptionComboCategoryOptionLinkModel.Columns.CATEGORY_OPTION_COMBO
-    );
 
     private final BriteDatabase briteDatabase;
     private final CodeGenerator codeGenerator;
@@ -240,6 +233,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         }
     }
 
+    @SuppressWarnings({"squid:S1172", "squid:CommentedOutCodeLine"})
     private void updateProgramTable(Date lastUpdated, String programUid) {
         //TODO: Update program causes crash
         /* ContentValues program = new ContentValues();
@@ -336,12 +330,11 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
             String message = String.format(Locale.US, "Failed to update event for uid=[%s]", id);
             return Observable.error(new SQLiteConstraintException(message));
         }
-        if (trackedEntityInstance != null)
+        if (trackedEntityInstance != null) {
             updateTei(trackedEntityInstance);
-        return event(id).map(eventModel1 -> {
-//            updateProgramTable(currentDate, eventModel1.program()); //TODO: This is crashing the app
-            return eventModel1;
-        });
+        }
+//            updateProgramTable(currentDate, eventModel1.program()); //TODO: (inside the map) This is crashing the app
+        return event(id).map(eventModel1 -> eventModel1);
     }
 
     @NonNull

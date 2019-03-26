@@ -33,7 +33,7 @@ public class OrgUnitDialog extends DialogFragment {
     DialogOrgunitBinding binding;
     private AndroidTreeView treeView;
     private boolean isMultiSelection = false;
-    static OrgUnitDialog instance;
+    private static OrgUnitDialog instance;
     private View.OnClickListener possitiveListener;
     private View.OnClickListener negativeListener;
     private String title;
@@ -48,14 +48,11 @@ public class OrgUnitDialog extends DialogFragment {
     }
 
     public OrgUnitDialog() {
-        instance = null;
         isMultiSelection = false;
         possitiveListener = null;
         negativeListener = null;
         title = null;
         myOrgs = null;
-
-
     }
 
     public OrgUnitDialog setPossitiveListener(View.OnClickListener listener) {
@@ -153,7 +150,7 @@ public class OrgUnitDialog extends DialogFragment {
         super.dismiss();
     }
 
-    private static void dismissInstance(){
+    private static void dismissInstance() {
         instance = null;
     }
 }

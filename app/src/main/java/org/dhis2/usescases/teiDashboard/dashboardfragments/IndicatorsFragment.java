@@ -36,7 +36,7 @@ public class IndicatorsFragment extends FragmentGlobalAbstract {
 
     private TeiDashboardContracts.Presenter presenter;
 
-    static public IndicatorsFragment getInstance() {
+    public static IndicatorsFragment getInstance() {
         if (instance == null)
             instance = new IndicatorsFragment();
         return instance;
@@ -74,9 +74,7 @@ public class IndicatorsFragment extends FragmentGlobalAbstract {
     }
 
     public Consumer<List<Trio<ProgramIndicator, String, String>>> swapIndicators() {
-        return indicators -> {
-            adapter.setIndicators(indicators);
-        };
+        return indicators -> adapter.setIndicators(indicators);
     }
 
     public void addIndicator(Trio<ProgramIndicator, String, String> indicator) {

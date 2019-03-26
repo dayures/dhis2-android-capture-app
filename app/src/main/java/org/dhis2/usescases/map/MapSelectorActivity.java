@@ -29,6 +29,7 @@ import androidx.core.app.ActivityCompat;
  * Created by Cristian on 15/03/2018.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class MapSelectorActivity extends ActivityGlobalAbstract implements OnMapReadyCallback {
 
     private GoogleMap mMap;
@@ -49,15 +50,17 @@ public class MapSelectorActivity extends ActivityGlobalAbstract implements OnMap
         setContentView(R.layout.activity_map_selector);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-        mapFragment.getMapAsync(this);
+        if (mapFragment != null) {
+            mapFragment.getMapAsync(this);
+        }
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         findViewById(R.id.back).setOnClickListener(v -> finish());
         findViewById(R.id.fab).setOnClickListener(v -> {
             if (mMap != null) {
-                Intent data = new Intent();
-                data.putExtra(LATITUDE, String.valueOf(mMap.getCameraPosition().target.latitude));
-                data.putExtra(LONGITUDE, String.valueOf(mMap.getCameraPosition().target.longitude));
-                setResult(RESULT_OK, data);
+                setResult(RESULT_OK,
+                        new Intent()
+                                .putExtra(LATITUDE, String.valueOf(mMap.getCameraPosition().target.latitude))
+                                .putExtra(LONGITUDE, String.valueOf(mMap.getCameraPosition().target.longitude)));
                 finish();
             }
         });
@@ -106,16 +109,11 @@ public class MapSelectorActivity extends ActivityGlobalAbstract implements OnMap
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String permissions[], @NonNull int[] grantResults) {
-        switch (requestCode) {
-            case EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST: {
-                // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    centerMapOnCurrentLocation();
-                } else {
-                    // TODO CRIS
-                }
-            }
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        // If request is cancelled, the result arrays are empty.
+        if (requestCode == EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST &&
+                grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            centerMapOnCurrentLocation();
         }
     }
 }

@@ -525,6 +525,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
         view.getAbstractActivity().startActivity(intent);
     }
 
+    @SuppressWarnings("squid:CommentedOutCodeLine")
     @Override
     public void subscribeToRelationshipLabel(Relationship relationship, TextView textView) {
 

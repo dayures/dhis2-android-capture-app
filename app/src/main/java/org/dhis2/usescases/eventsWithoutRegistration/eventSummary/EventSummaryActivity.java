@@ -44,6 +44,7 @@ import static android.text.TextUtils.isEmpty;
  * QUADRAM. Created by Cristian on 01/03/2018.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class EventSummaryActivity extends ActivityGlobalAbstract implements EventSummaryContract.View, ProgressBarAnimation.OnUpdate {
 
     private static final int PROGRESS_TIME = 2000;
@@ -225,16 +226,23 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     }
 
 
+    private void setSectionVisibility(View sectionView, String sectionUid) {
+        if (sectionView != null) {
+            if (sectionsToHide != null && sectionsToHide.contains(sectionUid)) {
+                sectionView.setVisibility(View.GONE);
+                sectionView.setVisibility(View.GONE);
+            } else {
+                sectionView.setVisibility(View.VISIBLE);
+            }
+        }
+    }
+
     void swap(@NonNull List<FieldViewModel> updates, String sectionUid) {
-
         View sectionView = sections.get(sectionUid);
-        if (sectionsToHide != null && sectionsToHide.contains(sectionUid)) {
-            sectionView.setVisibility(View.GONE);
-            sectionView.setVisibility(View.GONE);
-        } else
-            sectionView.setVisibility(View.VISIBLE);
 
-        if (sectionView.getVisibility() == View.VISIBLE) {
+        setSectionVisibility(sectionView, sectionUid);
+
+        if (sectionView != null && sectionView.getVisibility() == View.VISIBLE) {
             int completedSectionFields = calculateCompletedFields(updates);
             int totalSectionFields = updates.size();
             totalFields = totalFields + totalSectionFields;
@@ -268,10 +276,11 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
                     errorString.append(String.format("%n- %s", errorField));
                 }
 
-                String finalMessage = missingString.append("\n").append(errorString.toString()).toString();
 
                 sectionView.findViewById(R.id.section_info).setOnClickListener(view ->
-                        showInfoDialog("Error", finalMessage)
+                        showInfoDialog(
+                                getString(R.string.error),
+                                missingString.append("\n").append(errorString.toString()).toString())
                 );
             }
 

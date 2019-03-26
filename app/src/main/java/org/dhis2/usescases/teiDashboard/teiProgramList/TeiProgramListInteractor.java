@@ -31,6 +31,8 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
     private String trackedEntityId;
     private CompositeDisposable compositeDisposable;
     private final TeiProgramListRepository teiProgramListRepository;
+
+    @SuppressWarnings("squid:S1450")
     private Date selectedEnrollmentDate;
 
     TeiProgramListInteractor(TeiProgramListRepository teiProgramListRepository) {
@@ -118,9 +120,7 @@ public class TeiProgramListInteractor implements TeiProgramListContract.Interact
         if (selectedProgram != null) {
             dateDialog.setTitle(selectedProgram.enrollmentDateLabel());
         }
-        dateDialog.setButton(DialogInterface.BUTTON_NEGATIVE, view.getContext().getString(R.string.date_dialog_clear), (dialog, which) -> {
-            dialog.dismiss();
-        });
+        dateDialog.setButton(DialogInterface.BUTTON_NEGATIVE, view.getContext().getString(R.string.date_dialog_clear), (dialog, which) -> dialog.dismiss());
         dateDialog.show();
 
     }

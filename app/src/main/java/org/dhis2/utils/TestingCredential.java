@@ -8,24 +8,30 @@ import androidx.annotation.NonNull;
 public class TestingCredential {
 
     @NonNull
-    private String server_url;
+    private String serverUrl;
     @NonNull
-    private String user_name;
+    private String userName;
     @NonNull
-    private String user_pass;
+    private String userPass;
 
-    @NonNull
-    public String getServer_url() {
-        return server_url;
+    public TestingCredential(@NonNull String serverUrl, @NonNull String userName, @NonNull String userPass) {
+        this.serverUrl = serverUrl;
+        this.userName = userName;
+        this.userPass = userPass;
     }
 
     @NonNull
-    public String getUser_name() {
-        return user_name;
+    public String getServerUrl() {
+        return serverUrl;
     }
 
     @NonNull
-    public String getUser_pass() {
-        return user_pass;
+    public String getUserName() {
+        return userName;
+    }
+
+    @NonNull
+    public String getUserPass() {
+        return userPass;
     }
 }

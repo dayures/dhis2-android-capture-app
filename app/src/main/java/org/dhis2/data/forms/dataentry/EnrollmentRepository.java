@@ -177,18 +177,18 @@ final class EnrollmentRepository implements DataEntryRepository {
                             dataValue = d2.trackedEntityModule().reservedValueManager.getValue(uid, pattern == null || pattern.contains("OU") ? null : orgUnitUid);
                         }
 
-                    String INSERT = "INSERT INTO TrackedEntityAttributeValue\n" +
+                    String insert = "INSERT INTO TrackedEntityAttributeValue\n" +
                             "(lastUpdated, value, trackedEntityAttribute, trackedEntityInstance)\n" +
                             "VALUES (?,?,?,?)";
                     SQLiteStatement updateStatement = briteDatabase.getWritableDatabase()
-                            .compileStatement(INSERT);
+                            .compileStatement(insert);
                     sqLiteBind(updateStatement, 1, BaseIdentifiableObject.DATE_FORMAT
                             .format(Calendar.getInstance().getTime()));
                     sqLiteBind(updateStatement, 2, dataValue == null ? "" : dataValue);
                     sqLiteBind(updateStatement, 3, uid == null ? "" : uid);
                     sqLiteBind(updateStatement, 4, teiUid == null ? "" : teiUid);
 
-                    long insert = briteDatabase.executeInsert(
+                    briteDatabase.executeInsert(
                             TrackedEntityAttributeValueModel.TABLE, updateStatement);
                     updateStatement.clearBindings();
                 }

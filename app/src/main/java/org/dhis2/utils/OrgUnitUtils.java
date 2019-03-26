@@ -24,6 +24,10 @@ import timber.log.Timber;
 
 public class OrgUnitUtils {
 
+    private OrgUnitUtils() {
+        // hide public constructor
+    }
+
     public static TreeNode renderTree(Context context, @NonNull List<OrganisationUnit> myOrgs, Boolean isMultiSelection) {
 
         HashMap<Integer, ArrayList<TreeNode>> subLists = new HashMap<>();

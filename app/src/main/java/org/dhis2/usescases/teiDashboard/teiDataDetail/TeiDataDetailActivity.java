@@ -23,6 +23,7 @@ import javax.inject.Inject;
 import androidx.databinding.DataBindingUtil;
 import io.reactivex.functions.Consumer;
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class TeiDataDetailActivity extends ActivityGlobalAbstract implements TeiDataDetailContracts.View {
     ActivityTeidataDetailBinding binding;
 
@@ -61,28 +62,14 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
         });
 
         binding.fabCompleted.setOptionsClick(integer -> {
-            if (integer == null)
-                return;
-
-            switch (integer) {
-                case R.id.reOpen:
-                    presenter.onReOpen(dashboardProgramModel);
-                    break;
-                default:
-                    break;
+            if (integer != null && R.id.reOpen == integer) {
+                presenter.onReOpen(dashboardProgramModel);
             }
         });
 
         binding.fabCancelled.setOptionsClick(integer -> {
-            if (integer == null)
-                return;
-
-            switch (integer) {
-                case R.id.activate:
-                    presenter.onActivate(dashboardProgramModel);
-                    break;
-                default:
-                    break;
+            if (integer != null && R.id.reOpen == integer) {
+                presenter.onActivate(dashboardProgramModel);
             }
         });
     }

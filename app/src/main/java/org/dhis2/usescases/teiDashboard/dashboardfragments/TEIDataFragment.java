@@ -63,7 +63,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
 
     private FragmentTeiDataBinding binding;
 
-    static private TEIDataFragment instance;
+    private static TEIDataFragment instance;
     private TeiDashboardContracts.Presenter presenter;
 
     private EventAdapter adapter;
@@ -155,7 +155,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
             binding.setProgram(nprogram.getCurrentProgram());
             binding.setDashboardModel(nprogram);
             presenter.getTEIEvents(this);
-            followUp.set(nprogram.getCurrentEnrollment().followUp() != null ? nprogram.getCurrentEnrollment().followUp() : false);
+            followUp.set(nprogram.getCurrentEnrollment().followUp() != null && nprogram.getCurrentEnrollment().followUp());
             binding.setFollowup(followUp);
 
         } else if (nprogram != null) {

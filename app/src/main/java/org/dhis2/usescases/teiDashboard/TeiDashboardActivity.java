@@ -18,6 +18,7 @@ import androidx.fragment.app.FragmentStatePagerAdapter;
  * QUADRAM. Created by ppajuelo on 26/04/2018.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class TeiDashboardActivity extends ActivityGlobalAbstract implements TeiDashboardContracts.View {
 
     @Inject

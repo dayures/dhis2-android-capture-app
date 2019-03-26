@@ -47,7 +47,7 @@ public class LoginPresenter implements LoginContracts.Presenter {
         this.configurationRepository = configurationRepository;
     }
 
-    @SuppressWarnings("squid:S2583")
+    @SuppressWarnings({"squid:S2583", "squid:S1125"})
     @Override
     public void init(LoginContracts.View view) {
         this.view = view;
@@ -92,14 +92,14 @@ public class LoginPresenter implements LoginContracts.Presenter {
         if (false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) //TODO: REMOVE FALSE WHEN GREEN LIGHT
             disposable.add(RxPreconditions
                     .hasBiometricSupport(view.getContext())
-                    .filter(canHandleBiometrics -> {
-                        this.canHandleBiometrics = canHandleBiometrics;
+                    .filter(canHandleBiometricsResult -> {
+                        this.canHandleBiometrics = canHandleBiometricsResult;
                         return canHandleBiometrics && SecurePreferences.contains(Constants.SECURE_SERVER_URL);
                     })
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
-                            canHandleBiometrics -> view.showBiometricButton(),
+                            canHandleBiometricsResult -> view.showBiometricButton(),
                             Timber::e));
 
 
@@ -125,11 +125,11 @@ public class LoginPresenter implements LoginContracts.Presenter {
         disposable.add(
                 configurationRepository.configure(baseUrl)
                         .map(config -> ((App) view.getAbstractActivity().getApplicationContext()).createServerComponent(config).userManager())
-                        .switchMap(userManager -> {
+                        .switchMap(userManagerResult -> {
                             SharedPreferences prefs = view.getAbstractActivity().getSharedPreferences(
                                     Constants.SHARE_PREFS, Context.MODE_PRIVATE);
                             prefs.edit().putString(Constants.SERVER, serverUrl).apply();
-                            this.userManager = userManager;
+                            this.userManager = userManagerResult;
                             return userManager.logIn(userName.trim(), pass).map(user -> {
                                 if (user == null)
                                     return Response.error(404, ResponseBody.create(MediaType.parse("text"), "NOT FOUND"));

@@ -14,6 +14,10 @@ import timber.log.Timber;
  */
 public class Utils {
 
+    private Utils() {
+        // hide public constructor
+    }
+
     public static PopupMenu getPopUpMenu(Context context, View anchor, int gravity, int menu, PopupMenu.OnMenuItemClickListener listener, boolean showIcons) {
         PopupMenu popupMenu = new PopupMenu(context, anchor, gravity);
         if (showIcons)

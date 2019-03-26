@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 /**
  * QUADRAM. Created by frodriguez on 6/6/2018.
  */
+@SuppressWarnings("squid:CommentedOutCodeLine")
 public class RelationshipSpinnerAdapter extends ArrayAdapter<Pair<RelationshipType, String>> {
 
     private List<Pair<RelationshipType, String>> data;

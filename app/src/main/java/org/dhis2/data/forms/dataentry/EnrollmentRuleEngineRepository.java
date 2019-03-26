@@ -95,7 +95,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     @NonNull
     private Flowable<RuleEnrollment> queryEnrollment(
             @NonNull List<RuleAttributeValue> attributeValues) {
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, QUERY_ENROLLMENT, enrollmentUid == null ? "" : enrollmentUid)
+        return briteDatabase.createQuery(EnrollmentModel.TABLE, QUERY_ENROLLMENT, enrollmentUid)
                 .mapToOne(cursor -> {
                     Date enrollmentDate = parseDate(cursor.getString(2));
                     Date incidentDate = cursor.isNull(1) ?
@@ -128,12 +128,8 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     }
 
     @NonNull
-    private static Date parseDate(@NonNull String date) {
-        try {
-            return BaseIdentifiableObject.DATE_FORMAT.parse(date);
-        } catch (ParseException parseException) {
-            throw new RuntimeException(parseException);
-        }
+    private static Date parseDate(@NonNull String date) throws ParseException {
+        return BaseIdentifiableObject.DATE_FORMAT.parse(date);
     }
 
     @Nonnull

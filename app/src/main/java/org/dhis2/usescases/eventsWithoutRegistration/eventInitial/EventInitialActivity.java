@@ -90,6 +90,7 @@ import static org.dhis2.utils.Constants.TRACKED_ENTITY_INSTANCE;
  * QUADRAM. Created by Cristian on 01/03/2018.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class EventInitialActivity extends ActivityGlobalAbstract implements EventInitialContract.View, DatePickerDialog.OnDateSetListener, ProgressBarAnimation.OnUpdate {
 
     private static final int PROGRESS_TIME = 2000;
@@ -688,23 +689,12 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             calendar.add(Calendar.DAY_OF_YEAR, getIntent().getIntExtra(Constants.EVENT_SCHEDULE_INTERVAL, 0));
 
         DatePickerDialog datePickerDialog = new DatePickerDialog(this, listener, calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
-
-        // ONLY FUTURE DATES
-       /* if (eventCreationType == EventCreationType.SCHEDULE) {
-//            if (getIntent().getIntExtra(Constants.EVENT_SCHEDULE_INTERVAL, 0) > 0)
-            calendar.add(Calendar.DAY_OF_YEAR, getIntent().getIntExtra(Constants.EVENT_SCHEDULE_INTERVAL, 1));
-            datePickerDialog.getDatePicker().setMinDate(calendar.getTimeInMillis());
-        }*/
-        // ONLY PAST DATES AND TODAY
-//        else {
-        //If expiryPeriodType is not null set a minumn date
         if (program.expiryPeriodType() != null) {
             Date minDate = DateUtils.getInstance().expDate(null, program.expiryDays() == null ? 0 : program.expiryDays(), program.expiryPeriodType());
             datePickerDialog.getDatePicker().setMinDate(minDate.getTime());
         }
         if (eventCreationType != EventCreationType.SCHEDULE)
             datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis() - 1000);
-//        }
         datePickerDialog.show();
     }
 
@@ -727,10 +717,9 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         // If request is cancelled, the result arrays are empty.
-        if (requestCode == EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                presenter.onLocationClick();
-            }
+        if (requestCode == EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST &&
+                grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            presenter.onLocationClick();
         }
     }
 
@@ -753,7 +742,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     @NonNull
     @Override
     public Consumer<List<FieldViewModel>> showFields(String sectionUid) {
-        return fields -> swap(fields, sectionUid);
+        return this::swap;
     }
 
     @Override
@@ -761,7 +750,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         presenter.getProgramStage(programStageUid);
     }
 
-    void swap(@NonNull List<FieldViewModel> updates, String sectionUid) {
+    void swap(@NonNull List<FieldViewModel> updates) {
 
         List<FieldViewModel> realUpdates = new ArrayList<>();
         if (sectionsToHide != null && !sectionsToHide.isEmpty()) {

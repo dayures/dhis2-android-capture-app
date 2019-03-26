@@ -18,28 +18,40 @@ final class SyncPresenterImpl implements SyncPresenter {
     }
 
     @Override
-    public void syncAndDownloadEvents(Context context) throws Exception {
-        d2.eventModule().events.upload().call();
-        SharedPreferences prefs = context.getSharedPreferences(
-                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
-        int eventLimit = prefs.getInt(Constants.EVENT_MAX, Constants.EVENT_MAX_DEFAULT);
-        boolean limityByOU = prefs.getBoolean(Constants.LIMIT_BY_ORG_UNIT, false);
-        d2.eventModule().downloadSingleEvents(eventLimit, limityByOU).call();
+    public void syncAndDownloadEvents(Context context) throws SyncError {
+        try {
+            d2.eventModule().events.upload().call();
+            SharedPreferences prefs = context.getSharedPreferences(
+                    Constants.SHARE_PREFS, Context.MODE_PRIVATE);
+            int eventLimit = prefs.getInt(Constants.EVENT_MAX, Constants.EVENT_MAX_DEFAULT);
+            boolean limityByOU = prefs.getBoolean(Constants.LIMIT_BY_ORG_UNIT, false);
+            d2.eventModule().downloadSingleEvents(eventLimit, limityByOU).call();
+        } catch (Exception e) {
+            throw new SyncError();
+        }
     }
 
     @Override
-    public void syncAndDownloadTeis(Context context) throws Exception {
-        d2.trackedEntityModule().trackedEntityInstances.upload().call();
-        SharedPreferences prefs = context.getSharedPreferences(
-                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
-        int teiLimit = prefs.getInt(Constants.TEI_MAX, Constants.TEI_MAX_DEFAULT);
-        boolean limityByOU = prefs.getBoolean(Constants.LIMIT_BY_ORG_UNIT, false);
-        d2.trackedEntityModule().downloadTrackedEntityInstances(teiLimit, limityByOU).call();
+    public void syncAndDownloadTeis(Context context) throws SyncError {
+        try {
+            d2.trackedEntityModule().trackedEntityInstances.upload().call();
+            SharedPreferences prefs = context.getSharedPreferences(
+                    Constants.SHARE_PREFS, Context.MODE_PRIVATE);
+            int teiLimit = prefs.getInt(Constants.TEI_MAX, Constants.TEI_MAX_DEFAULT);
+            boolean limityByOU = prefs.getBoolean(Constants.LIMIT_BY_ORG_UNIT, false);
+            d2.trackedEntityModule().downloadTrackedEntityInstances(teiLimit, limityByOU).call();
+        } catch (Exception e) {
+            throw new SyncError();
+        }
     }
 
     @Override
-    public void syncMetadata(Context context) throws Exception {
-        d2.syncMetaData().call();
+    public void syncMetadata(Context context) throws SyncError {
+        try {
+            d2.syncMetaData().call();
+        } catch (Exception e) {
+            throw new SyncError();
+        }
     }
 
     @Override

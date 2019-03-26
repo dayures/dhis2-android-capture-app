@@ -1,14 +1,15 @@
 package org.dhis2.usescases.jira;
 
-import androidx.databinding.ObservableField;
 import android.util.Base64;
+
+import com.google.gson.Gson;
 
 import org.dhis2.R;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
-import com.google.gson.Gson;
 
 import java.util.ArrayList;
 
+import androidx.databinding.ObservableField;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.RequestBody;
@@ -27,6 +28,7 @@ import static android.text.TextUtils.isEmpty;
  * QUADRAM. Created by ppajuelo on 24/05/2018.
  */
 
+@SuppressWarnings("squid:S1068")
 public class JiraPresenterImpl implements JiraPresenter {
 
     private final JiraIssueService issueService;
@@ -119,20 +121,6 @@ public class JiraPresenterImpl implements JiraPresenter {
 
         IssueRequest(String summary, String description) {
             this.fields = new Fields(summary, description);
-        }
-    }
-
-    private class IssueResponse {
-        private String id;
-        private String key;
-        private String self;
-
-        public String getId() {
-            return id;
-        }
-
-        public String getKey() {
-            return key;
         }
     }
 

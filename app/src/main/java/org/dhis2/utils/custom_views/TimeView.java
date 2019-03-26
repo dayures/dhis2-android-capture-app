@@ -37,7 +37,6 @@ public class TimeView extends FieldLayout implements View.OnClickListener {
     private OnDateSelected listener;
 
     private String label;
-    private String description;
     private Date date;
 
     public TimeView(Context context) {
@@ -82,7 +81,6 @@ public class TimeView extends FieldLayout implements View.OnClickListener {
     }
 
     public void setDescription(String description) {
-        this.description = description;
         binding.setVariable(BR.description, description);
         binding.executePendingBindings();
     }
@@ -141,7 +139,6 @@ public class TimeView extends FieldLayout implements View.OnClickListener {
                 editText.setText(calendarTime);
             }
             listener.onDateSelected(selectedDate);
-//            nextFocus(view);
         }, hour, minute, is24HourFormat);
         dialog.setTitle(label);
         dialog.show();

@@ -1,14 +1,13 @@
 package org.dhis2.data.forms.dataentry.fields.edittext;
 
+import org.dhis2.data.forms.dataentry.fields.EditableFieldViewModel;
+import org.hisp.dhis.android.core.common.ValueType;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import org.dhis2.data.forms.dataentry.fields.EditableFieldViewModel;
 
-import org.hisp.dhis.android.core.common.ValueType;
-
-
-public abstract class EditTextModel<T> extends EditableFieldViewModel<T> {
+public abstract class EditTextModel extends EditableFieldViewModel {
 
     @NonNull
     public abstract String hint();

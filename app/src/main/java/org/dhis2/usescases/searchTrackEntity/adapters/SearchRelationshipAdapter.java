@@ -4,7 +4,6 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import org.dhis2.R;
-import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.databinding.ItemSearchRelationshipTrackedEntityBinding;
 import org.dhis2.usescases.searchTrackEntity.SearchTEContractsModule;
 
@@ -21,13 +20,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class SearchRelationshipAdapter extends RecyclerView.Adapter<SearchRelationshipViewHolder> {
 
-    private final MetadataRepository metadataRepository;
     private SearchTEContractsModule.Presenter presenter;
     private List<SearchTeiModel> trackedEntityInstances;
 
-    public SearchRelationshipAdapter(SearchTEContractsModule.Presenter presenter, MetadataRepository metadataRepository) {
+    public SearchRelationshipAdapter(SearchTEContractsModule.Presenter presenter) {
         this.presenter = presenter;
-        this.metadataRepository = metadataRepository;
         this.trackedEntityInstances = new ArrayList<>();
     }
 
@@ -41,7 +38,7 @@ public class SearchRelationshipAdapter extends RecyclerView.Adapter<SearchRelati
 
     @Override
     public void onBindViewHolder(@NonNull SearchRelationshipViewHolder holder, int position) {
-        holder.bind(presenter, trackedEntityInstances.get(position), metadataRepository);
+        holder.bind(presenter, trackedEntityInstances.get(position));
     }
 
     @Override

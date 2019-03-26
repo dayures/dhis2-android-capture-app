@@ -25,7 +25,6 @@ import org.dhis2.utils.Constants;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.OrgUnitUtils;
 import org.dhis2.utils.Result;
-import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.PeriodType;
@@ -79,7 +78,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
     public EventInitialPresenter(@NonNull EventSummaryRepository eventSummaryRepository,
                                  @NonNull EventInitialRepository eventInitialRepository,
                                  @NonNull MetadataRepository metadataRepository,
-                                 @NonNull SchedulerProvider schedulerProvider, D2 d2) {
+                                 @NonNull SchedulerProvider schedulerProvider) {
 
         this.metadataRepository = metadataRepository;
         this.eventInitialRepository = eventInitialRepository;
@@ -284,7 +283,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                         catComboUid, catOptionUid,
                         latitude, longitude)
                         .switchMap(
-                                eventId -> eventInitialRepository.updateTrackedEntityInstance(eventId, trackedEntityInstanceUid, orgUnitUid)
+                                eventIdResult -> eventInitialRepository.updateTrackedEntityInstance(eventIdResult, trackedEntityInstanceUid, orgUnitUid)
                         )
                         .distinctUntilChanged()
                         .subscribeOn(Schedulers.io())
@@ -390,8 +389,8 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        orgUnits -> {
-                            this.orgUnits = orgUnits;
+                        orgUnitsResult -> {
+                            orgUnits = orgUnitsResult;
                             view.addTree(OrgUnitUtils.renderTree(view.getContext(), orgUnits, true));
                         },
                         throwable -> view.showNoOrgUnits()

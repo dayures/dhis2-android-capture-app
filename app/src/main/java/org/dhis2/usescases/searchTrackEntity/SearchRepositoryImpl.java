@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 import androidx.annotation.NonNull;
@@ -302,7 +303,8 @@ public class SearchRepositoryImpl implements SearchRepository {
 
     @NonNull
     @Override
-    public Observable<String> saveToEnroll(@NonNull String teiType, @NonNull String orgUnit, @NonNull String programUid, @Nullable String teiUid, HashMap<String, String> queryData, Date enrollmentDate) {
+    public Observable<String> saveToEnroll(@NonNull String teiType, @NonNull String orgUnit, @NonNull String programUid,
+                                           @Nullable String teiUid, Map<String, String> queryData, Date enrollmentDate) {
         Date currentDate = Calendar.getInstance().getTime();
         return Observable.defer(() -> {
             TrackedEntityInstance trackedEntityInstanceModel = null;
@@ -326,8 +328,8 @@ public class SearchRepositoryImpl implements SearchRepository {
                     return Observable.error(new SQLiteConstraintException(message));
                 }
 
-                for (String key : queryData.keySet()) {
-                    String dataValue = queryData.get(key);
+                for (Map.Entry<String, String> entry : queryData.entrySet()) {
+                    String dataValue = entry.getValue();
                     if (dataValue.contains("_os_"))
                         dataValue = dataValue.split("_os_")[1];
                     TrackedEntityAttributeValue attributeValueModel =
@@ -335,7 +337,7 @@ public class SearchRepositoryImpl implements SearchRepository {
                                     .created(currentDate)
                                     .lastUpdated(currentDate)
                                     .value(dataValue)
-                                    .trackedEntityAttribute(key)
+                                    .trackedEntityAttribute(entry.getKey())
                                     .trackedEntityInstance(generatedUid)
                                     .build();
                     if (briteDatabase.insert(TrackedEntityAttributeValueModel.TABLE,

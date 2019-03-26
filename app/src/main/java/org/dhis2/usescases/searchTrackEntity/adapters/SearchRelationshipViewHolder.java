@@ -1,6 +1,5 @@
 package org.dhis2.usescases.searchTrackEntity.adapters;
 
-import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.databinding.ItemSearchRelationshipTrackedEntityBinding;
 import org.dhis2.usescases.searchTrackEntity.SearchTEContractsModule;
 import org.hisp.dhis.android.core.relationship.RelationshipType;
@@ -16,6 +15,7 @@ import io.reactivex.disposables.CompositeDisposable;
  * QUADRAM. Created by frodriguez on 11/7/2017.
  */
 
+@SuppressWarnings({"squid:S1068", "squid:CommentedOutCodeLine", "squid:S1450"})
 public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
 
     private ItemSearchRelationshipTrackedEntityBinding binding;
@@ -33,7 +33,7 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
     }
 
 
-    public void bind(SearchTEContractsModule.Presenter presenter, SearchTeiModel teiModel, MetadataRepository metadataRepository) {
+    public void bind(SearchTEContractsModule.Presenter presenter, SearchTeiModel teiModel) {
         this.presenter = presenter;
         this.trackedEntityInstanceModel = teiModel;
         binding.setPresenter(presenter);

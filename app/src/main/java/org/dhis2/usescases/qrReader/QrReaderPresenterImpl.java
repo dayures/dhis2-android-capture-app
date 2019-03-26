@@ -364,6 +364,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
         this.view = view;
     }
 
+    @SuppressWarnings("squid:CommentedOutCodeLine")
     // SAVES READ TRACKED ENTITY INSTANCE, TRACKED ENTITY ATTRIBUTE VALUES, ENROLLMENTS, EVENTS AND RELATIONSHIPS INTO LOCAL DATABASE
     @Override
     public void download() {

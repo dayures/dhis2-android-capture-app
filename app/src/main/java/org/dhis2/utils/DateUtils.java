@@ -240,6 +240,7 @@ public class DateUtils {
     /**********************
      COMPARE DATES REGION*/
     @Deprecated
+    @SuppressWarnings("squid:MissingDeprecatedCheck")
     public boolean hasExpired(@NonNull Event event, int expiryDays, int completeEventExpiryDays, @Nullable PeriodType expiryPeriodType) {
         Calendar expiredDate = Calendar.getInstance();
 
@@ -1034,8 +1035,8 @@ public class DateUtils {
         boolean expiredBecouseOfPeriod;
         boolean expiredBecouseOfCompletion = false;
 
-        expiredBecouseOfCompletion = status == EventStatus.COMPLETED ?
-                isEventExpired(null, eventDate, compExpDays) : false;
+        expiredBecouseOfCompletion = status == EventStatus.COMPLETED &&
+                isEventExpired(null, eventDate, compExpDays);
 
         Date expDate = expDate(null, expDays, programPeriodType);
         expiredBecouseOfPeriod = expDate != null && expDate.before(getCalendar().getTime());

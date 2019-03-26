@@ -1,9 +1,5 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventCapture;
 
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ObservableField;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -13,6 +9,9 @@ import org.dhis2.databinding.ItemSectionSelectorBinding;
 import java.util.ArrayList;
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
 
@@ -50,12 +49,10 @@ public class SectionSelectorAdapter extends RecyclerView.Adapter<EventSectionHol
         return items != null ? items.size() : 0;
     }
 
-    public void swapData(String currentSection, List<EventSectionModel> update) {
-
+    public void swapData(List<EventSectionModel> update) {
         this.items.clear();
         this.items.addAll(update);
         notifyDataSetChanged();
-
         percentageFlowable.onNext(calculateCompletionPercentage());
 
     }
@@ -71,8 +68,8 @@ public class SectionSelectorAdapter extends RecyclerView.Adapter<EventSectionHol
             wValues += (float) sectionModel.numberOfCompletedFields();
             totals += (float) sectionModel.numberOfTotalFields();
         }
-        if (totals == 0){
-            return  100;
+        if (totals == 0) {
+            return 100;
         }
         percentage = wValues / totals;
         return percentage;

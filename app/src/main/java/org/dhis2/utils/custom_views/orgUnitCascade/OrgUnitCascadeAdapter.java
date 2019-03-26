@@ -1,10 +1,5 @@
 package org.dhis2.utils.custom_views.orgUnitCascade;
 
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ObservableInt;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
@@ -17,6 +12,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ObservableInt;
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * QUADRAM. Created by ppajuelo on 22/10/2018.
@@ -99,7 +100,7 @@ public class OrgUnitCascadeAdapter extends RecyclerView.Adapter<OrgUnitCascadeHo
     public void setOrgUnit(Quintet<String, String, String, Integer, Boolean> orgUnit, String path) {
         String[] parentUids = path.replaceFirst("/", "").split("/");
         for (int i = 1; i <= parentUids.length; i++)
-            setSelectedLevel(i, parentUids[i - 1], parentUids[i - 1].equals(orgUnit.val0()) ? orgUnit.val4() : false);
+            setSelectedLevel(i, parentUids[i - 1], parentUids[i - 1].equals(orgUnit.val0()) && orgUnit.val4());
         this.selectedOrgUnit = orgUnit;
     }
 

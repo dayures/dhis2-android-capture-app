@@ -47,7 +47,7 @@ import timber.log.Timber;
 import static android.text.TextUtils.isEmpty;
 import static org.dhis2.utils.Constants.RQ_QR_SCANNER;
 
-
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class LoginActivity extends ActivityGlobalAbstract implements LoginContracts.View {
 
     ActivityLoginBinding binding;
@@ -264,8 +264,8 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
             users.add(Constants.USER_TEST_ANDROID);
 
         for (TestingCredential testingCredential : testingCredentials) {
-            if (!urls.contains(testingCredential.getServer_url()))
-                urls.add(testingCredential.getServer_url());
+            if (!urls.contains(testingCredential.getServerUrl()))
+                urls.add(testingCredential.getServerUrl());
         }
 
         saveListToPreference(Constants.PREFS_URLS, urls);
@@ -278,7 +278,7 @@ public class LoginActivity extends ActivityGlobalAbstract implements LoginContra
         binding.userNameEdit.setAdapter(userAdapter);
     }
 
-    @SuppressWarnings("squid:S2583")
+    @SuppressWarnings({"squid:S2583", "squid:S1125"})
     @Override
     public void saveUsersData() {
         if (urls != null && !urls.contains(binding.serverUrlEdit.getText().toString())) {

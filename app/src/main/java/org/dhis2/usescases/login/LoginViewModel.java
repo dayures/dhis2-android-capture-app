@@ -34,6 +34,7 @@ public class LoginViewModel extends ViewModel {
         return isTestingEnvironment;
     }
 
+    @SuppressWarnings("squid:S1172")
     public void onServerChanged(CharSequence serverUrl, int start, int before, int count) {
         if (!serverUrl.toString().equals(this.serverUrl.getValue())) {
             this.serverUrl.setValue(serverUrl.toString());
@@ -43,14 +44,15 @@ public class LoginViewModel extends ViewModel {
         }
     }
 
+    @SuppressWarnings("squid:S1172")
     public void onUserChanged(CharSequence userName, int start, int before, int count) {
         if (!userName.toString().equals(this.userName.getValue())) {
-
             this.userName.setValue(userName.toString());
             checkData();
         }
     }
 
+    @SuppressWarnings("squid:S1172")
     public void onPassChanged(CharSequence password, int start, int before, int count) {
         if (!password.toString().equals(this.password.getValue())) {
             this.password.setValue(password.toString());
@@ -75,8 +77,8 @@ public class LoginViewModel extends ViewModel {
                 if (testingCredentials.containsKey(serverUrl) && testingCredentials.get(serverUrl) != null)
                     isTestingEnvironment.setValue(
                             Trio.create(serverUrl,
-                                    testingCredentials.get(serverUrl).getUser_name(),
-                                    testingCredentials.get(serverUrl).getUser_pass()));
+                                    testingCredentials.get(serverUrl).getUserName(),
+                                    testingCredentials.get(serverUrl).getUserPass()));
                 break;
         }
     }
@@ -84,7 +86,7 @@ public class LoginViewModel extends ViewModel {
     public void setTestingCredentials(List<TestingCredential> testingCredentials) {
         this.testingCredentials = new HashMap<>();
         for (TestingCredential testingCredential : testingCredentials) {
-            this.testingCredentials.put(testingCredential.getServer_url(), testingCredential);
+            this.testingCredentials.put(testingCredential.getServerUrl(), testingCredential);
         }
     }
 }

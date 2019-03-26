@@ -138,9 +138,7 @@ public class DataSetTableRepositoryImpl implements DataSetTableRepository {
         return briteDatabase.createQuery(PeriodModel.TABLE, PERIOD_CODE, periodType, initPeriodType)
                 .mapToOne(Period::create)
                 .flatMap(periodModel -> briteDatabase.createQuery(DataValueModel.TABLE, DATA_VALUES, periodModel.periodId())
-                        .mapToList(cursor -> {
-                            return DataValue.builder()
-                                    .build();
-                        })).toFlowable(BackpressureStrategy.LATEST);
+                        .mapToList(cursor -> DataValue.builder()
+                                .build())).toFlowable(BackpressureStrategy.LATEST);
     }
 }

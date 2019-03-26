@@ -18,6 +18,7 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
+@SuppressWarnings("squid:CommentedOutCodeLine")
 public class SyncPresenter implements SyncContracts.Presenter {
 
     private final MetadataRepository metadataRepository;

@@ -20,6 +20,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class DataSetTableActivity extends ActivityGlobalAbstract implements DataSetTableContract.View {
 
     String orgUnitUid;

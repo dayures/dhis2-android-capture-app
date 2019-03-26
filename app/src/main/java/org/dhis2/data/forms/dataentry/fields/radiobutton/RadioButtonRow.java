@@ -36,7 +36,7 @@ public class RadioButtonRow implements Row<RadioButtonHolder, RadioButtonViewMod
         FormYesNoBinding binding = DataBindingUtil.inflate(inflater,
                 R.layout.form_yes_no, parent, false);
         binding.customYesNo.setIsBgTransparent(isBgTransparent);
-        return new RadioButtonHolder(parent, binding, processor);
+        return new RadioButtonHolder(binding, processor);
     }
 
     @Override
