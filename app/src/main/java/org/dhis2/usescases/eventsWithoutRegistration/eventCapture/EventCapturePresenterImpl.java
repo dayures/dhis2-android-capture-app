@@ -50,6 +50,8 @@ import static android.text.TextUtils.isEmpty;
  */
 public class EventCapturePresenterImpl implements EventCaptureContract.EventCapturePresenter, RulesActionCallbacks {
 
+    private static final String NO_SECTION = "NO_SECTION";
+
     private final EventCaptureContract.EventCaptureRepository eventCaptureRepository;
     private final RulesUtilsProvider rulesUtils;
     private final DataEntryStore dataEntryStore;
@@ -182,7 +184,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
                                     for (FieldViewModel fieldViewModel : fields)
                                         if (!isEmpty(fieldViewModel.value()))
                                             cont++;
-                                    eventSectionModels.add(EventSectionModel.create("NO_SECTION", "no_section", cont, fields.size()));
+                                    eventSectionModels.add(EventSectionModel.create(NO_SECTION, NO_SECTION, cont, fields.size()));
                                 }
                             }
 
@@ -213,7 +215,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
                                         for (FieldViewModel fieldViewModel : fieldMap.get(null))
                                             fieldMap.get(section).add(fieldViewModel);
 
-                                    List<FieldViewModel> fieldsToShow = fieldMap.get(section.equals("NO_SECTION") ? null : section);
+                                    List<FieldViewModel> fieldsToShow = fieldMap.get(section.equals(NO_SECTION) ? null : section);
                                     return fieldsToShow != null ? fieldsToShow : new ArrayList<FieldViewModel>();
                                 }))
                         .observeOn(Schedulers.computation())
@@ -228,7 +230,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
     }
 
     private Flowable<List<FieldViewModel>> getFieldFlowable(@Nullable String sectionUid) {
-        if (sectionUid == null || sectionUid.equals("NO_SECTION")) {
+        if (sectionUid == null || sectionUid.equals(NO_SECTION)) {
             return Flowable.zip(
                     eventCaptureRepository.list().subscribeOn(Schedulers.computation()),
                     eventCaptureRepository.calculate().subscribeOn(Schedulers.computation()),
@@ -324,10 +326,10 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
 
                                 String sectionUid = finalSectionList.get(position).sectionUid() != null ?
                                         finalSectionList.get(position).sectionUid() :
-                                        "NO_SECTION";
+                                        NO_SECTION;
 
                                 return Flowable.just(!finalSectionList.isEmpty() ?
-                                        sectionUid : "NO_SECTION");
+                                        sectionUid : NO_SECTION);
                             })
                             .observeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())

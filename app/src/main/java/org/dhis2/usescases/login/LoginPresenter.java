@@ -35,6 +35,8 @@ import timber.log.Timber;
 
 public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
 
+    private static final String SESSION_LOCKED = "SessionLocked";
+
     private final ConfigurationRepository configurationRepository;
     private LoginContracts.EventSummaryView view;
 
@@ -64,9 +66,9 @@ public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
                     .subscribe(isUserLoggedIn -> {
                         SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
                                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
-                        if (isUserLoggedIn && !prefs.getBoolean("SessionLocked", false)) {
+                        if (isUserLoggedIn && !prefs.getBoolean(SESSION_LOCKED, false)) {
                             view.startActivity(MainActivity.class, null, true, true, null);
-                        } else if (prefs.getBoolean("SessionLocked", false)) {
+                        } else if (prefs.getBoolean(SESSION_LOCKED, false)) {
                             view.showUnlockButton();
                         }
 
@@ -168,7 +170,7 @@ public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
         SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
         if (prefs.getString("pin", "").equals(pin)) {
-            prefs.edit().putBoolean("SessionLocked", false).apply();
+            prefs.edit().putBoolean(SESSION_LOCKED, false).apply();
             view.startActivity(MainActivity.class, null, true, true, null);
         }
     }
@@ -189,7 +191,7 @@ public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
                     .subscribe(
                             data -> {
                                 SharedPreferences prefs = view.getAbstracContext().getSharedPreferences();
-                                prefs.edit().putBoolean("SessionLocked", false).apply();
+                                prefs.edit().putBoolean(SESSION_LOCKED, false).apply();
                                 prefs.edit().putString("pin", null).apply();
                                 view.handleLogout();
                             },

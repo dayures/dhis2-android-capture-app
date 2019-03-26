@@ -39,6 +39,8 @@ import static org.dhis2.data.qr.QRjson.ENROLLMENT_JSON;
 import static org.dhis2.data.qr.QRjson.EVENTS_JSON;
 import static org.dhis2.data.qr.QRjson.EVENT_JSON;
 import static org.dhis2.data.qr.QRjson.TEI_JSON;
+import static org.dhis2.utils.SqlConstants.SELECT_ALL_FROM;
+import static org.dhis2.utils.SqlConstants.WHERE;
 
 /**
  * QUADRAM. Created by ppajuelo on 22/05/2018.
@@ -49,17 +51,17 @@ public class QRCodeGenerator implements QRInterface {
     private final BriteDatabase briteDatabase;
     private final Gson gson;
 
-    private static final String TEI = "SELECT * FROM " + TrackedEntityInstanceModel.TABLE + " WHERE " + TrackedEntityInstanceModel.TABLE + "." + TrackedEntityInstanceModel.Columns.UID + " = ? LIMIT 1";
+    private static final String TEI = SELECT_ALL_FROM + TrackedEntityInstanceModel.TABLE + WHERE + TrackedEntityInstanceModel.TABLE + "." + TrackedEntityInstanceModel.Columns.UID + " = ? LIMIT 1";
 
-    private static final String EVENT = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.TABLE + "." + EventModel.Columns.UID + " = ? LIMIT 1";
+    private static final String EVENT = SELECT_ALL_FROM + EventModel.TABLE + WHERE + EventModel.TABLE + "." + EventModel.Columns.UID + " = ? LIMIT 1";
 
-    private static final String TEI_ATTR = "SELECT * FROM " + TrackedEntityAttributeValueModel.TABLE + " WHERE " + TrackedEntityAttributeValueModel.TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE + " = ?";
+    private static final String TEI_ATTR = SELECT_ALL_FROM + TrackedEntityAttributeValueModel.TABLE + WHERE + TrackedEntityAttributeValueModel.TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE + " = ?";
 
-    private static final String TEI_DATA = "SELECT * FROM " + TrackedEntityDataValueModel.TABLE + " WHERE " + TrackedEntityDataValueModel.TABLE + "." + TrackedEntityDataValueModel.Columns.EVENT + " = ?";
+    private static final String TEI_DATA = SELECT_ALL_FROM + TrackedEntityDataValueModel.TABLE + WHERE + TrackedEntityDataValueModel.TABLE + "." + TrackedEntityDataValueModel.Columns.EVENT + " = ?";
 
-    private static final String TEI_ENROLLMENTS = "SELECT * FROM " + EnrollmentModel.TABLE + " WHERE " + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + " = ?";
+    private static final String TEI_ENROLLMENTS = SELECT_ALL_FROM + EnrollmentModel.TABLE + WHERE + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + " = ?";
 
-    private static final String TEI_EVENTS = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.TABLE + "." + EventModel.Columns.ENROLLMENT + " =?";
+    private static final String TEI_EVENTS = SELECT_ALL_FROM + EventModel.TABLE + WHERE + EventModel.TABLE + "." + EventModel.Columns.ENROLLMENT + " =?";
 
     QRCodeGenerator(BriteDatabase briteDatabase) {
         this.briteDatabase = briteDatabase;

@@ -50,6 +50,8 @@ import io.reactivex.functions.Consumer;
 import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SqlConstants.FROM;
+import static org.dhis2.utils.SqlConstants.SELECT;
 
 @SuppressWarnings({
         "PMD.AvoidDuplicateLiterals"
@@ -74,35 +76,35 @@ public class EventRepository implements FormRepository {
             EventModel.TABLE, EventModel.Columns.PROGRAM, ProgramModel.TABLE, ProgramModel.Columns.UID,
             EventModel.TABLE, EventModel.Columns.UID);
 
-    private static final String SELECT_TITLE = "SELECT\n" +
+    private static final String SELECT_TITLE = SELECT + "\n" +
             "  Program.displayName,\n" +
             "  ProgramStage.displayName\n" +
-            "FROM Event\n" +
+            FROM + EventModel.TABLE + "\n" +
             "  JOIN Program ON Event.program = Program.uid\n" +
             "  JOIN ProgramStage ON Event.programStage = ProgramStage.uid\n" +
             "WHERE Event.uid = ? " +
             "LIMIT 1";
 
-    private static final String SELECT_SECTIONS = "SELECT\n" +
+    private static final String SELECT_SECTIONS = SELECT + "\n" +
             "  Program.uid AS programUid,\n" +
             "  ProgramStage.uid AS programStageUid,\n" +
             "  ProgramStageSection.uid AS programStageSectionUid,\n" +
             "  ProgramStageSection.displayName AS programStageDisplayName,\n" +
             "  ProgramStageSection.mobileRenderType AS renderType,\n" +
             "  ProgramStageSection.sortOrder AS sectionOrder\n" +
-            "FROM Event\n" +
+            FROM + EventModel.TABLE + "\n" +
             "  JOIN Program ON Event.program = Program.uid\n" +
             "  JOIN ProgramStage ON Event.programStage = ProgramStage.uid\n" +
             "  LEFT OUTER JOIN ProgramStageSection ON ProgramStageSection.programStage = Event.programStage\n" +
             "WHERE Event.uid = ? ORDER BY ProgramStageSection.sortOrder";
 
-    private static final String SELECT_EVENT_STATUS = "SELECT\n" +
+    private static final String SELECT_EVENT_STATUS = SELECT + "\n" +
             "  Event.status\n" +
-            "FROM Event\n" +
+            FROM + EventModel.TABLE + "\n" +
             "WHERE Event.uid = ? " +
             "LIMIT 1";
 
-    private static final String QUERY = "SELECT\n" +
+    private static final String QUERY = SELECT + "\n" +
             "  Field.id,\n" +
             "  Field.label,\n" +
             "  Field.type,\n" +
@@ -117,7 +119,7 @@ public class EventRepository implements FormRepository {
             "  Field.displayDescription,\n" +
             "  Field.formOrder,\n" +
             "  Field.sectionOrder\n" +
-            "FROM Event\n" +
+            FROM + EventModel.TABLE + "\n" +
             "  LEFT OUTER JOIN (\n" +
             "      SELECT\n" +
             "        DataElement.displayName AS label,\n" +

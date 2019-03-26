@@ -32,6 +32,8 @@ import java.util.Set;
 import androidx.annotation.NonNull;
 import io.reactivex.Observable;
 
+import static org.dhis2.utils.SqlConstants.SELECT;
+
 /**
  * QUADRAM. Created by ppajuelo on 02/11/2017.
  */
@@ -57,11 +59,11 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
     @NonNull
     @Override
     public Observable<List<EnrollmentViewModel>> activeEnrollments(String trackedEntityId) {
-        String selectActiveEnrollmentWithTeiId = "SELECT " +
+        String selectActiveEnrollmentWithTeiId = SELECT +
                 "Enrollment.uid," +
                 "Enrollment.enrollmentDate," +
                 "Enrollment.followup," +
-                "ObjectStyle.icon," +
+                ObjectStyleModel.TABLE + "." + ObjectStyleModel.Columns.ICON + "," +
                 "ObjectStyle.color," +
                 "Program.displayName AS programName," +
                 "Program.uid AS programUid," +
@@ -79,11 +81,11 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
     @NonNull
     @Override
     public Observable<List<EnrollmentViewModel>> otherEnrollments(String trackedEntityId) {
-        String selectActiveEnrollmentWithTeiId = "SELECT " +
+        String selectActiveEnrollmentWithTeiId = SELECT +
                 "Enrollment.uid," +
                 "Enrollment.enrollmentDate," +
                 "Enrollment.followup," +
-                "ObjectStyle.icon," +
+                ObjectStyleModel.TABLE + "." + ObjectStyleModel.Columns.ICON + "," +
                 "ObjectStyle.color," +
                 "Program.displayName AS programName," +
                 "Program.uid AS programUid," +
@@ -99,11 +101,11 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
     }
 
 
-    private static final String PROGRAM_MODELS_FOR_TEI = "SELECT " +
+    private static final String PROGRAM_MODELS_FOR_TEI = SELECT +
             "Program.uid, " +
             "Program.displayName, " +
             "ObjectStyle.color, " +
-            "ObjectStyle.icon," +
+            ObjectStyleModel.TABLE + "." + ObjectStyleModel.Columns.ICON + "," +
             "Program.programType," +
             "Program.trackedEntityType," +
             "Program.description, " +

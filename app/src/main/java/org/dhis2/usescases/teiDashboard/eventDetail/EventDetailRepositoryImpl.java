@@ -41,6 +41,9 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
+import static org.dhis2.utils.SqlConstants.NOT_EQUALS;
+import static org.dhis2.utils.SqlConstants.QUOTE;
+
 /**
  * QUADRAM. Created by ppajuelo on 02/11/2017.
  */
@@ -71,7 +74,7 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
     @Override
     public Observable<Event> eventModelDetail(String uid) {
         String selectEventWithUid = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.Columns.UID + "='" + uid + "' " +
-                "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+                "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' LIMIT 1";
         return briteDatabase.createQuery(EventModel.TABLE, selectEventWithUid)
                 .mapToOne(Event::create);
     }
@@ -83,7 +86,7 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
                 "SELECT %s.* FROM %s " +
                         "JOIN %s ON %s.%s = %s.%s " +
                         "WHERE %s.%s = ? " +
-                        "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' " +
+                        "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' " +
                         "ORDER BY %s.%s",
                 ProgramStageSectionModel.TABLE, ProgramStageSectionModel.TABLE,
                 EventModel.TABLE, EventModel.TABLE, EventModel.Columns.PROGRAM_STAGE, ProgramStageSectionModel.TABLE, ProgramStageSectionModel.Columns.PROGRAM_STAGE,
@@ -101,7 +104,7 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
                 "SELECT %s.* FROM %s " +
                         "JOIN %s ON %s.%s =%s.%s " +
                         "WHERE %s.%s = ? " +
-                        "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'",
+                        "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'",
                 ProgramStageDataElementModel.TABLE, ProgramStageDataElementModel.TABLE,
                 EventModel.TABLE, EventModel.TABLE, EventModel.Columns.PROGRAM_STAGE, ProgramStageDataElementModel.TABLE, ProgramStageDataElementModel.Columns.PROGRAM_STAGE,
                 EventModel.TABLE, EventModel.Columns.UID

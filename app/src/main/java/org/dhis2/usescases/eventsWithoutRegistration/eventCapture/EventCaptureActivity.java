@@ -51,6 +51,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
 
     private static final int SWIPE_THRESHOLD = 100;
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+    private static final String SHOW_OPTIONS = "SHOW_OPTIONS";
 
     private GestureDetector gestureScanner;
 
@@ -155,7 +156,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 .setIsExpired(presenter.hasExpired())
                 .setCanComplete(canComplete)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
+                .show(getSupportFragmentManager(), SHOW_OPTIONS);
     }
 
     @Override
@@ -165,7 +166,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 .setIsExpired(presenter.hasExpired())
                 .setReopen(true)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
+                .show(getSupportFragmentManager(), SHOW_OPTIONS);
     }
 
     @Override
@@ -176,7 +177,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 .setIsExpired(presenter.hasExpired())
                 .setSkip(true)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
+                .show(getSupportFragmentManager(), SHOW_OPTIONS);
     }
 
     @Override
@@ -186,7 +187,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 .setIsExpired(presenter.hasExpired())
                 .setReschedule(true)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
+                .show(getSupportFragmentManager(), SHOW_OPTIONS);
     }
 
     @Override

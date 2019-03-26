@@ -65,6 +65,8 @@ import timber.log.Timber;
 
 public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashboardPresenter {
 
+    private static final String TEI_UID = "TEI_UID";
+    private static final String PROGRAM_UID = "PROGRAM_UID";
     private final DashboardRepository dashboardRepository;
     private final MetadataRepository metadataRepository;
     private final D2 d2;
@@ -264,7 +266,7 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
     @Override
     public void onEnrollmentSelectorClick() {
         Bundle extras = new Bundle();
-        extras.putString("TEI_UID", teUid);
+        extras.putString(TEI_UID, teUid);
         view.goToEnrollmentList(extras);
     }
 
@@ -285,8 +287,8 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
         Fragment teiFragment = TEIDataFragment.getInstance();
         Intent intent = new Intent(view.getContext(), TeiDataDetailActivity.class);
         Bundle extras = new Bundle();
-        extras.putString("TEI_UID", teUid);
-        extras.putString("PROGRAM_UID", programUid);
+        extras.putString(TEI_UID, teUid);
+        extras.putString(PROGRAM_UID, programUid);
         if (dashboardProgramModel.getCurrentEnrollment() != null)
             extras.putString("ENROLLMENT_UID", dashboardProgramModel.getCurrentEnrollment().uid());
         intent.putExtras(extras);
@@ -314,7 +316,7 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
             Bundle extras = new Bundle();
             extras.putString("EVENT_UID", uid);
             extras.putString("TOOLBAR_TITLE", view.getToolbarTitle());
-            extras.putString("TEI_UID", teUid);
+            extras.putString(TEI_UID, teUid);
             intent.putExtras(extras);
             ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(view.getAbstractActivity(), sharedView, "shared_view");
             teiFragment.startActivityForResult(intent, TEIDataFragment.getEventRequestCode(), options.toBundle());
@@ -352,7 +354,7 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
             extras.putBoolean("FROM_RELATIONSHIP", true);
             extras.putString("FROM_RELATIONSHIP_TEI", teUid);
             extras.putString("TRACKED_ENTITY_UID", teiTypeToAdd);
-            extras.putString("PROGRAM_UID", null);
+            extras.putString(PROGRAM_UID, null);
             intent.putExtras(extras);
             relationshipFragment.startActivityForResult(intent, Constants.REQ_ADD_RELATIONSHIP);
         } else
@@ -519,8 +521,8 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
     public void openDashboard(String teiUid) {
         Intent intent = new Intent(view.getContext(), TeiDashboardMobileActivity.class);
         Bundle bundle = new Bundle();
-        bundle.putString("TEI_UID", teiUid);
-        bundle.putString("PROGRAM_UID", null);
+        bundle.putString(TEI_UID, teiUid);
+        bundle.putString(PROGRAM_UID, null);
         intent.putExtras(bundle);
         view.getAbstractActivity().startActivity(intent);
     }

@@ -40,6 +40,8 @@ public class DateUtils {
     public static final String DATABASE_FORMAT_EXPRESSION_NO_SECONDS = "yyyy-MM-dd'T'HH:mm";
     public static final String DATE_TIME_FORMAT_EXPRESSION = "yyyy-MM-dd HH:mm";
     public static final String DATE_FORMAT_EXPRESSION = "yyyy-MM-dd";
+    public static final String WEEK_FORMAT_EXPRESSION = "w yyyy";
+    public static final String MONTH_FORMAT_EXPRESSION = "MMM yyyy";
 
     public Date[] getDateFromDateAndPeriod(Date date, Period period) {
         switch (period) {
@@ -240,7 +242,7 @@ public class DateUtils {
     /**********************
      COMPARE DATES REGION*/
     @Deprecated
-    @SuppressWarnings("squid:MissingDeprecatedCheck")
+    @SuppressWarnings({"squid:MissingDeprecatedCheck", "squid:S1133"})
     public boolean hasExpired(@NonNull Event event, int expiryDays, int completeEventExpiryDays, @Nullable PeriodType expiryPeriodType) {
         Calendar expiredDate = Calendar.getInstance();
 
@@ -919,51 +921,51 @@ public class DateUtils {
             periodType = PeriodType.Daily;
         switch (periodType) {
             case Weekly:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(WEEK_FORMAT_EXPRESSION, locale).format(initDate);
                 break;
             case WeeklyWednesday:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(WEEK_FORMAT_EXPRESSION, locale).format(initDate);
                 break;
             case WeeklyThursday:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(WEEK_FORMAT_EXPRESSION, locale).format(initDate);
                 break;
             case WeeklySaturday:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(WEEK_FORMAT_EXPRESSION, locale).format(initDate);
                 break;
             case WeeklySunday:
-                formattedDate = new SimpleDateFormat("w yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(WEEK_FORMAT_EXPRESSION, locale).format(initDate);
                 break;
             case BiWeekly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("w yyyy", locale).format(initDate),
-                        new SimpleDateFormat("w yyyy", locale).format(endDate)
+                        new SimpleDateFormat(WEEK_FORMAT_EXPRESSION, locale).format(initDate),
+                        new SimpleDateFormat(WEEK_FORMAT_EXPRESSION, locale).format(endDate)
                 );
                 break;
             case Monthly:
-                formattedDate = new SimpleDateFormat("MMM yyyy", locale).format(initDate);
+                formattedDate = new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(initDate);
                 break;
             case BiMonthly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(initDate),
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(endDate)
                 );
                 break;
             case Quarterly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(initDate),
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(endDate)
                 );
                 break;
             case SixMonthly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(initDate),
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(endDate)
                 );
                 break;
             case SixMonthlyApril:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(initDate),
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(endDate)
                 );
                 break;
             case Yearly:
@@ -971,20 +973,20 @@ public class DateUtils {
                 break;
             case FinancialApril:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(initDate),
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(endDate)
                 );
                 break;
             case FinancialJuly:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(initDate),
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(endDate)
                 );
                 break;
             case FinancialOct:
                 formattedDate = String.format(periodString,
-                        new SimpleDateFormat("MMM yyyy", locale).format(initDate),
-                        new SimpleDateFormat("MMM yyyy", locale).format(endDate)
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(initDate),
+                        new SimpleDateFormat(MONTH_FORMAT_EXPRESSION, locale).format(endDate)
                 );
                 break;
             case Daily:

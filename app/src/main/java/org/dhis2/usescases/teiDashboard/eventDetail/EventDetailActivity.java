@@ -53,6 +53,8 @@ import timber.log.Timber;
 @SuppressWarnings("squid:MaximumInheritanceDepth")
 public class EventDetailActivity extends ActivityGlobalAbstract implements EventDetailContracts.EventDetailView {
 
+    private static final String EVENT_DATA_ENTRY = "EVENT_DATA_ENTRY";
+
     ActivityEventDetailBinding binding;
     @Inject
     EventDetailContracts.EventDetailPresenter presenter;
@@ -119,15 +121,15 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
 
             supportStartPostponedEnterTransition();
 
-            if (getSupportFragmentManager().findFragmentByTag("EVENT_DATA_ENTRY") != null)
+            if (getSupportFragmentManager().findFragmentByTag(EVENT_DATA_ENTRY) != null)
                 getSupportFragmentManager().beginTransaction()
-                        .remove(getSupportFragmentManager().findFragmentByTag("EVENT_DATA_ENTRY"))
+                        .remove(getSupportFragmentManager().findFragmentByTag(EVENT_DATA_ENTRY))
                         .commit();
 
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.dataFragment, FormFragment.newInstance(
                             FormViewArguments.createForEvent(eventUid), false,
-                            false, true), "EVENT_DATA_ENTRY")
+                            false, true), EVENT_DATA_ENTRY)
                     .commit();
 
             if (!HelpManager.getInstance().isTutorialReadyForScreen(getClass().getName()))

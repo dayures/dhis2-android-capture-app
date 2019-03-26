@@ -50,6 +50,9 @@ import io.reactivex.Observable;
 import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SqlConstants.FROM;
+import static org.dhis2.utils.SqlConstants.NOT_EQUALS;
+import static org.dhis2.utils.SqlConstants.QUOTE;
 
 /**
  * QUADRAM. Created by Cristian on 22/03/2018.
@@ -79,12 +82,12 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "  ProgramStageSection.displayName AS programStageSectionDisplayName,\n" +
             "  ProgramStage.displayName AS programStageDisplayName,\n" +
             "  ProgramStageSection.mobileRenderType AS renderType\n" +
-            "FROM Event\n" +
+            FROM + EventModel.TABLE + "\n" +
             "  JOIN Program ON Event.program = Program.uid\n" +
             "  JOIN ProgramStage ON Event.programStage = ProgramStage.uid\n" +
             "  LEFT OUTER JOIN ProgramStageSection ON ProgramStageSection.programStage = Event.programStage\n" +
             "WHERE Event.uid = ?\n" +
-            "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY ProgramStageSection.sortOrder";
+            "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY ProgramStageSection.sortOrder";
 
     private static final String QUERY = "SELECT\n" +
             "  Field.id,\n" +
@@ -101,7 +104,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "  Field.displayDescription,\n" +
             "  Field.formOrder,\n" +
             "  Field.sectionOrder\n" +
-            "FROM Event\n" +
+            FROM + EventModel.TABLE + "\n" +
             "  LEFT OUTER JOIN (\n" +
             "      SELECT\n" +
             "        DataElement.displayName AS label,\n" +
@@ -140,10 +143,10 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "  Event.dueDate,\n" +
             "  Event.organisationUnit,\n" +
             "  ProgramStage.displayName\n" +
-            "FROM Event\n" +
+            FROM + EventModel.TABLE + "\n" +
             "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
             "WHERE Event.uid = ?\n" +
-            "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'\n" +
+            "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'\n" +
             "LIMIT 1;";
 
     private static final String QUERY_VALUES = "SELECT " +
@@ -159,7 +162,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
             "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "';";
 
     private static final String EVENT_QUERY = "SELECT * FROM Event WHERE Event.uid = ? LIMIT 1";
     private static final String PROGRAM_QUERY = "SELECT * FROM Program JOIN ProgramStage ON " +

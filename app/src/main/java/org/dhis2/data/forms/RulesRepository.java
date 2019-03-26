@@ -22,6 +22,7 @@ import org.hisp.dhis.android.core.program.ProgramRuleActionType;
 import org.hisp.dhis.android.core.program.ProgramRuleModel;
 import org.hisp.dhis.android.core.program.ProgramRuleVariableModel;
 import org.hisp.dhis.android.core.program.ProgramRuleVariableSourceType;
+import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.rules.models.Rule;
 import org.hisp.dhis.rules.models.RuleAction;
@@ -69,6 +70,13 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SqlConstants.AND;
+import static org.dhis2.utils.SqlConstants.FROM;
+import static org.dhis2.utils.SqlConstants.JOIN;
+import static org.dhis2.utils.SqlConstants.NOT_EQUALS;
+import static org.dhis2.utils.SqlConstants.ON;
+import static org.dhis2.utils.SqlConstants.QUOTE;
+import static org.dhis2.utils.SqlConstants.SELECT;
 
 
 @SuppressWarnings("PMD")
@@ -77,7 +85,7 @@ public final class RulesRepository {
             "FROM Constant";
 
 
-    private static final String QUERY_RULES = "SELECT\n" +
+    private static final String QUERY_RULES = SELECT + "\n" +
             "  ProgramRule.uid, \n" +
             "  ProgramRule.programStage,\n" +
             "  ProgramRule.priority,\n" +
@@ -85,7 +93,7 @@ public final class RulesRepository {
             "FROM ProgramRule\n" +
             "WHERE program = ?;";
 
-    private static final String QUERY_VARIABLES = "SELECT\n" +
+    private static final String QUERY_VARIABLES = SELECT + "\n" +
             "  name,\n" +
             "  programStage,\n" +
             "  programRuleVariableSourceType,\n" +
@@ -115,7 +123,7 @@ public final class RulesRepository {
             "  \"TEI_ATTRIBUTE\"\n" +
             ");";
 
-    private static final String QUERY_ACTIONS = "SELECT\n" +
+    private static final String QUERY_ACTIONS = SELECT + "\n" +
             "  ProgramRuleAction.programRule,\n" +
             "  ProgramRuleAction.programStage,\n" +
             "  ProgramRuleAction.programStageSection,\n" +
@@ -150,47 +158,47 @@ public final class RulesRepository {
     /**
      * Query all events except current one from a program without registration
      */
-    private static final String QUERY_OTHER_EVENTS = "SELECT Event.uid,\n" +
-            "  Event.programStage,\n" +
-            "  Event.status,\n" +
-            "  Event.eventDate,\n" +
-            "  Event.dueDate,\n" +
-            "  Event.organisationUnit,\n" +
-            "  ProgramStage.displayName\n" +
-            "FROM Event\n" +
-            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
+    private static final String QUERY_OTHER_EVENTS = SELECT + EventModel.TABLE + "." + EventModel.Columns.UID + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.STATUS + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.EVENT_DATE + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.DUE_DATE + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
+            " " + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.DISPLAY_NAME + ",\n" +
+            FROM + EventModel.TABLE + "\n"  +
+            JOIN + ProgramStageModel.TABLE + ON + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.UID + " = " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + "\n" +
             "WHERE Event.program = ? AND Event.uid != ? AND Event.eventDate <= ? \n" +
-            " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
+            AND + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
 
     /**
      * Query all events except current one from an enrollment
      */
-    private static final String QUERY_OTHER_EVENTS_ENROLLMENTS = "SELECT Event.uid,\n" +
-            "  Event.programStage,\n" +
-            "  Event.status,\n" +
-            "  Event.eventDate,\n" +
-            "  Event.dueDate,\n" +
-            "  Event.organisationUnit,\n" +
-            "  ProgramStage.displayName\n" +
-            "FROM Event\n" +
-            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
+    private static final String QUERY_OTHER_EVENTS_ENROLLMENTS = SELECT + EventModel.TABLE + "." + EventModel.Columns.UID + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.STATUS + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.EVENT_DATE + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.DUE_DATE + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
+            " " + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.DISPLAY_NAME + ",\n" +
+            FROM + EventModel.TABLE + "\n"  +
+            JOIN + ProgramStageModel.TABLE + ON + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.UID + " = " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + "\n" +
             "WHERE Event.enrollment = ? AND Event.uid != ? AND Event.eventDate <= ?\n" +
-            " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
+            AND + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
 
     /**
      * Query all events from an enrollment
      */
-    private static final String QUERY_EVENTS_ENROLLMENTS = "SELECT Event.uid,\n" +
-            "  Event.programStage,\n" +
-            "  Event.status,\n" +
-            "  Event.eventDate,\n" +
-            "  Event.dueDate,\n" +
-            "  Event.organisationUnit,\n" +
-            "  ProgramStage.displayName\n" +
-            "FROM Event\n" +
-            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
+    private static final String QUERY_EVENTS_ENROLLMENTS = SELECT + EventModel.TABLE + "." + EventModel.Columns.UID + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.STATUS + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.EVENT_DATE + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.DUE_DATE + ",\n" +
+            " " + EventModel.TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
+            " " + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.DISPLAY_NAME + ",\n" +
+            FROM + EventModel.TABLE + "\n"  +
+            JOIN + ProgramStageModel.TABLE + ON + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.UID + " = " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + "\n" +
             "WHERE Event.enrollment = ?\n" +
-            " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC LIMIT 10";
+            AND + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC LIMIT 10";
 
     private static final String QUERY_VALUES = "SELECT " +
             "  Event.eventDate," +
@@ -205,9 +213,9 @@ public final class RulesRepository {
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
             "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "';";
 
-    private static final String QUERY_ENROLLMENT = "SELECT\n" +
+    private static final String QUERY_ENROLLMENT = SELECT + "\n" +
             "  Enrollment.uid,\n" +
             "  Enrollment.incidentDate,\n" +
             "  Enrollment.enrollmentDate,\n" +
@@ -219,7 +227,7 @@ public final class RulesRepository {
             "WHERE Enrollment.uid = ? \n" +
             "LIMIT 1;";
 
-    private static final String QUERY_ATTRIBUTE_VALUES = "SELECT\n" +
+    private static final String QUERY_ATTRIBUTE_VALUES = SELECT + "\n" +
             "  Field.id,\n" +
             "  Value.value,\n" +
             "  ProgramRuleVariable.useCodeForOptionSet,\n" +

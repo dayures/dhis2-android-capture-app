@@ -10,6 +10,7 @@ import org.dhis2.data.user.UserRepository;
 import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
+import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
@@ -34,10 +35,18 @@ import io.reactivex.Flowable;
 
 import static org.dhis2.data.forms.dataentry.DataEntryStore.valueType.ATTR;
 import static org.dhis2.data.forms.dataentry.DataEntryStore.valueType.DATA_ELEMENT;
+import static org.dhis2.utils.SqlConstants.AND;
+import static org.dhis2.utils.SqlConstants.EQUAL;
+import static org.dhis2.utils.SqlConstants.FROM;
+import static org.dhis2.utils.SqlConstants.JOIN;
+import static org.dhis2.utils.SqlConstants.ON;
+import static org.dhis2.utils.SqlConstants.QUESTION_MARK;
+import static org.dhis2.utils.SqlConstants.SELECT;
+import static org.dhis2.utils.SqlConstants.WHERE;
 
 public final class DataValueStore implements DataEntryStore {
     private static final String SELECT_EVENT = "SELECT * FROM " + EventModel.TABLE +
-            " WHERE " + EventModel.Columns.UID + " = ? AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+            " WHERE " + EventModel.Columns.UID + EQUAL + QUESTION_MARK + AND + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
 
     @NonNull
     private final BriteDatabase briteDatabase;
@@ -96,7 +105,7 @@ public final class DataValueStore implements DataEntryStore {
 
             // ToDo: write test cases for different events
             return (long) briteDatabase.update(TrackedEntityDataValueModel.TABLE, dataValue,
-                    TrackedEntityDataValueModel.Columns.DATA_ELEMENT + " = ? AND " +
+                    TrackedEntityDataValueModel.Columns.DATA_ELEMENT + EQUAL + QUESTION_MARK + AND +
                             TrackedEntityDataValueModel.Columns.EVENT + " = ?", uid, eventUid);
         } else {
             dataValue.put(TrackedEntityAttributeValueModel.Columns.LAST_UPDATED,
@@ -109,16 +118,16 @@ public final class DataValueStore implements DataEntryStore {
 
             String teiUid = "";
             try (Cursor enrollmentCursor = briteDatabase.query(
-                    "SELECT Enrollment.trackedEntityInstance FROM TrackedEntityAttributeValue " +
-                            "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityAttributeValue.trackedEntityInstance " +
-                            "WHERE TrackedEntityAttributeValue.trackedEntityAttribute = ?", uid)) {
+                    SELECT + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + FROM + TrackedEntityAttributeValueModel.TABLE + " " +
+                            JOIN + EnrollmentModel.TABLE + ON + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + EQUAL + TrackedEntityAttributeValueModel.TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE +
+                            WHERE + TrackedEntityAttributeValueModel.TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK, uid)) {
                 if (enrollmentCursor.moveToFirst()) {
                     teiUid = enrollmentCursor.getString(0);
                 }
             }
 
             return (long) briteDatabase.update(TrackedEntityAttributeValueModel.TABLE, dataValue,
-                    TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + " = ? AND " +
+                    TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK + AND +
                             TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE + " = ? ",
                     uid, teiUid);
         }
@@ -146,7 +155,7 @@ public final class DataValueStore implements DataEntryStore {
             }
         } else {
             try (Cursor cursor = briteDatabase.query("SELECT TrackedEntityAttributeValue.value FROM TrackedEntityAttributeValue " +
-                    "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityAttributeValue.trackedEntityInstance " +
+                    JOIN + EnrollmentModel.TABLE + ON + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + EQUAL + TrackedEntityAttributeValueModel.TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE +
                     "JOIN Event ON Event.enrollment = Enrollment.uid " +
                     "WHERE TrackedEntityAttributeValue.trackedEntityAttribute = ? " +
                     "AND Event.uid = ?", uid, eventUid)) {
@@ -174,9 +183,9 @@ public final class DataValueStore implements DataEntryStore {
         } else {
             String teiUid = null;
             try (Cursor enrollmentCursor = briteDatabase.query(
-                    "SELECT Enrollment.trackedEntityInstance FROM TrackedEntityAttributeValue " +
-                            "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityAttributeValue.trackedEntityInstance " +
-                            "WHERE TrackedEntityAttributeValue.trackedEntityAttribute = ?", uid)) {
+                    SELECT + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + FROM + TrackedEntityAttributeValueModel.TABLE + " " +
+                            JOIN + EnrollmentModel.TABLE + ON + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + EQUAL + TrackedEntityAttributeValueModel.TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE +
+                            WHERE + TrackedEntityAttributeValueModel.TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK, uid)) {
                 if (enrollmentCursor.moveToFirst()) {
                     teiUid = enrollmentCursor.getString(0);
                 }
@@ -197,22 +206,22 @@ public final class DataValueStore implements DataEntryStore {
     private long delete(@NonNull String uid, valueType valueType) {
         if (valueType == DATA_ELEMENT)
             return (long) briteDatabase.delete(TrackedEntityDataValueModel.TABLE,
-                    TrackedEntityDataValueModel.Columns.DATA_ELEMENT + " = ? AND " +
+                    TrackedEntityDataValueModel.Columns.DATA_ELEMENT + EQUAL + QUESTION_MARK + AND +
                             TrackedEntityDataValueModel.Columns.EVENT + " = ?",
                     uid, eventUid);
         else {
             String teiUid = "";
             try (Cursor enrollmentCursor = briteDatabase.query(
-                    "SELECT Enrollment.trackedEntityInstance FROM TrackedEntityAttributeValue " +
-                            "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityAttributeValue.trackedEntityInstance " +
-                            "WHERE TrackedEntityAttributeValue.trackedEntityAttribute = ?", uid)) {
+                    SELECT + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + FROM + TrackedEntityAttributeValueModel.TABLE + " " +
+                            JOIN + EnrollmentModel.TABLE + ON + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + EQUAL + TrackedEntityAttributeValueModel.TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE +
+                            WHERE + TrackedEntityAttributeValueModel.TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK, uid)) {
                 if (enrollmentCursor.moveToFirst()) {
                     teiUid = enrollmentCursor.getString(0);
                 }
             }
 
             return (long) briteDatabase.delete(TrackedEntityAttributeValueModel.TABLE,
-                    TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + " = ? AND " +
+                    TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK + AND +
                             TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_INSTANCE + " = ? ",
                     uid, teiUid);
         }

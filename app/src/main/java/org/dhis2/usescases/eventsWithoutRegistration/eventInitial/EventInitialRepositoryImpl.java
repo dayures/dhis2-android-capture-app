@@ -42,6 +42,11 @@ import io.reactivex.Observable;
 import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SqlConstants.LIMIT_1;
+import static org.dhis2.utils.SqlConstants.NOT_EQUALS;
+import static org.dhis2.utils.SqlConstants.QUOTE;
+import static org.dhis2.utils.SqlConstants.SELECT_ALL_FROM;
+import static org.dhis2.utils.SqlConstants.WHERE;
 
 /**
  * QUADRAM. Created by Cristian on 22/03/2018.
@@ -53,7 +58,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
             "JOIN OrganisationUnitProgramLink ON OrganisationUnitProgramLink .organisationUnit = OrganisationUnit.uid " +
             "WHERE OrganisationUnitProgramLink .program = ?";
 
-    private static final String SELECT_ORG_UNITS_FILTERED = "SELECT * FROM " + OrganisationUnitModel.TABLE +
+    private static final String SELECT_ORG_UNITS_FILTERED = SELECT_ALL_FROM + OrganisationUnitModel.TABLE +
             " JOIN OrganisationUnitProgramLink ON OrganisationUnitProgramLink .organisationUnit = OrganisationUnit.uid " +
             " WHERE ("
             + OrganisationUnitModel.Columns.OPENING_DATE + " IS NULL OR " +
@@ -77,7 +82,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<Event> event(String eventId) {
         String id = eventId == null ? "" : eventId;
-        String selectEventWithId = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.Columns.UID + " = '" + id + "' AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+        String selectEventWithId = SELECT_ALL_FROM + EventModel.TABLE + WHERE + EventModel.Columns.UID + " = '" + id + "' AND " + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(EventModel.TABLE, selectEventWithId)
                 .mapToOne(Event::create);
     }
@@ -266,7 +271,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @NonNull
     @Override
     public Observable<Event> newlyCreatedEvent(long rowId) {
-        String selectEventWithRowid = "SELECT * FROM " + EventModel.TABLE + " WHERE " + EventModel.Columns.ID + " = '" + rowId + "'" + " AND " + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+        String selectEventWithRowid = SELECT_ALL_FROM + EventModel.TABLE + WHERE + EventModel.Columns.ID + " = '" + rowId + "'" + " AND " + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(EventModel.TABLE, selectEventWithRowid).mapToOne(Event::create);
     }
 
@@ -274,7 +279,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<ProgramStage> programStage(String programUid) {
         String id = programUid == null ? "" : programUid;
-        String selectProgramStage = "SELECT * FROM " + ProgramStageModel.TABLE + " WHERE " + ProgramStageModel.Columns.PROGRAM + " = '" + id + "' LIMIT 1";
+        String selectProgramStage = SELECT_ALL_FROM + ProgramStageModel.TABLE + WHERE + ProgramStageModel.Columns.PROGRAM + " = '" + id + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(ProgramStageModel.TABLE, selectProgramStage)
                 .mapToOne(ProgramStage::create);
     }
@@ -283,7 +288,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<ProgramStage> programStageWithId(String programStageUid) {
         String id = programStageUid == null ? "" : programStageUid;
-        String selectProgramStageWithId = "SELECT * FROM " + ProgramStageModel.TABLE + " WHERE " + ProgramStageModel.Columns.UID + " = '" + id + "' LIMIT 1";
+        String selectProgramStageWithId = SELECT_ALL_FROM + ProgramStageModel.TABLE + WHERE + ProgramStageModel.Columns.UID + " = '" + id + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(ProgramStageModel.TABLE, selectProgramStageWithId)
                 .mapToOne(ProgramStage::create);
     }
@@ -346,7 +351,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                         "WHERE %s.%s = ? " +
                         "AND %s.%s = ? " +
                         "AND %s.%s = ? " +
-                        "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'" +
+                        "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
                         "AND " + EventModel.TABLE + "." + EventModel.Columns.EVENT_DATE + " > DATE() " +
                         "ORDER BY CASE WHEN %s.%s > %s.%s " +
                         "THEN %s.%s ELSE %s.%s END ASC",
