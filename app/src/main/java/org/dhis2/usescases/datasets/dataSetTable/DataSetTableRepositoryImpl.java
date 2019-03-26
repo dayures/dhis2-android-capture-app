@@ -3,8 +3,8 @@ package org.dhis2.usescases.datasets.dataSetTable;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.utils.DateUtils;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.common.Access;
 import org.hisp.dhis.android.core.common.ObjectWithUid;
 import org.hisp.dhis.android.core.dataelement.DataElement;
@@ -122,7 +122,7 @@ public class DataSetTableRepositoryImpl implements DataSetTableRepository {
                 "GROUP BY CategoryOptionCombo.uid";
         Map<String, List<CategoryOptionCombo>> map = new HashMap<>();
 
-        return briteDatabase.createQuery(CategoryOptionComboModel.TABLE, query, dataSetUid)
+        return briteDatabase.createQuery(SqlConstants.CAT_OPTION_COMBO_TABLE, query, dataSetUid)
                 .mapToList(cursor -> {
                     CategoryOptionCombo catOptionCombo = CategoryOptionCombo.create(cursor);
                     if (map.get(catOptionCombo.categoryCombo()) == null) {

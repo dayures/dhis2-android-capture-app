@@ -30,7 +30,6 @@ import org.hisp.dhis.android.core.legendset.LegendModel;
 import org.hisp.dhis.android.core.legendset.ProgramIndicatorLegendSetLinkModel;
 import org.hisp.dhis.android.core.program.ProgramIndicator;
 import org.hisp.dhis.android.core.program.ProgramIndicatorModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttributeModel;
@@ -96,12 +95,12 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     WHERE + TABLE_FIELD_EQUALS + QUESTION_MARK +
                     "LIMIT 1",
             SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.EVENT_TABLE,
-            SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
-            SqlConstants.EVENT_TABLE, EventModel.Columns.UID);
+            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
+            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID);
 
     private static final String GET_EVENT_FROM_UID = String.format(
             "SELECT * FROM %s WHERE %s.%s = ? LIMIT 1",
-            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_TABLE, EventModel.Columns.UID);
+            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID);
 
     private static final String EVENTS_QUERY = String.format(
             "SELECT DISTINCT %s.* FROM %s " +
@@ -116,13 +115,13 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     "ELSE %s.%s END DESC, %s.%s ASC",
             SqlConstants.EVENT_TABLE, SqlConstants.EVENT_TABLE,
             SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_UID, SqlConstants.EVENT_TABLE, EventModel.Columns.ENROLLMENT,
-            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
+            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
             SqlConstants.ENROLLMENT_TABLE, EnrollmentModel.Columns.PROGRAM,
             SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI,
-            SqlConstants.EVENT_TABLE, EventModel.Columns.STATE, State.TO_DELETE,
-            SqlConstants.PROGRAM_STAGE_TABLE, ProgramModel.Columns.UID, ProgramStageModel.Columns.UID, SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.PROGRAM,
-            SqlConstants.EVENT_TABLE, EventModel.Columns.DUE_DATE,
-            SqlConstants.EVENT_TABLE, EventModel.Columns.EVENT_DATE, SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.SORT_ORDER);
+            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_STATE, State.TO_DELETE,
+            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_UID, SqlConstants.PROGRAM_STAGE_UID, SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.PROGRAM,
+            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DUE_DATE,
+            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DATE, SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.SORT_ORDER);
 
     private static final String EVENTS_DISPLAY_BOX = String.format(
             "SELECT Event.* FROM %s " +
@@ -133,7 +132,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     "AND %s.%s = ?",
             SqlConstants.EVENT_TABLE,
             SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_UID, SqlConstants.EVENT_TABLE, EventModel.Columns.ENROLLMENT,
-            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
+            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
             SqlConstants.ENROLLMENT_TABLE, EnrollmentModel.Columns.PROGRAM,
             SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI,
             SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.DISPLAY_GENERATE_EVENT_BOX);
@@ -239,7 +238,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
         updateProgramTable(currentDate, eventModel.program());
         updateTeiState();
 
-        briteDatabase.update(SqlConstants.EVENT_TABLE, event.toContentValues(), EventModel.Columns.UID + " = ?", event.uid());
+        briteDatabase.update(SqlConstants.EVENT_TABLE, event.toContentValues(), SqlConstants.EVENT_UID + " = ?", event.uid());
         return event;
     }
 
@@ -303,17 +302,17 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     if (standardInterval != null)
                         dueDate.add(Calendar.DAY_OF_YEAR, standardInterval);
 
-                    values.put(EventModel.Columns.UID, codeGenerator.generate());
+                    values.put(SqlConstants.EVENT_UID, codeGenerator.generate());
                     values.put(EventModel.Columns.ENROLLMENT, event.enrollment());
                     values.put(EventModel.Columns.CREATED, DateUtils.databaseDateFormat().format(createdDate.getTime()));
                     values.put(EventModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(createdDate.getTime()));
-                    values.put(EventModel.Columns.STATUS, EventStatus.SCHEDULE.toString());
+                    values.put(SqlConstants.EVENT_STATUS, EventStatus.SCHEDULE.toString());
                     values.put(SqlConstants.EVENT_PROGRAM, event.program());
                     values.put(SqlConstants.EVENT_PROGRAM_STAGE, event.programStage());
-                    values.put(EventModel.Columns.ORGANISATION_UNIT, event.organisationUnit());
-                    values.put(EventModel.Columns.DUE_DATE, DateUtils.databaseDateFormat().format(dueDate.getTime()));
-                    values.put(EventModel.Columns.EVENT_DATE, DateUtils.databaseDateFormat().format(dueDate.getTime()));
-                    values.put(EventModel.Columns.STATE, State.TO_POST.toString());
+                    values.put(SqlConstants.EVENT_ORG_UNIT, event.organisationUnit());
+                    values.put(SqlConstants.EVENT_DUE_DATE, DateUtils.databaseDateFormat().format(dueDate.getTime()));
+                    values.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(dueDate.getTime()));
+                    values.put(SqlConstants.EVENT_STATE, State.TO_POST.toString());
 
                     if (briteDatabase.insert(SqlConstants.EVENT_TABLE, values) <= 0) {
                         return Observable.error(new IllegalStateException("Event has not been successfully added"));
@@ -350,19 +349,19 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     chosenDate.set(Calendar.SECOND, 0);
                     chosenDate.set(Calendar.MILLISECOND, 0);
 
-                    values.put(EventModel.Columns.UID, codeGenerator.generate());
+                    values.put(SqlConstants.EVENT_UID, codeGenerator.generate());
                     values.put(EventModel.Columns.ENROLLMENT, event.enrollment());
                     values.put(EventModel.Columns.CREATED, DateUtils.databaseDateFormat().format(createdDate.getTime()));
                     values.put(EventModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(createdDate.getTime()));
-                    values.put(EventModel.Columns.STATUS, EventStatus.SCHEDULE.toString());
+                    values.put(SqlConstants.EVENT_STATUS, EventStatus.SCHEDULE.toString());
                     values.put(SqlConstants.EVENT_PROGRAM, event.program());
                     values.put(SqlConstants.EVENT_PROGRAM_STAGE, event.programStage());
-                    values.put(EventModel.Columns.ORGANISATION_UNIT, event.organisationUnit());
+                    values.put(SqlConstants.EVENT_ORG_UNIT, event.organisationUnit());
                     if (chosenDate != null) {
-                        values.put(EventModel.Columns.DUE_DATE, DateUtils.databaseDateFormat().format(chosenDate.getTime()));
-                        values.put(EventModel.Columns.EVENT_DATE, DateUtils.databaseDateFormat().format(chosenDate.getTime()));
+                        values.put(SqlConstants.EVENT_DUE_DATE, DateUtils.databaseDateFormat().format(chosenDate.getTime()));
+                        values.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(chosenDate.getTime()));
                     }
-                    values.put(EventModel.Columns.STATE, State.TO_POST.toString());
+                    values.put(SqlConstants.EVENT_STATE, State.TO_POST.toString());
 
                     if (briteDatabase.insert(SqlConstants.EVENT_TABLE, values) <= 0) {
                         return Observable.error(new IllegalStateException("Event has not been successfully added"));
@@ -627,6 +626,6 @@ public class DashboardRepositoryImpl implements DashboardRepository {
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues();TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
-        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
+        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, SqlConstants.PROGRAM_UID + " = ?", programUid);*/
     }
 }

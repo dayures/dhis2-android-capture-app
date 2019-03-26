@@ -10,8 +10,6 @@ import org.dhis2.utils.Result;
 import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
-import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.rules.models.RuleDataValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEvent;
@@ -40,7 +38,7 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
             "FROM Event\n" +
             "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
             "WHERE Event.uid = ?\n" +
-            " AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'" +
+            " AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + " != '" + State.TO_DELETE + "'" +
             "LIMIT 1;";
 
     private static final String QUERY_VALUES = "SELECT " +
@@ -56,7 +54,7 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
             "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + " != '" + State.TO_DELETE + "';";
 
     @NonNull
     private final BriteDatabase briteDatabase;
@@ -129,7 +127,7 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
     @NonNull
     private Flowable<List<RuleDataValue>> queryDataValues() {
         return briteDatabase.createQuery(Arrays.asList(SqlConstants.EVENT_TABLE,
-                TrackedEntityDataValueModel.TABLE), QUERY_VALUES, eventUid)
+                SqlConstants.TEI_DATA_VALUE_TABLE), QUERY_VALUES, eventUid)
                 .mapToList(cursor -> {
                     Date eventDate = DateUtils.databaseDateFormat().parse(cursor.getString(0));
                     String programStage = cursor.getString(1);

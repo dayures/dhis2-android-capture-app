@@ -15,13 +15,11 @@ import org.hisp.dhis.android.core.dataelement.DataElementModel;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -295,10 +293,10 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 JSONObject attrValue = jsonArray.getJSONObject(i);
                 if (attrValue.has(PROGRAM) && attrValue.getString(PROGRAM) != null) {
                     try (Cursor cursor = briteDatabase.query(SELECT +
-                                    ProgramModel.Columns.UID + ", " +
+                                    SqlConstants.PROGRAM_UID + ", " +
                                     ProgramModel.Columns.DISPLAY_NAME +
                                     FROM + SqlConstants.PROGRAM_TABLE +
-                                    WHERE + ProgramModel.Columns.UID + " = ?",
+                                    WHERE + SqlConstants.PROGRAM_UID + " = ?",
                             attrValue.getString(PROGRAM))) {
                         // PROGRAM FOUND, ENROLLMENT CAN BE SAVED
                         if (cursor != null && cursor.moveToFirst() && cursor.getCount() > 0) {
@@ -606,7 +604,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 TrackedEntityDataValue attrValueModel = attrValueModelBuilder.build();
 
                 if (attrValueModel != null) {
-                    long result = briteDatabase.insert(TrackedEntityDataValueModel.TABLE, attrValueModel.toContentValues());
+                    long result = briteDatabase.insert(SqlConstants.TEI_DATA_VALUE_TABLE, attrValueModel.toContentValues());
                     Timber.d(LOG_INSERT, result);
                 }
 
@@ -727,7 +725,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 Event eventModel = eventModelBuilder.build();
 
                 try (Cursor cursor = briteDatabase.query(SELECT_ALL_FROM + SqlConstants.EVENT_TABLE +
-                        WHERE + EventModel.Columns.UID + " = ?", eventModel.uid())) {
+                        WHERE + SqlConstants.EVENT_UID + " = ?", eventModel.uid())) {
                     if (cursor != null && cursor.moveToFirst() && cursor.getCount() > 0) {
                         // EVENT ALREADY EXISTS IN THE DATABASE, JUST INSERT ATTRIBUTES
                     } else {
@@ -767,7 +765,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 TrackedEntityDataValue attrValueModel = attrValueModelBuilder.build();
 
                 if (attrValueModel != null) {
-                    long result = briteDatabase.insert(TrackedEntityDataValueModel.TABLE, attrValueModel.toContentValues());
+                    long result = briteDatabase.insert(SqlConstants.TEI_DATA_VALUE_TABLE, attrValueModel.toContentValues());
                     Timber.d(LOG_INSERT, result);
                 }
 

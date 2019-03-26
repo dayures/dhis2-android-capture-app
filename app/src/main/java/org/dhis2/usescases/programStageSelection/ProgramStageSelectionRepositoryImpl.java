@@ -12,11 +12,9 @@ import org.dhis2.utils.Result;
 import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.State;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.rules.RuleEngine;
 import org.hisp.dhis.rules.RuleEngineContext;
 import org.hisp.dhis.rules.RuleExpressionEvaluator;
@@ -105,7 +103,7 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
             "FROM Event\n" +
             "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
             "WHERE Event.enrollment = ?\n" +
-            " AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "'";
+            " AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + " != '" + State.TO_DELETE + "'";
 
     private static final String QUERY_VALUES = "SELECT " +
             "  Event.eventDate," +
@@ -120,7 +118,7 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
             "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + " != '" + State.TO_DELETE + "';";
 
     private final BriteDatabase briteDatabase;
     private final Flowable<RuleEngine> cachedRuleEngineFlowable;
@@ -206,7 +204,7 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
     @NonNull
     private Flowable<List<RuleDataValue>> queryDataValues(String eventUid) {
         return briteDatabase.createQuery(Arrays.asList(SqlConstants.EVENT_TABLE,
-                TrackedEntityDataValueModel.TABLE), QUERY_VALUES, eventUid == null ? "" : eventUid)
+                SqlConstants.TEI_DATA_VALUE_TABLE), QUERY_VALUES, eventUid == null ? "" : eventUid)
                 .mapToList(cursor -> {
                     Date eventDate = DateUtils.databaseDateFormat().parse(cursor.getString(0));
                     String programStage = cursor.getString(1);

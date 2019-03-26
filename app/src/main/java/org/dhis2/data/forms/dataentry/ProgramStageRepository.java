@@ -8,6 +8,7 @@ import com.squareup.sqlbrite2.BriteDatabase;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactory;
 import org.dhis2.utils.DateUtils;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
@@ -19,7 +20,6 @@ import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -138,7 +138,7 @@ final class ProgramStageRepository implements DataEntryRepository {
         }
 
         return briteDatabase
-                .createQuery(TrackedEntityDataValueModel.TABLE, prepareStatement())
+                .createQuery(SqlConstants.TEI_DATA_VALUE_TABLE, prepareStatement())
                 .mapToList(this::transform)
                 .map(this::checkRenderType);
     }
@@ -207,8 +207,8 @@ final class ProgramStageRepository implements DataEntryRepository {
             if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
                 TrackedEntityDataValue dataValue = TrackedEntityDataValue.create(dataValueCursor);
                 ContentValues contentValues = dataValue.toContentValues();
-                contentValues.put(TrackedEntityDataValueModel.Columns.VALUE, content);
-                int row = briteDatabase.update(TrackedEntityDataValueModel.TABLE, contentValues, "dataElement = ?", field == null ? "" : field);
+                contentValues.put(SqlConstants.TEI_DATA_VALUE_VALUE, content);
+                int row = briteDatabase.update(SqlConstants.TEI_DATA_VALUE_TABLE, contentValues, "dataElement = ?", field == null ? "" : field);
                 if (row == -1)
                     Timber.d("Error updating field %s", field == null ? "" : field);
             }

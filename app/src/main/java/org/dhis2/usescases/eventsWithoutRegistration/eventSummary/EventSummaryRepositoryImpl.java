@@ -27,7 +27,6 @@ import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.rules.models.RuleDataValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEvent;
@@ -86,7 +85,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "  JOIN ProgramStage ON Event.programStage = ProgramStage.uid\n" +
             "  LEFT OUTER JOIN ProgramStageSection ON ProgramStageSection.programStage = Event.programStage\n" +
             "WHERE Event.uid = ?\n" +
-            "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY ProgramStageSection.sortOrder";
+            "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY ProgramStageSection.sortOrder";
 
     private static final String QUERY = "SELECT\n" +
             "  Field.id,\n" +
@@ -145,7 +144,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             FROM + SqlConstants.EVENT_TABLE + "\n" +
             "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
             "WHERE Event.uid = ?\n" +
-            "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'\n" +
+            "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'\n" +
             "LIMIT 1;";
 
     private static final String QUERY_VALUES = "SELECT " +
@@ -161,7 +160,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
             "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "';";
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "';";
 
     private static final String EVENT_QUERY = "SELECT * FROM Event WHERE Event.uid = ? LIMIT 1";
     private static final String PROGRAM_QUERY = "SELECT * FROM Program JOIN ProgramStage ON " +
@@ -227,7 +226,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
     @Override
     public Flowable<List<FieldViewModel>> list(String sectionUid, String eventUid) {
         return briteDatabase
-                .createQuery(TrackedEntityDataValueModel.TABLE, prepareStatement(sectionUid, eventUid))
+                .createQuery(SqlConstants.TEI_DATA_VALUE_TABLE, prepareStatement(sectionUid, eventUid))
                 .mapToList(this::transform)
                 .toFlowable(BackpressureStrategy.LATEST);
     }
@@ -312,22 +311,22 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
                     case SKIPPED:
                     case VISITED:
                     case SCHEDULE:
-                        values.put(EventModel.Columns.STATUS, EventStatus.COMPLETED.name()); //TODO: Can this happen?
+                        values.put(SqlConstants.EVENT_STATUS, EventStatus.COMPLETED.name()); //TODO: Can this happen?
                         values.put(EventModel.Columns.COMPLETE_DATE, lastUpdated);
                         break;
                     case COMPLETED:
-                        values.put(EventModel.Columns.STATUS, EventStatus.ACTIVE.name()); //TODO: This should check dates?
+                        values.put(SqlConstants.EVENT_STATUS, EventStatus.ACTIVE.name()); //TODO: This should check dates?
                         break;
                     default:
                         break;
                 }
 
 
-                values.put(EventModel.Columns.STATE, State.TO_UPDATE.toString());
+                values.put(SqlConstants.EVENT_STATE, State.TO_UPDATE.toString());
                 values.put(EventModel.Columns.LAST_UPDATED, lastUpdated);
 
                 if (briteDatabase.update(SqlConstants.EVENT_TABLE, values,
-                        EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid) <= 0) {
+                        SqlConstants.EVENT_UID + " = ?", eventUid == null ? "" : eventUid) <= 0) {
 
                     throw new IllegalStateException(String.format(Locale.US, "Event=[%s] " +
                             "has not been successfully updated", event.uid()));
@@ -339,7 +338,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
                         ContentValues programValues = program.toContentValues();
                         values.put(ProgramModel.Columns.LAST_UPDATED, lastUpdated);
                         if (briteDatabase.update(SqlConstants.PROGRAM_TABLE, programValues,
-                                ProgramModel.Columns.UID + " = ?", program.uid() == null ? "" : program.uid()) <= 0) {
+                                SqlConstants.PROGRAM_UID + " = ?", program.uid() == null ? "" : program.uid()) <= 0) {
 
                             throw new IllegalStateException(String.format(Locale.US, "Program=[%s] " +
                                     "has not been successfully updated", event.uid()));
@@ -408,7 +407,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
     @NonNull
     private Flowable<List<RuleDataValue>> queryDataValues(String eventUid) {
         return briteDatabase.createQuery(Arrays.asList(SqlConstants.EVENT_TABLE,
-                TrackedEntityDataValueModel.TABLE), QUERY_VALUES, eventUid == null ? "" : eventUid)
+                SqlConstants.TEI_DATA_VALUE_TABLE), QUERY_VALUES, eventUid == null ? "" : eventUid)
                 .mapToList(cursor -> {
                     Date eventDate = DateUtils.databaseDateFormat().parse(cursor.getString(0));
                     String programStage = cursor.getString(1);

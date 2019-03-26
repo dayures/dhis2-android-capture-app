@@ -13,9 +13,7 @@ import org.dhis2.data.tuples.Trio;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.category.CategoryCombo;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
@@ -25,8 +23,6 @@ import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.Program;
-import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.rules.RuleEngine;
 import org.hisp.dhis.rules.RuleEngineContext;
 import org.hisp.dhis.rules.RuleExpressionEvaluator;
@@ -71,8 +67,8 @@ public class EventRepository implements FormRepository {
                     "ON %s.%s = %s.%s " +
                     "WHERE %s.%s = ? LIMIT 1",
             SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_TABLE, SqlConstants.EVENT_TABLE,
-            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM, SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.UID,
-            SqlConstants.EVENT_TABLE, EventModel.Columns.UID);
+            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM, SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_UID,
+            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID);
 
     private static final String SELECT_TITLE = SELECT + "\n" +
             "  Program.displayName,\n" +
@@ -266,13 +262,13 @@ public class EventRepository implements FormRepository {
             cal.set(Calendar.MILLISECOND, 0);
 
             ContentValues event = new ContentValues();
-            event.put(EventModel.Columns.EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
-            event.put(EventModel.Columns.STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
+            event.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
+            event.put(SqlConstants.EVENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
             // TODO: and if so, keep the TO_POST state
 
             updateProgramTable(Calendar.getInstance().getTime(), programUid);
 
-            briteDatabase.update(SqlConstants.EVENT_TABLE, event, EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid);
+            briteDatabase.update(SqlConstants.EVENT_TABLE, event, SqlConstants.EVENT_UID + " = ?", eventUid == null ? "" : eventUid);
         };
     }
 
@@ -297,13 +293,13 @@ public class EventRepository implements FormRepository {
     public Consumer<ReportStatus> storeReportStatus() {
         return reportStatus -> {
             ContentValues event = new ContentValues();
-            event.put(EventModel.Columns.STATUS, ReportStatus.toEventStatus(reportStatus).name());
-            event.put(EventModel.Columns.STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
+            event.put(SqlConstants.EVENT_STATUS, ReportStatus.toEventStatus(reportStatus).name());
+            event.put(SqlConstants.EVENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
             // TODO: and if so, keep the TO_POST state
 
             updateProgramTable(Calendar.getInstance().getTime(), programUid);
 
-            briteDatabase.update(SqlConstants.EVENT_TABLE, event, EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid);
+            briteDatabase.update(SqlConstants.EVENT_TABLE, event, SqlConstants.EVENT_UID + " = ?", eventUid == null ? "" : eventUid);
         };
     }
 
@@ -323,7 +319,7 @@ public class EventRepository implements FormRepository {
     @Override
     public Observable<List<FieldViewModel>> fieldValues() {
         String where = String.format(Locale.US, "WHERE Event.uid = '%s'", eventUid == null ? "" : eventUid);
-        return briteDatabase.createQuery(TrackedEntityDataValueModel.TABLE, String.format(Locale.US, QUERY, where))
+        return briteDatabase.createQuery(SqlConstants.TEI_DATA_VALUE_TABLE, String.format(Locale.US, QUERY, where))
                 .mapToList(this::transform);
     }
 
@@ -341,7 +337,7 @@ public class EventRepository implements FormRepository {
     public void deleteEvent() {
         String deleteWhereRelationship = String.format(
                 "%s.%s = ",
-                SqlConstants.EVENT_TABLE, EventModel.Columns.UID);
+                SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID);
         String id = eventUid == null ? "" : eventUid;
         briteDatabase.delete(SqlConstants.EVENT_TABLE, deleteWhereRelationship + "'" + id + "'");
     }
@@ -356,7 +352,7 @@ public class EventRepository implements FormRepository {
     public Observable<String> getTrackedEntityInstanceUid() {
         String selectTe = "SELECT " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.TRACKED_ENTITY_INSTANCE +
                 " FROM " + SqlConstants.EVENT_TABLE +
-                " WHERE " + EventModel.Columns.UID + " = ? LIMIT 1";
+                " WHERE " + SqlConstants.EVENT_UID + " = ? LIMIT 1";
         return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, selectTe, eventUid == null ? "" : eventUid).mapToOne(cursor -> cursor.getString(0));
     }
 
@@ -364,11 +360,11 @@ public class EventRepository implements FormRepository {
     public Observable<Trio<Boolean, CategoryCombo, List<CategoryOptionCombo>>> getProgramCategoryCombo() {
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, "SELECT * FROM Event WHERE Event.uid = ?", eventUid)
                 .mapToOne(Event::create)
-                .flatMap(eventModel -> briteDatabase.createQuery(CategoryComboModel.TABLE, "SELECT CategoryCombo.* FROM CategoryCombo " +
+                .flatMap(eventModel -> briteDatabase.createQuery(SqlConstants.CAT_COMBO_TABLE, "SELECT CategoryCombo.* FROM CategoryCombo " +
                         "JOIN Program ON Program.categoryCombo = CategoryCombo.uid WHERE Program.uid = ?", eventModel.program())
                         .mapToOne(CategoryCombo::create)
                         .flatMap(categoryComboModel ->
-                                briteDatabase.createQuery(CategoryOptionComboModel.TABLE, "SELECT * FROM CategoryOptionCombo " +
+                                briteDatabase.createQuery(SqlConstants.CAT_OPTION_COMBO_TABLE, "SELECT * FROM CategoryOptionCombo " +
                                         "WHERE categoryCombo = ?", categoryComboModel.uid())
                                         .mapToList(CategoryOptionCombo::create)
                                         .map(categoryOptionComboModels -> {
@@ -387,11 +383,11 @@ public class EventRepository implements FormRepository {
     @Override
     public void saveCategoryOption(CategoryOptionCombo selectedOption) {
         ContentValues event = new ContentValues();
-        event.put(EventModel.Columns.ATTRIBUTE_OPTION_COMBO, selectedOption.uid());
-        event.put(EventModel.Columns.STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
+        event.put(SqlConstants.EVENT_ATTR_OPTION_COMBO, selectedOption.uid());
+        event.put(SqlConstants.EVENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
         // TODO: and if so, keep the TO_POST state
 
-        briteDatabase.update(SqlConstants.EVENT_TABLE, event, EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid);
+        briteDatabase.update(SqlConstants.EVENT_TABLE, event, SqlConstants.EVENT_UID + " = ?", eventUid == null ? "" : eventUid);
     }
 
     @Override
@@ -489,6 +485,6 @@ public class EventRepository implements FormRepository {
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues();TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
-        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
+        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, SqlConstants.PROGRAM_UID + " = ?", programUid);*/
     }
 }

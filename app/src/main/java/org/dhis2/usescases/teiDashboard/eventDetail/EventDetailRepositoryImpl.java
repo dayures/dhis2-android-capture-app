@@ -8,14 +8,12 @@ import org.dhis2.data.tuples.Pair;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.category.CategoryCombo;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
@@ -26,7 +24,6 @@ import org.hisp.dhis.android.core.program.ProgramStageDataElementModel;
 import org.hisp.dhis.android.core.program.ProgramStageSection;
 import org.hisp.dhis.android.core.program.ProgramStageSectionModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.util.ArrayList;
@@ -71,8 +68,8 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
     @NonNull
     @Override
     public Observable<Event> eventModelDetail(String uid) {
-        String selectEventWithUid = "SELECT * FROM " + SqlConstants.EVENT_TABLE + " WHERE " + EventModel.Columns.UID + "='" + uid + "' " +
-                "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' LIMIT 1";
+        String selectEventWithUid = "SELECT * FROM " + SqlConstants.EVENT_TABLE + " WHERE " + SqlConstants.EVENT_UID + "='" + uid + "' " +
+                "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' LIMIT 1";
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, selectEventWithUid)
                 .mapToOne(Event::create);
     }
@@ -84,11 +81,11 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
                 "SELECT %s.* FROM %s " +
                         "JOIN %s ON %s.%s = %s.%s " +
                         "WHERE %s.%s = ? " +
-                        "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' " +
+                        "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' " +
                         "ORDER BY %s.%s",
                 SqlConstants.PROGRAM_STAGE_SECTION_TABLE, SqlConstants.PROGRAM_STAGE_SECTION_TABLE,
                 SqlConstants.EVENT_TABLE, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE, SqlConstants.PROGRAM_STAGE_SECTION_TABLE, ProgramStageSectionModel.Columns.PROGRAM_STAGE,
-                SqlConstants.EVENT_TABLE, EventModel.Columns.UID,
+                SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID,
                 SqlConstants.PROGRAM_STAGE_SECTION_TABLE, ProgramStageSectionModel.Columns.SORT_ORDER
         );
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, selectProgramStageSections, eventUid == null ? "" : eventUid)
@@ -102,10 +99,10 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
                 "SELECT %s.* FROM %s " +
                         "JOIN %s ON %s.%s =%s.%s " +
                         "WHERE %s.%s = ? " +
-                        "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'",
+                        "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'",
                 ProgramStageDataElementModel.TABLE, ProgramStageDataElementModel.TABLE,
                 SqlConstants.EVENT_TABLE, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE, ProgramStageDataElementModel.TABLE, ProgramStageDataElementModel.Columns.PROGRAM_STAGE,
-                SqlConstants.EVENT_TABLE, EventModel.Columns.UID
+                SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID
         );
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, selectProgramStageDe, eventUid == null ? "" : eventUid)
                 .mapToList(ProgramStageDataElement::create);
@@ -114,9 +111,9 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
     @NonNull
     @Override
     public Observable<List<TrackedEntityDataValue>> dataValueModelList(String eventUid) {
-        String selectTrackedEntityDataValueWithEventUid = "SELECT * FROM " + TrackedEntityDataValueModel.TABLE + " WHERE " + TrackedEntityDataValueModel.Columns.EVENT + "=";
+        String selectTrackedEntityDataValueWithEventUid = "SELECT * FROM " + SqlConstants.TEI_DATA_VALUE_TABLE + " WHERE " + SqlConstants.TEI_DATA_VALUE_EVENT + "=";
         String uid = eventUid == null ? "" : eventUid;
-        return briteDatabase.createQuery(TrackedEntityDataValueModel.TABLE, selectTrackedEntityDataValueWithEventUid + "'" + uid + "'")
+        return briteDatabase.createQuery(SqlConstants.TEI_DATA_VALUE_TABLE, selectTrackedEntityDataValueWithEventUid + "'" + uid + "'")
                 .mapToList(TrackedEntityDataValue::create);
     }
 
@@ -134,7 +131,7 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
     public void deleteNotPostedEvent(String eventUid) {
         String deleteWhere = String.format(
                 "%s.%s = ",
-                SqlConstants.EVENT_TABLE, EventModel.Columns.UID
+                SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID
         );
         String id = eventUid == null ? "" : eventUid;
         briteDatabase.delete(SqlConstants.EVENT_TABLE, deleteWhere + "'" + id + "'");
@@ -159,7 +156,7 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
                 .build();
 
         if (event != null) {
-            briteDatabase.update(SqlConstants.EVENT_TABLE, event.toContentValues(), EventModel.Columns.UID + " = ?", event.uid());
+            briteDatabase.update(SqlConstants.EVENT_TABLE, event.toContentValues(), SqlConstants.EVENT_UID + " = ?", event.uid());
             updateTEi();
         }
 
@@ -198,12 +195,12 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
                 "JOIN Event ON Event.program = Program.uid " +
                 "WHERE Event.uid = ? LIMIT 1)";
         String selectCategoryCombo = String.format("SELECT * FROM %s WHERE %s.%s = ?",
-                CategoryOptionComboModel.TABLE, CategoryOptionComboModel.TABLE, CategoryOptionComboModel.Columns.CATEGORY_COMBO);
-        return briteDatabase.createQuery(CategoryComboModel.TABLE, getCatComboFromEvent, eventUid == null ? "" : eventUid)
+                SqlConstants.CAT_OPTION_COMBO_TABLE, SqlConstants.CAT_OPTION_COMBO_TABLE, CategoryOptionComboModel.Columns.CATEGORY_COMBO);
+        return briteDatabase.createQuery(SqlConstants.CAT_COMBO_TABLE, getCatComboFromEvent, eventUid == null ? "" : eventUid)
                 .mapToOne(CategoryCombo::create)
                 .flatMap(catCombo -> {
                     if (catCombo != null && !catCombo.isDefault())
-                        return briteDatabase.createQuery(CategoryOptionComboModel.TABLE, selectCategoryCombo, catCombo.uid()).mapToList(CategoryOptionCombo::create)
+                        return briteDatabase.createQuery(SqlConstants.CAT_OPTION_COMBO_TABLE, selectCategoryCombo, catCombo.uid()).mapToList(CategoryOptionCombo::create)
                                 .map(list -> Pair.create(catCombo.name(), list));
                     else
                         return Observable.just(Pair.create("", new ArrayList<>()));
@@ -226,11 +223,11 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
     @Override
     public void saveCatOption(CategoryOptionCombo selectedOption) {
         ContentValues event = new ContentValues();
-        event.put(EventModel.Columns.ATTRIBUTE_OPTION_COMBO, selectedOption.uid());
-        event.put(EventModel.Columns.STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
+        event.put(SqlConstants.EVENT_ATTR_OPTION_COMBO, selectedOption.uid());
+        event.put(SqlConstants.EVENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
         // TODO: and if so, keep the TO_POST state
 
-        briteDatabase.update(SqlConstants.EVENT_TABLE, event, EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid);
+        briteDatabase.update(SqlConstants.EVENT_TABLE, event, SqlConstants.EVENT_UID + " = ?", eventUid == null ? "" : eventUid);
         updateTEi();
     }
 
@@ -248,7 +245,7 @@ public class EventDetailRepositoryImpl implements EventDetailRepository {
     private void updateProgramTable(Date lastUpdated, String programUid) {
        /* ContentValues program = new ContentValues();  TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
-        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
+        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, SqlConstants.PROGRAM_UID + " = ?", programUid);*/
     }
 
     private void updateTEi() {

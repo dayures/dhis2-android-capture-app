@@ -123,8 +123,8 @@ public class SearchRepositoryImpl implements SearchRepository {
             SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.DISPLAY_NAME,
             ObjectStyleModel.TABLE, ObjectStyleModel.Columns.COLOR,
             ObjectStyleModel.TABLE, ObjectStyleModel.Columns.ICON, SqlConstants.PROGRAM_TABLE,
-            ObjectStyleModel.TABLE, ObjectStyleModel.TABLE, ObjectStyleModel.Columns.UID, SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.UID,
-            SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.UID
+            ObjectStyleModel.TABLE, ObjectStyleModel.TABLE, ObjectStyleModel.Columns.UID, SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_UID,
+            SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_UID
     );
 
     private static final String SELECT_TRACKED_ENTITY_TYPE_ATTRIBUTES = String.format(

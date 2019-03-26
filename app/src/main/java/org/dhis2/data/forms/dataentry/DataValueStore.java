@@ -12,11 +12,9 @@ import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 import org.hisp.dhis.android.core.user.UserCredentials;
@@ -46,7 +44,7 @@ import static org.dhis2.utils.SqlConstants.WHERE;
 
 public final class DataValueStore implements DataEntryStore {
     private static final String SELECT_EVENT = "SELECT * FROM " + SqlConstants.EVENT_TABLE +
-            " WHERE " + EventModel.Columns.UID + EQUAL + QUESTION_MARK + AND + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+            " WHERE " + SqlConstants.EVENT_UID + EQUAL + QUESTION_MARK + AND + SqlConstants.EVENT_STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
 
     @NonNull
     private final BriteDatabase briteDatabase;
@@ -95,18 +93,18 @@ public final class DataValueStore implements DataEntryStore {
         ContentValues dataValue = new ContentValues();
         if (valueType == DATA_ELEMENT) {
             // renderSearchResults time stamp
-            dataValue.put(TrackedEntityDataValueModel.Columns.LAST_UPDATED,
+            dataValue.put(SqlConstants.TEI_DATA_VALUE_LAST_UPDATED,
                     BaseIdentifiableObject.DATE_FORMAT.format(Calendar.getInstance().getTime()));
             if (value == null) {
-                dataValue.putNull(TrackedEntityDataValueModel.Columns.VALUE);
+                dataValue.putNull(SqlConstants.TEI_DATA_VALUE_VALUE);
             } else {
-                dataValue.put(TrackedEntityDataValueModel.Columns.VALUE, value);
+                dataValue.put(SqlConstants.TEI_DATA_VALUE_VALUE, value);
             }
 
             // ToDo: write test cases for different events
-            return (long) briteDatabase.update(TrackedEntityDataValueModel.TABLE, dataValue,
-                    TrackedEntityDataValueModel.Columns.DATA_ELEMENT + EQUAL + QUESTION_MARK + AND +
-                            TrackedEntityDataValueModel.Columns.EVENT + " = ?", uid, eventUid);
+            return (long) briteDatabase.update(SqlConstants.TEI_DATA_VALUE_TABLE, dataValue,
+                    SqlConstants.TEI_DATA_VALUE_DATA_ELEMENT + EQUAL + QUESTION_MARK + AND +
+                            SqlConstants.TEI_DATA_VALUE_EVENT + " = ?", uid, eventUid);
         } else {
             dataValue.put(TrackedEntityAttributeValueModel.Columns.LAST_UPDATED,
                     BaseIdentifiableObject.DATE_FORMAT.format(Calendar.getInstance().getTime()));
@@ -178,7 +176,7 @@ public final class DataValueStore implements DataEntryStore {
                             .value(value)
                             .storedBy(storedBy)
                             .build();
-            return briteDatabase.insert(TrackedEntityDataValueModel.TABLE,
+            return briteDatabase.insert(SqlConstants.TEI_DATA_VALUE_TABLE,
                     dataValueModel.toContentValues());
         } else {
             String teiUid = null;
@@ -205,9 +203,9 @@ public final class DataValueStore implements DataEntryStore {
 
     private long delete(@NonNull String uid, valueType valueType) {
         if (valueType == DATA_ELEMENT)
-            return (long) briteDatabase.delete(TrackedEntityDataValueModel.TABLE,
-                    TrackedEntityDataValueModel.Columns.DATA_ELEMENT + EQUAL + QUESTION_MARK + AND +
-                            TrackedEntityDataValueModel.Columns.EVENT + " = ?",
+            return (long) briteDatabase.delete(SqlConstants.TEI_DATA_VALUE_TABLE,
+                    SqlConstants.TEI_DATA_VALUE_DATA_ELEMENT + EQUAL + QUESTION_MARK + AND +
+                            SqlConstants.TEI_DATA_VALUE_EVENT + " = ?",
                     uid, eventUid);
         else {
             String teiUid = "";
@@ -235,10 +233,10 @@ public final class DataValueStore implements DataEntryStore {
                             State.ERROR.equals(eventModel.state())) {
 
                         ContentValues values = eventModel.toContentValues();
-                        values.put(EventModel.Columns.STATE, State.TO_UPDATE.toString());
+                        values.put(SqlConstants.EVENT_STATE, State.TO_UPDATE.toString());
 
                         if (briteDatabase.update(SqlConstants.EVENT_TABLE, values,
-                                EventModel.Columns.UID + " = ?", eventUid) <= 0) {
+                                SqlConstants.EVENT_UID + " = ?", eventUid) <= 0) {
 
                             throw new IllegalStateException(String.format(Locale.US, "Event=[%s] " +
                                     "has not been successfully updated", eventUid));

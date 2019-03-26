@@ -13,7 +13,6 @@ import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 import org.hisp.dhis.android.core.user.UserCredentials;
 
@@ -28,8 +27,8 @@ import io.reactivex.Flowable;
 
 final class DataValueStore implements DataEntryStore {
     private static final String SELECT_EVENT = "SELECT * FROM " + SqlConstants.EVENT_TABLE +
-            " WHERE " + EventModel.Columns.UID + " = ? " +
-            "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+            " WHERE " + SqlConstants.EVENT_UID + " = ? " +
+            "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
 
     @NonNull
     private final BriteDatabase briteDatabase;
@@ -86,11 +85,11 @@ final class DataValueStore implements DataEntryStore {
                 break;
 
         }
-        contentValues.put(EventModel.Columns.STATUS, eventStatus);
-        contentValues.put(EventModel.Columns.STATE, eventModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+        contentValues.put(SqlConstants.EVENT_STATUS, eventStatus);
+        contentValues.put(SqlConstants.EVENT_STATE, eventModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
         updateProgramTable(currentDate, eventModel.program());
 
-        briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, EventModel.Columns.UID + "= ?", eventModel.uid());
+        briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + "= ?", eventModel.uid());
         updateTEi();
     }
 
@@ -99,10 +98,10 @@ final class DataValueStore implements DataEntryStore {
         ContentValues contentValues = new ContentValues();
         Date currentDate = Calendar.getInstance().getTime();
         contentValues.put(EventModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
-        contentValues.put(EventModel.Columns.EVENT_DATE, DateUtils.databaseDateFormat().format(eventDate));
+        contentValues.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(eventDate));
         if (eventDate.before(currentDate))
-            contentValues.put(EventModel.Columns.STATUS, EventStatus.ACTIVE.name());
-        briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, EventModel.Columns.UID + "= ?", eventModel.uid());
+            contentValues.put(SqlConstants.EVENT_STATUS, EventStatus.ACTIVE.name());
+        briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + "= ?", eventModel.uid());
         updateTEi();
     }
 
@@ -110,25 +109,25 @@ final class DataValueStore implements DataEntryStore {
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues(); //TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
-        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
+        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, SqlConstants.PROGRAM_UID + " = ?", programUid);*/
     }
 
     private long update(@NonNull String uid, @Nullable String value) {
         ContentValues dataValue = new ContentValues();
 
         // renderSearchResults time stamp
-        dataValue.put(TrackedEntityDataValueModel.Columns.LAST_UPDATED,
+        dataValue.put(SqlConstants.TEI_DATA_VALUE_LAST_UPDATED,
                 BaseIdentifiableObject.DATE_FORMAT.format(Calendar.getInstance().getTime()));
         if (value == null) {
-            dataValue.putNull(TrackedEntityDataValueModel.Columns.VALUE);
+            dataValue.putNull(SqlConstants.TEI_DATA_VALUE_VALUE);
         } else {
-            dataValue.put(TrackedEntityDataValueModel.Columns.VALUE, value);
+            dataValue.put(SqlConstants.TEI_DATA_VALUE_VALUE, value);
         }
 
         // ToDo: write test cases for different events
-        return (long) briteDatabase.update(TrackedEntityDataValueModel.TABLE, dataValue,
-                TrackedEntityDataValueModel.Columns.DATA_ELEMENT + " = ? AND " +
-                        TrackedEntityDataValueModel.Columns.EVENT + " = ?",
+        return (long) briteDatabase.update(SqlConstants.TEI_DATA_VALUE_TABLE, dataValue,
+                SqlConstants.TEI_DATA_VALUE_DATA_ELEMENT + " = ? AND " +
+                        SqlConstants.TEI_DATA_VALUE_EVENT + " = ?",
                 uid,
                 eventUid);
     }
@@ -144,7 +143,7 @@ final class DataValueStore implements DataEntryStore {
                         .value(value)
                         .storedBy(storedBy)
                         .build();
-        return briteDatabase.insert(TrackedEntityDataValueModel.TABLE,
+        return briteDatabase.insert(SqlConstants.TEI_DATA_VALUE_TABLE,
                 dataValueModel.toContentValues());
     }
 
@@ -156,10 +155,10 @@ final class DataValueStore implements DataEntryStore {
                             State.ERROR.equals(eventModel.state())) {
 
                         ContentValues values = eventModel.toContentValues();
-                        values.put(EventModel.Columns.STATE, State.TO_UPDATE.toString());
+                        values.put(SqlConstants.EVENT_STATE, State.TO_UPDATE.toString());
 
                         if (briteDatabase.update(SqlConstants.EVENT_TABLE, values,
-                                EventModel.Columns.UID + " = ?", eventUid) <= 0) {
+                                SqlConstants.EVENT_UID + " = ?", eventUid) <= 0) {
 
                             throw new IllegalStateException(String.format(Locale.US, "Event=[%s] " +
                                     "has not been successfully updated", eventUid));

@@ -11,9 +11,7 @@ import org.dhis2.utils.CodeGenerator;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.category.CategoryCombo;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.Coordinates;
 import org.hisp.dhis.android.core.common.State;
@@ -25,7 +23,6 @@ import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
-import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
@@ -83,7 +80,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<Event> event(String eventId) {
         String id = eventId == null ? "" : eventId;
-        String selectEventWithId = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + EventModel.Columns.UID + " = '" + id + "' AND " + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
+        String selectEventWithId = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_UID + " = '" + id + "' AND " + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, selectEventWithId)
                 .mapToOne(Event::create);
     }
@@ -99,7 +96,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<CategoryCombo> catComboModel(String programUid) {
         String catComboQuery = "SELECT CategoryCombo.* FROM CategoryCombo JOIN Program ON Program.categoryCombo = CategoryCombo.uid WHERE Program.uid = ?";
-        return briteDatabase.createQuery(CategoryComboModel.TABLE, catComboQuery, programUid)
+        return briteDatabase.createQuery(SqlConstants.CAT_COMBO_TABLE, catComboQuery, programUid)
                 .mapToOne(CategoryCombo::create);
     }
 
@@ -112,7 +109,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 "JOIN CategoryOption ON CategoryOptionComboCategoryOptionLink.CategoryOption = CategoryOption.uid " +
                 "JOIN Program ON Program.categoryCombo = CategoryCombo.uid " +
                 "WHERE categoryOption.accessDataWrite AND program.uid = ?";
-        return briteDatabase.createQuery(CategoryOptionComboModel.TABLE, catComboQuery, programUid)
+        return briteDatabase.createQuery(SqlConstants.CAT_OPTION_COMBO_TABLE, catComboQuery, programUid)
                 .mapToList(CategoryOptionCombo::create);
     }
 
@@ -244,7 +241,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         //TODO: Update program causes crash
         /* ContentValues program = new ContentValues();
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
-        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
+        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, SqlConstants.PROGRAM_UID + " = ?", programUid);*/
     }
 
     @Override
@@ -272,7 +269,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @NonNull
     @Override
     public Observable<Event> newlyCreatedEvent(long rowId) {
-        String selectEventWithRowid = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + EventModel.Columns.ID + " = '" + rowId + "'" + " AND " + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
+        String selectEventWithRowid = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + EventModel.Columns.ID + " = '" + rowId + "'" + " AND " + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, selectEventWithRowid).mapToOne(Event::create);
     }
 
@@ -289,7 +286,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<ProgramStage> programStageWithId(String programStageUid) {
         String id = programStageUid == null ? "" : programStageUid;
-        String selectProgramStageWithId = SELECT_ALL_FROM + SqlConstants.PROGRAM_STAGE_TABLE + WHERE + ProgramStageModel.Columns.UID + " = '" + id + QUOTE + LIMIT_1;
+        String selectProgramStageWithId = SELECT_ALL_FROM + SqlConstants.PROGRAM_STAGE_TABLE + WHERE + SqlConstants.PROGRAM_STAGE_UID + " = '" + id + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(SqlConstants.PROGRAM_STAGE_TABLE, selectProgramStageWithId)
                 .mapToOne(ProgramStage::create);
     }
@@ -314,12 +311,12 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         cal.set(Calendar.MILLISECOND, 0);
 
         ContentValues contentValues = new ContentValues();
-        contentValues.put(EventModel.Columns.EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
-        contentValues.put(EventModel.Columns.ORGANISATION_UNIT, orgUnitUid);
+        contentValues.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
+        contentValues.put(SqlConstants.EVENT_ORG_UNIT, orgUnitUid);
         // TODO CRIS: CHECK IF THESE ARE WORKING...
         contentValues.put(EventModel.Columns.LATITUDE, latitude);
         contentValues.put(EventModel.Columns.LONGITUDE, longitude);
-        contentValues.put(EventModel.Columns.ATTRIBUTE_OPTION_COMBO, catComboUid);
+        contentValues.put(SqlConstants.EVENT_ATTR_OPTION_COMBO, catComboUid);
         contentValues.put(EventModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(currentDate));
 
         long row = -1;
@@ -327,7 +324,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         String id = eventUid == null ? "" : eventUid;
 
         try {
-            row = briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, EventModel.Columns.UID + " = ?", id);
+            row = briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + " = ?", id);
         } catch (Exception e) {
             Timber.e(e);
         }
@@ -352,8 +349,8 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                         "WHERE %s.%s = ? " +
                         "AND %s.%s = ? " +
                         "AND %s.%s = ? " +
-                        "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
-                        "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.EVENT_DATE + " > DATE() " +
+                        "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
+                        "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_DATE + " > DATE() " +
                         "ORDER BY CASE WHEN %s.%s > %s.%s " +
                         "THEN %s.%s ELSE %s.%s END ASC",
                 SqlConstants.EVENT_TABLE, SqlConstants.ENROLLMENT_TABLE,
@@ -361,8 +358,8 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 SqlConstants.ENROLLMENT_TABLE, EnrollmentModel.Columns.PROGRAM,
                 SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_UID,
                 SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
-                SqlConstants.EVENT_TABLE, EventModel.Columns.DUE_DATE, SqlConstants.EVENT_TABLE, EventModel.Columns.EVENT_DATE,
-                SqlConstants.EVENT_TABLE, EventModel.Columns.DUE_DATE, SqlConstants.EVENT_TABLE, EventModel.Columns.EVENT_DATE);
+                SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DUE_DATE, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DATE,
+                SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DUE_DATE, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DATE);
 
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, eventsQuery, programUid == null ? "" : programUid,
                 enrollmentUid == null ? "" : enrollmentUid,
@@ -389,13 +386,13 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 if (eventModel.state() == State.TO_POST) {
                     String deleteWhere = String.format(
                             "%s.%s = ?",
-                            SqlConstants.EVENT_TABLE, EventModel.Columns.UID
+                            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID
                     );
                     briteDatabase.delete(SqlConstants.EVENT_TABLE, deleteWhere, eventId);
                 } else {
                     ContentValues contentValues = eventModel.toContentValues();
-                    contentValues.put(EventModel.Columns.STATE, State.TO_DELETE.name());
-                    briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, EventModel.Columns.UID + " = ?", eventId);
+                    contentValues.put(SqlConstants.EVENT_STATE, State.TO_DELETE.name());
+                    briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + " = ?", eventId);
                 }
 
                 if (!isEmpty(eventModel.enrollment()))

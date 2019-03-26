@@ -22,7 +22,6 @@ import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.maintenance.D2Error;
 import org.hisp.dhis.android.core.option.Option;
 import org.hisp.dhis.android.core.option.OptionGroupOptionLinkTableInfo;
@@ -31,9 +30,7 @@ import org.hisp.dhis.android.core.option.OptionSetModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.Program;
-import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramStage;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttribute;
 import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttributeModel;
 import org.hisp.dhis.android.core.resource.Resource;
@@ -90,14 +87,14 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                     "WHERE %s.%s = ?",
             SqlConstants.PROGRAM_TABLE,
             SqlConstants.PROGRAM_TABLE,
-            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TABLE, EnrollmentModel.Columns.PROGRAM, SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.UID,
+            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TABLE, EnrollmentModel.Columns.PROGRAM, SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_UID,
             SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI);
 
     private static final Set<String> ACTIVE_TEI_PROGRAMS_TABLES = new HashSet<>(Arrays.asList(SqlConstants.PROGRAM_TABLE, SqlConstants.ENROLLMENT_TABLE));
 
 
     private static final String PROGRAM_LIST_ALL_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.UID);
+            SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_UID);
 
     private static final String TRACKED_ENTITY_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
             TrackedEntityTypeModel.TABLE, TrackedEntityTypeModel.TABLE, TrackedEntityTypeModel.Columns.UID);
@@ -138,32 +135,32 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     private static final Set<String> PROGRAM_TRACKED_ENTITY_ATTRIBUTES_NO_PROGRAM_TABLES = new HashSet<>(Arrays.asList(TrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.TABLE));
 
     private static final String SELECT_PROGRAM_STAGE = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.UID);
+            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_UID);
 
     private static final String SELECT_CATEGORY_OPTION_COMBO = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            CategoryOptionComboModel.TABLE, CategoryOptionComboModel.TABLE, CategoryOptionComboModel.Columns.UID);
+            SqlConstants.CAT_OPTION_COMBO_TABLE, SqlConstants.CAT_OPTION_COMBO_TABLE, CategoryOptionComboModel.Columns.UID);
 
     private static final String SELECT_CATEGORY_OPTIONS_COMBO = String.format("SELECT %s.* FROM %s " +
                     JOIN_TABLE_ON +
                     JOIN_TABLE_ON +
                     "WHERE %s.%s AND %s.%s = ",
-            CategoryOptionComboModel.TABLE, CategoryOptionComboModel.TABLE,
+            SqlConstants.CAT_OPTION_COMBO_TABLE, SqlConstants.CAT_OPTION_COMBO_TABLE,
             CategoryOptionComboCategoryOptionLinkTableInfo.TABLE_INFO.name(),
             CategoryOptionComboCategoryOptionLinkTableInfo.TABLE_INFO.name(), CategoryOptionComboCategoryOptionLinkTableInfo.Columns.CATEGORY_OPTION_COMBO,
-            CategoryOptionComboModel.TABLE, CategoryOptionComboModel.Columns.UID,
+            SqlConstants.CAT_OPTION_COMBO_TABLE, CategoryOptionComboModel.Columns.UID,
             CategoryOptionModel.TABLE, CategoryOptionComboCategoryOptionLinkTableInfo.TABLE_INFO.name(), CategoryOptionComboCategoryOptionLinkTableInfo.Columns.CATEGORY_OPTION,
             CategoryOptionModel.TABLE, CategoryOptionModel.Columns.UID,
-            CategoryOptionModel.TABLE, CategoryOptionModel.Columns.ACCESS_DATA_WRITE, CategoryOptionComboModel.TABLE, CategoryOptionComboModel.Columns.CATEGORY_COMBO);
+            CategoryOptionModel.TABLE, CategoryOptionModel.Columns.ACCESS_DATA_WRITE, SqlConstants.CAT_OPTION_COMBO_TABLE, CategoryOptionComboModel.Columns.CATEGORY_COMBO);
 
     private static final String SELECT_CATEGORY = "SELECT * FROM Category " +
             "JOIN CategoryCategoryComboLink ON CategoryCategoryComboLink.category = Category.uid " +
             "WHERE CategoryCategoryComboLink.categoryCombo = ?";
 
     private static final String SELECT_CATEGORY_COMBO = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            CategoryComboModel.TABLE, CategoryComboModel.TABLE, CategoryComboModel.Columns.UID);
+            SqlConstants.CAT_COMBO_TABLE, SqlConstants.CAT_COMBO_TABLE, CategoryComboModel.Columns.UID);
 
     private static final String SELECT_DEFAULT_CAT_COMBO = String.format("SELECT %s FROM %s WHERE %s.%s = '1' LIMIT 1",
-            CategoryComboModel.Columns.UID, CategoryComboModel.TABLE, CategoryComboModel.TABLE, CategoryComboModel.Columns.IS_DEFAULT);
+            CategoryComboModel.Columns.UID, SqlConstants.CAT_COMBO_TABLE, SqlConstants.CAT_COMBO_TABLE, CategoryComboModel.Columns.IS_DEFAULT);
 
     private static final String EXPIRY_DATE_PERIOD_QUERY = String.format(
             "SELECT program.* FROM %s " +
@@ -171,8 +168,8 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                     "WHERE %s.%s = ? " +
                     "LIMIT 1",
             SqlConstants.PROGRAM_TABLE,
-            SqlConstants.EVENT_TABLE, SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM,
-            SqlConstants.EVENT_TABLE, EventModel.Columns.UID);
+            SqlConstants.EVENT_TABLE, SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM,
+            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID);
 
     private final BriteDatabase briteDatabase;
 
@@ -192,14 +189,14 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<CategoryCombo> getCategoryComboWithId(String categoryComboId) {
         String id = categoryComboId == null ? "" : categoryComboId;
         return briteDatabase
-                .createQuery(CategoryComboModel.TABLE, SELECT_CATEGORY_COMBO + QUOTE + id + QUOTE + LIMIT_1)
+                .createQuery(SqlConstants.CAT_COMBO_TABLE, SELECT_CATEGORY_COMBO + QUOTE + id + QUOTE + LIMIT_1)
                 .mapToOne(CategoryCombo::create);
     }
 
     @Override
     public Observable<String> getDefaultCategoryOptionId() {
         return briteDatabase
-                .createQuery(CategoryComboModel.TABLE, SELECT_DEFAULT_CAT_COMBO)
+                .createQuery(SqlConstants.CAT_COMBO_TABLE, SELECT_DEFAULT_CAT_COMBO)
                 .mapToOne(cursor -> cursor.getString(0));
     }
 
@@ -237,8 +234,8 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     @Override
     public void saveCatOption(String eventUid, CategoryOptionCombo selectedOption) {
         ContentValues event = new ContentValues();
-        event.put(EventModel.Columns.ATTRIBUTE_OPTION_COMBO, selectedOption.uid());
-        briteDatabase.update(SqlConstants.EVENT_TABLE, event, EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid);
+        event.put(SqlConstants.EVENT_ATTR_OPTION_COMBO, selectedOption.uid());
+        briteDatabase.update(SqlConstants.EVENT_TABLE, event, SqlConstants.EVENT_UID + " = ?", eventUid == null ? "" : eventUid);
     }
 
     @Override

@@ -18,7 +18,6 @@ import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.dataelement.DataElement;
 import org.hisp.dhis.android.core.dataelement.DataElementModel;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.DatePeriod;
@@ -82,15 +81,15 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
 
         if (dates != null) {
             String selectEventWithProgramUidAndDates = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_PROGRAM + "='%s' AND (%s) " +
-                    "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
+                    "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
                     orgQuery +
-                    " ORDER BY " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.EVENT_DATE + " DESC, Event.lastUpdated DESC";
+                    " ORDER BY " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_DATE + " DESC, Event.lastUpdated DESC";
 
             StringBuilder dateQuery = new StringBuilder();
             String queryFormat = "(%s BETWEEN '%s' AND '%s') ";
             for (int i = 0; i < dates.size(); i++) {
                 Date[] datesToQuery = DateUtils.getInstance().getDateFromDateAndPeriod(dates.get(i), period);
-                dateQuery.append(String.format(queryFormat, EventModel.Columns.EVENT_DATE, DateUtils.databaseDateFormat().format(datesToQuery[0]), DateUtils.databaseDateFormat().format(datesToQuery[1])));
+                dateQuery.append(String.format(queryFormat, SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(datesToQuery[0]), DateUtils.databaseDateFormat().format(datesToQuery[1])));
                 if (i < dates.size() - 1)
                     dateQuery.append("OR ");
             }
@@ -105,9 +104,9 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
 
 
             String selectEventWithProgramUidAndDates = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_PROGRAM + "='%s' " +
-                    "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
+                    "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
                     orgQuery +
-                    " ORDER BY " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.EVENT_DATE + " DESC, Event.lastUpdated DESC";
+                    " ORDER BY " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_DATE + " DESC, Event.lastUpdated DESC";
 
             String query = selectEventWithProgramUidAndDates + pageQuery;
 
@@ -134,15 +133,15 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
             return programEvents(programUid, dates, period, orgUnitQuery, page);
         }
         if (dates != null) {
-            String selectEventWithProgramUidAndDatesAndCatCombo = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_PROGRAM + "='%s' AND " + EventModel.Columns.ATTRIBUTE_OPTION_COMBO + "='%s' AND (%s) " +
-                    "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
-                    " AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + " IN (" + orgUnitQuery + ")";
+            String selectEventWithProgramUidAndDatesAndCatCombo = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_PROGRAM + "='%s' AND " + SqlConstants.EVENT_ATTR_OPTION_COMBO + "='%s' AND (%s) " +
+                    "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
+                    " AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_ORG_UNIT + " IN (" + orgUnitQuery + ")";
 
             StringBuilder dateQuery = new StringBuilder();
             String queryFormat = "(%s BETWEEN '%s' AND '%s') ";
             for (int i = 0; i < dates.size(); i++) {
                 Date[] datesToQuery = DateUtils.getInstance().getDateFromDateAndPeriod(dates.get(i), period);
-                dateQuery.append(String.format(queryFormat, EventModel.Columns.EVENT_DATE, DateUtils.getInstance().formatDate(datesToQuery[0]), DateUtils.getInstance().formatDate(datesToQuery[1])));
+                dateQuery.append(String.format(queryFormat, SqlConstants.EVENT_DATE, DateUtils.getInstance().formatDate(datesToQuery[0]), DateUtils.getInstance().formatDate(datesToQuery[1])));
                 if (i < dates.size() - 1)
                     dateQuery.append("OR ");
             }
@@ -155,9 +154,9 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
                     dateQuery))
                     .mapToList(cursor -> transformIntoEventViewModel(Event.create(cursor))).toFlowable(BackpressureStrategy.LATEST);
         } else {
-            String selectEventWithProgramUidAndDatesAndCatCombo = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_PROGRAM + "='%s' AND " + EventModel.Columns.ATTRIBUTE_OPTION_COMBO + "='%s' " +
-                    "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
-                    " AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + " IN (" + orgUnitQuery + ")";
+            String selectEventWithProgramUidAndDatesAndCatCombo = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_PROGRAM + "='%s' AND " + SqlConstants.EVENT_ATTR_OPTION_COMBO + "='%s' " +
+                    "AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
+                    " AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_ORG_UNIT + " IN (" + orgUnitQuery + ")";
 
             String id = categoryOptionComboModel.uid() == null ? "" : categoryOptionComboModel.uid();
             String query = selectEventWithProgramUidAndDatesAndCatCombo + pageQuery;
@@ -334,10 +333,10 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
     @Override
     public Observable<List<CategoryOptionCombo>> catCombo(String categoryComboUid) {
         String id = categoryComboUid == null ? "" : categoryComboUid;
-        String selectCategoryCombo = "SELECT " + CategoryOptionComboModel.TABLE + ".* FROM " + CategoryOptionComboModel.TABLE + " INNER JOIN " + CategoryComboModel.TABLE +
-                " ON " + CategoryOptionComboModel.TABLE + "." + CategoryOptionComboModel.Columns.CATEGORY_COMBO + " = " + CategoryComboModel.TABLE + "." + CategoryComboModel.Columns.UID
-                + WHERE + CategoryComboModel.TABLE + "." + CategoryComboModel.Columns.UID + " = '" + id + "'";
-        return briteDatabase.createQuery(CategoryOptionComboModel.TABLE, selectCategoryCombo)
+        String selectCategoryCombo = "SELECT " + SqlConstants.CAT_OPTION_COMBO_TABLE + ".* FROM " + SqlConstants.CAT_OPTION_COMBO_TABLE + " INNER JOIN " + SqlConstants.CAT_COMBO_TABLE +
+                " ON " + SqlConstants.CAT_OPTION_COMBO_TABLE + "." + CategoryOptionComboModel.Columns.CATEGORY_COMBO + " = " + SqlConstants.CAT_COMBO_TABLE + "." + CategoryComboModel.Columns.UID
+                + WHERE + SqlConstants.CAT_COMBO_TABLE + "." + CategoryComboModel.Columns.UID + " = '" + id + "'";
+        return briteDatabase.createQuery(SqlConstants.CAT_OPTION_COMBO_TABLE, selectCategoryCombo)
                 .mapToList(CategoryOptionCombo::create);
     }
 

@@ -13,7 +13,6 @@ import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
@@ -133,19 +132,19 @@ public final class AttributeValueStore implements DataEntryStore {
             return updated;
         } else {
             ContentValues dataValue = new ContentValues();
-            dataValue.put(TrackedEntityDataValueModel.Columns.LAST_UPDATED,
+            dataValue.put(SqlConstants.TEI_DATA_VALUE_LAST_UPDATED,
                     BaseIdentifiableObject.DATE_FORMAT.format(Calendar.getInstance().getTime()));
             if (value == null) {
-                dataValue.putNull(TrackedEntityDataValueModel.Columns.VALUE);
+                dataValue.putNull(SqlConstants.TEI_DATA_VALUE_VALUE);
             } else {
-                dataValue.put(TrackedEntityDataValueModel.Columns.VALUE, value);
+                dataValue.put(SqlConstants.TEI_DATA_VALUE_VALUE, value);
             }
             String eventUid = eventUid(attribute);
             // ToDo: write test cases for different events
             if (!isEmpty(eventUid))
-                return (long) briteDatabase.update(TrackedEntityDataValueModel.TABLE, dataValue,
-                        TrackedEntityDataValueModel.Columns.DATA_ELEMENT + " = ? AND " +
-                                TrackedEntityDataValueModel.Columns.EVENT + " = ?", attribute, eventUid);
+                return (long) briteDatabase.update(SqlConstants.TEI_DATA_VALUE_TABLE, dataValue,
+                        SqlConstants.TEI_DATA_VALUE_DATA_ELEMENT + " = ? AND " +
+                                SqlConstants.TEI_DATA_VALUE_EVENT + " = ?", attribute, eventUid);
             else return -1;
         }
     }
@@ -224,7 +223,7 @@ public final class AttributeValueStore implements DataEntryStore {
                                 .event(eventUid)
                                 .value(value)
                                 .build();
-                return briteDatabase.insert(TrackedEntityDataValueModel.TABLE,
+                return briteDatabase.insert(SqlConstants.TEI_DATA_VALUE_TABLE,
                         dataValueModel.toContentValues());
             } else
                 return -1;
@@ -243,9 +242,9 @@ public final class AttributeValueStore implements DataEntryStore {
         } else {
             String eventUid = eventUid(attribute);
             if (!isEmpty(eventUid))
-                return (long) briteDatabase.delete(TrackedEntityDataValueModel.TABLE,
-                        TrackedEntityDataValueModel.Columns.DATA_ELEMENT + " = ? AND " +
-                                TrackedEntityDataValueModel.Columns.EVENT + " = ?",
+                return (long) briteDatabase.delete(SqlConstants.TEI_DATA_VALUE_TABLE,
+                        SqlConstants.TEI_DATA_VALUE_DATA_ELEMENT + " = ? AND " +
+                                SqlConstants.TEI_DATA_VALUE_EVENT + " = ?",
                         attribute, eventUid);
             else
                 return -1;

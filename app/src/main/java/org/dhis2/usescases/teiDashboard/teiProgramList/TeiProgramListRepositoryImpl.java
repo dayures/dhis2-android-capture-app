@@ -19,7 +19,6 @@ import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitProgramLinkModel;
 import org.hisp.dhis.android.core.program.Program;
-import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.util.Arrays;
@@ -142,8 +141,8 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
     @Override
     public Observable<List<Program>> alreadyEnrolledPrograms(String trackedEntityId) {
         String selectEnrolledProgramsWithTeiId = "SELECT * FROM " + SqlConstants.PROGRAM_TABLE + " JOIN " + SqlConstants.ENROLLMENT_TABLE +
-                " ON " + SqlConstants.ENROLLMENT_TABLE + "." + EnrollmentModel.Columns.PROGRAM + "=" + SqlConstants.PROGRAM_TABLE + "." + ProgramModel.Columns.UID +
-                " WHERE " + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + "='%s' GROUP BY " + SqlConstants.PROGRAM_TABLE + "." + ProgramModel.Columns.UID;
+                " ON " + SqlConstants.ENROLLMENT_TABLE + "." + EnrollmentModel.Columns.PROGRAM + "=" + SqlConstants.PROGRAM_TABLE + "." + SqlConstants.PROGRAM_UID +
+                " WHERE " + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + "='%s' GROUP BY " + SqlConstants.PROGRAM_TABLE + "." + SqlConstants.PROGRAM_UID;
         return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, String.format(selectEnrolledProgramsWithTeiId, trackedEntityId == null ? "" : trackedEntityId))
                 .mapToList(Program::create);
     }
