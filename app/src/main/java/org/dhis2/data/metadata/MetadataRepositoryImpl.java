@@ -8,6 +8,7 @@ import com.squareup.sqlbrite2.BriteDatabase;
 import org.dhis2.R;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.utils.DateUtils;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.category.Category;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
@@ -33,7 +34,6 @@ import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
-import org.hisp.dhis.android.core.program.ProgramStageSectionModel;
 import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttribute;
 import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttributeModel;
 import org.hisp.dhis.android.core.resource.Resource;
@@ -78,32 +78,32 @@ import static org.dhis2.utils.SqlConstants.SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIE
  */
 
 public class MetadataRepositoryImpl implements MetadataRepository {
-        
+
     private static final String SELECT_TEI_ENROLLMENTS = String.format(
             "SELECT * FROM %s WHERE %s.%s =",
-            EnrollmentModel.TABLE,
-            EnrollmentModel.TABLE, EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE);
+            SqlConstants.ENROLLMENT_TABLE,
+            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI);
 
     private static final String ACTIVE_TEI_PROGRAMS = String.format(
             " SELECT %s.* FROM %s " +
                     JOIN_TABLE_ON +
                     "WHERE %s.%s = ?",
-            ProgramModel.TABLE,
-            ProgramModel.TABLE,
-            EnrollmentModel.TABLE, EnrollmentModel.TABLE, EnrollmentModel.Columns.PROGRAM, ProgramModel.TABLE, ProgramModel.Columns.UID,
-            EnrollmentModel.TABLE, EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE);
+            SqlConstants.PROGRAM_TABLE,
+            SqlConstants.PROGRAM_TABLE,
+            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TABLE, EnrollmentModel.Columns.PROGRAM, SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.UID,
+            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI);
 
-    private static final Set<String> ACTIVE_TEI_PROGRAMS_TABLES = new HashSet<>(Arrays.asList(ProgramModel.TABLE, EnrollmentModel.TABLE));
+    private static final Set<String> ACTIVE_TEI_PROGRAMS_TABLES = new HashSet<>(Arrays.asList(SqlConstants.PROGRAM_TABLE, SqlConstants.ENROLLMENT_TABLE));
 
 
     private static final String PROGRAM_LIST_ALL_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            ProgramModel.TABLE, ProgramModel.TABLE, ProgramModel.Columns.UID);
+            SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.UID);
 
     private static final String TRACKED_ENTITY_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
             TrackedEntityTypeModel.TABLE, TrackedEntityTypeModel.TABLE, TrackedEntityTypeModel.Columns.UID);
 
     private static final String TRACKED_ENTITY_INSTANCE_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            TrackedEntityInstanceModel.TABLE, TrackedEntityInstanceModel.TABLE, TrackedEntityInstanceModel.Columns.UID);
+            SqlConstants.TEI_TABLE, SqlConstants.TEI_TABLE, SqlConstants.TEI_UID);
 
     private static final String ORG_UNIT_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
             OrganisationUnitModel.TABLE, OrganisationUnitModel.TABLE, OrganisationUnitModel.Columns.UID);
@@ -113,8 +113,8 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                     JOIN_TABLE_ON +
                     "WHERE  %s.%s = ? LIMIT 1",
             OrganisationUnitModel.TABLE,
-            TrackedEntityInstanceModel.TABLE, TrackedEntityInstanceModel.TABLE, TrackedEntityInstanceModel.Columns.ORGANISATION_UNIT, OrganisationUnitModel.TABLE, OrganisationUnitModel.Columns.UID,
-            TrackedEntityInstanceModel.TABLE, TrackedEntityInstanceModel.Columns.UID);
+            SqlConstants.TEI_TABLE, SqlConstants.TEI_TABLE, TrackedEntityInstanceModel.Columns.ORGANISATION_UNIT, OrganisationUnitModel.TABLE, OrganisationUnitModel.Columns.UID,
+            SqlConstants.TEI_TABLE, SqlConstants.TEI_UID);
 
     private static final String ENROLLMENT_ORG_UNIT_QUERY =
             "SELECT OrganisationUnit.* FROM OrganisationUnit " +
@@ -123,7 +123,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                     "JOIN Program ON Program.uid = Enrollment.program WHERE Enrollment.trackedEntityInstance = ? AND Program.uid = ? LIMIT 1)";
 
 
-    private static final Set<String> TEI_ORG_UNIT_TABLES = new HashSet<>(Arrays.asList(OrganisationUnitModel.TABLE, TrackedEntityInstanceModel.TABLE));
+    private static final Set<String> TEI_ORG_UNIT_TABLES = new HashSet<>(Arrays.asList(OrganisationUnitModel.TABLE, SqlConstants.TEI_TABLE));
 
     private static final String PROGRAM_TRACKED_ENTITY_ATTRIBUTES_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
             ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.PROGRAM);
@@ -138,7 +138,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     private static final Set<String> PROGRAM_TRACKED_ENTITY_ATTRIBUTES_NO_PROGRAM_TABLES = new HashSet<>(Arrays.asList(TrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.TABLE));
 
     private static final String SELECT_PROGRAM_STAGE = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            ProgramStageModel.TABLE, ProgramStageModel.TABLE, ProgramStageModel.Columns.UID);
+            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, ProgramStageModel.Columns.UID);
 
     private static final String SELECT_CATEGORY_OPTION_COMBO = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
             CategoryOptionComboModel.TABLE, CategoryOptionComboModel.TABLE, CategoryOptionComboModel.Columns.UID);
@@ -170,9 +170,9 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                     JOIN_TABLE_ON +
                     "WHERE %s.%s = ? " +
                     "LIMIT 1",
-            ProgramModel.TABLE,
-            EventModel.TABLE, ProgramModel.TABLE, ProgramModel.Columns.UID, EventModel.TABLE, EventModel.Columns.PROGRAM,
-            EventModel.TABLE, EventModel.Columns.UID);
+            SqlConstants.PROGRAM_TABLE,
+            SqlConstants.EVENT_TABLE, SqlConstants.PROGRAM_TABLE, ProgramModel.Columns.UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM,
+            SqlConstants.EVENT_TABLE, EventModel.Columns.UID);
 
     private final BriteDatabase briteDatabase;
 
@@ -206,7 +206,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<TrackedEntityInstance> getTrackedEntityInstance(String teiUid) {
         String id = teiUid == null ? "" : teiUid;
         return briteDatabase
-                .createQuery(TrackedEntityInstanceModel.TABLE, TRACKED_ENTITY_INSTANCE_QUERY + QUOTE + id + QUOTE + LIMIT_1)
+                .createQuery(SqlConstants.TEI_TABLE, TRACKED_ENTITY_INSTANCE_QUERY + QUOTE + id + QUOTE + LIMIT_1)
                 .mapToOne(TrackedEntityInstance::create);
     }
 
@@ -238,7 +238,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public void saveCatOption(String eventUid, CategoryOptionCombo selectedOption) {
         ContentValues event = new ContentValues();
         event.put(EventModel.Columns.ATTRIBUTE_OPTION_COMBO, selectedOption.uid());
-        briteDatabase.update(EventModel.TABLE, event, EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid);
+        briteDatabase.update(SqlConstants.EVENT_TABLE, event, EventModel.Columns.UID + " = ?", eventUid == null ? "" : eventUid);
     }
 
     @Override
@@ -284,7 +284,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<ProgramStage> programStage(String programStageId) {
         String id = programStageId == null ? "" : programStageId;
         return briteDatabase
-                .createQuery(ProgramStageModel.TABLE, SELECT_PROGRAM_STAGE + QUOTE + id + QUOTE + LIMIT_1)
+                .createQuery(SqlConstants.PROGRAM_STAGE_TABLE, SELECT_PROGRAM_STAGE + QUOTE + id + QUOTE + LIMIT_1)
                 .mapToOne(ProgramStage::create);
     }
 
@@ -293,7 +293,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<List<Enrollment>> getTEIEnrollments(String teiUid) {
         String id = teiUid == null ? "" : teiUid;
         return briteDatabase
-                .createQuery(EnrollmentModel.TABLE, SELECT_TEI_ENROLLMENTS + QUOTE + id + QUOTE)
+                .createQuery(SqlConstants.ENROLLMENT_TABLE, SELECT_TEI_ENROLLMENTS + QUOTE + id + QUOTE)
                 .mapToList(Enrollment::create);
     }
 
@@ -332,7 +332,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
 
     @Override
     public Flowable<ProgramStage> programStageForEvent(String eventId) {
-        return briteDatabase.createQuery(ProgramStageSectionModel.TABLE, "SELECT ProgramStage.* FROM ProgramStage JOIN Event ON Event.programStage = ProgramStage.uid WHERE Event.uid = ? LIMIT 1", eventId)
+        return briteDatabase.createQuery(SqlConstants.PROGRAM_STAGE_SECTION_TABLE, "SELECT ProgramStage.* FROM ProgramStage JOIN Event ON Event.programStage = ProgramStage.uid WHERE Event.uid = ? LIMIT 1", eventId)
                 .mapToOne(ProgramStage::create).toFlowable(BackpressureStrategy.LATEST);
     }
 
@@ -347,7 +347,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<Program> getProgramWithId(String programUid) {
         String id = programUid == null ? "" : programUid;
         return briteDatabase
-                .createQuery(ProgramModel.TABLE, PROGRAM_LIST_ALL_QUERY + QUOTE + id + QUOTE + LIMIT_1)
+                .createQuery(SqlConstants.PROGRAM_TABLE, PROGRAM_LIST_ALL_QUERY + QUOTE + id + QUOTE + LIMIT_1)
                 .mapToOne(Program::create);
     }
 
@@ -394,13 +394,13 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     @Override
     public Observable<Program> getExpiryDateFromEvent(String eventUid) {
         return briteDatabase
-                .createQuery(ProgramModel.TABLE, EXPIRY_DATE_PERIOD_QUERY, eventUid == null ? "" : eventUid)
+                .createQuery(SqlConstants.PROGRAM_TABLE, EXPIRY_DATE_PERIOD_QUERY, eventUid == null ? "" : eventUid)
                 .mapToOne(Program::create);
     }
 
     @Override
     public Observable<Boolean> isCompletedEventExpired(String eventUid) {
-        return Observable.zip(briteDatabase.createQuery(EventModel.TABLE, "SELECT * FROM Event WHERE uid = ?", eventUid)
+        return Observable.zip(briteDatabase.createQuery(SqlConstants.EVENT_TABLE, "SELECT * FROM Event WHERE uid = ?", eventUid)
                         .mapToOne(Event::create),
                 getExpiryDateFromEvent(eventUid),
                 ((eventModel, programModel) -> DateUtils.getInstance().isEventExpired(null, eventModel.completedDate(),

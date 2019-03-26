@@ -7,11 +7,11 @@ import android.database.sqlite.SQLiteStatement;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.tuples.Pair;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
@@ -127,7 +127,7 @@ public final class AttributeValueStore implements DataEntryStore {
             sqLiteBind(updateStatement, 4, attribute);
 
             long updated = briteDatabase.executeUpdateDelete(
-                    TrackedEntityAttributeValueModel.TABLE, updateStatement);
+                    SqlConstants.TE_ATTR_VALUE_TABLE, updateStatement);
             updateStatement.clearBindings();
 
             return updated;
@@ -209,7 +209,7 @@ public final class AttributeValueStore implements DataEntryStore {
                                 .value(value)
                                 .build();
 
-                return briteDatabase.insert(TrackedEntityAttributeValueModel.TABLE, attributeValueModel.toContentValues());
+                return briteDatabase.insert(SqlConstants.TE_ATTR_VALUE_TABLE, attributeValueModel.toContentValues());
             } else
                 return -1;
         } else {
@@ -237,7 +237,7 @@ public final class AttributeValueStore implements DataEntryStore {
             sqLiteBind(deleteStatement, 2, attribute);
 
             long deleted = briteDatabase.executeUpdateDelete(
-                    TrackedEntityAttributeValueModel.TABLE, deleteStatement);
+                    SqlConstants.TE_ATTR_VALUE_TABLE, deleteStatement);
             deleteStatement.clearBindings();
             return deleted;
         } else {
@@ -289,7 +289,7 @@ public final class AttributeValueStore implements DataEntryStore {
 
     @NonNull
     private Flowable<Long> updateEnrollment(long status) {
-        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, SELECT_TEI, enrollment)
+        return briteDatabase.createQuery(SqlConstants.TEI_TABLE, SELECT_TEI, enrollment)
                 .mapToOne(TrackedEntityInstance::create).take(1).toFlowable(BackpressureStrategy.LATEST)
                 .switchMap(tei -> {
                     if (State.SYNCED.equals(tei.state()) || State.TO_DELETE.equals(tei.state()) ||
@@ -298,8 +298,8 @@ public final class AttributeValueStore implements DataEntryStore {
                         values.put(TrackedEntityInstanceModel.Columns.STATE, State.TO_UPDATE.toString());
 
                         String teiUid = tei.uid() == null ? "" : tei.uid();
-                        if (briteDatabase.update(TrackedEntityInstanceModel.TABLE, values,
-                                TrackedEntityInstanceModel.Columns.UID + " = ?", teiUid) <= 0) {
+                        if (briteDatabase.update(SqlConstants.TEI_TABLE, values,
+                                SqlConstants.TEI_UID + " = ?", teiUid) <= 0) {
 
                             throw new IllegalStateException(String.format(Locale.US, "Tei=[%s] " +
                                     "has not been successfully updated", tei.uid()));

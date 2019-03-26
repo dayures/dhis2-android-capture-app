@@ -6,12 +6,11 @@ import android.database.sqlite.SQLiteStatement;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.tuples.Pair;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
@@ -81,14 +80,14 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
     @Override
     public Flowable<EnrollmentStatus> enrollmentStatus(@NonNull String enrollmentUid) {
         String query = "SELECT Enrollment.* FROM Enrollment WHERE Enrollment.uid = ? LIMIT 1";
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, query, enrollmentUid)
+        return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, query, enrollmentUid)
                 .mapToOne(Enrollment::create)
                 .map(Enrollment::status).toFlowable(BackpressureStrategy.LATEST);
     }
 
     @Override
     public Flowable<Pair<Double, Double>> enrollmentCoordinates() {
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, "SELECT * FROM Enrollment WHERE uid = ? LIMIT 1", enrollment)
+        return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, "SELECT * FROM Enrollment WHERE uid = ? LIMIT 1", enrollment)
                 .mapToOne(Enrollment::create)
                 .filter(enrollmentModel -> enrollmentModel.coordinate().latitude() != null && enrollmentModel.coordinate().longitude() != null)
                 .map(enrollmentModel ->
@@ -100,9 +99,9 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
     public Flowable<Long> saveCoordinates(double latitude, double longitude) {
         return Flowable.defer(() -> {
             ContentValues cv = new ContentValues();
-            cv.put(EnrollmentModel.Columns.LATITUDE, latitude);
-            cv.put(EnrollmentModel.Columns.LONGITUDE, longitude);
-            long updated = briteDatabase.update(EnrollmentModel.TABLE, cv, "uid = ?", enrollment);
+            cv.put(SqlConstants.ENROLLMENT_LATITUDE, latitude);
+            cv.put(SqlConstants.ENROLLMENT_LONGITUDE, longitude);
+            long updated = briteDatabase.update(SqlConstants.ENROLLMENT_TABLE, cv, "uid = ?", enrollment);
             return Flowable.just(updated);
         })
                 .switchMap(this::updateEnrollment);
@@ -116,7 +115,7 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
         sqLiteBind(updateStatement, 3, enrollment);
 
         long updated = briteDatabase.executeUpdateDelete(
-                TrackedEntityAttributeValueModel.TABLE, updateStatement);
+                SqlConstants.TE_ATTR_VALUE_TABLE, updateStatement);
         updateStatement.clearBindings();
 
         return updated;
@@ -125,7 +124,7 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
 
     @NonNull
     private Flowable<Long> updateEnrollment(long status) {
-        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, SELECT_TEI, enrollment)
+        return briteDatabase.createQuery(SqlConstants.TEI_TABLE, SELECT_TEI, enrollment)
                 .mapToOne(TrackedEntityInstance::create).take(1).toFlowable(BackpressureStrategy.LATEST)
                 .switchMap(tei -> {
                     if (State.SYNCED.equals(tei.state()) || State.TO_DELETE.equals(tei.state()) ||
@@ -133,8 +132,8 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
                         ContentValues values = tei.toContentValues();
                         values.put(TrackedEntityInstanceModel.Columns.STATE, State.TO_UPDATE.toString());
 
-                        if (briteDatabase.update(TrackedEntityInstanceModel.TABLE, values,
-                                TrackedEntityInstanceModel.Columns.UID + " = ?", tei.uid()) <= 0) {
+                        if (briteDatabase.update(SqlConstants.TEI_TABLE, values,
+                                SqlConstants.TEI_UID + " = ?", tei.uid()) <= 0) {
 
                             throw new IllegalStateException(String.format(Locale.US, "Tei=[%s] " +
                                     "has not been successfully updated", tei.uid()));

@@ -6,6 +6,7 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.user.UserRepository;
 import org.dhis2.utils.DateUtils;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.event.Event;
@@ -26,9 +27,9 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 final class DataValueStore implements DataEntryStore {
-    private static final String SELECT_EVENT = "SELECT * FROM " + EventModel.TABLE +
+    private static final String SELECT_EVENT = "SELECT * FROM " + SqlConstants.EVENT_TABLE +
             " WHERE " + EventModel.Columns.UID + " = ? " +
-            "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
+            "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' LIMIT 1";
 
     @NonNull
     private final BriteDatabase briteDatabase;
@@ -89,7 +90,7 @@ final class DataValueStore implements DataEntryStore {
         contentValues.put(EventModel.Columns.STATE, eventModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
         updateProgramTable(currentDate, eventModel.program());
 
-        briteDatabase.update(EventModel.TABLE, contentValues, EventModel.Columns.UID + "= ?", eventModel.uid());
+        briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, EventModel.Columns.UID + "= ?", eventModel.uid());
         updateTEi();
     }
 
@@ -101,7 +102,7 @@ final class DataValueStore implements DataEntryStore {
         contentValues.put(EventModel.Columns.EVENT_DATE, DateUtils.databaseDateFormat().format(eventDate));
         if (eventDate.before(currentDate))
             contentValues.put(EventModel.Columns.STATUS, EventStatus.ACTIVE.name());
-        briteDatabase.update(EventModel.TABLE, contentValues, EventModel.Columns.UID + "= ?", eventModel.uid());
+        briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, EventModel.Columns.UID + "= ?", eventModel.uid());
         updateTEi();
     }
 
@@ -109,7 +110,7 @@ final class DataValueStore implements DataEntryStore {
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues(); //TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
-        briteDatabase.update(ProgramModel.TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
+        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
     }
 
     private long update(@NonNull String uid, @Nullable String value) {
@@ -148,7 +149,7 @@ final class DataValueStore implements DataEntryStore {
     }
 
     private Flowable<Long> updateEvent(long status) {
-        return briteDatabase.createQuery(EventModel.TABLE, SELECT_EVENT, eventUid)
+        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, SELECT_EVENT, eventUid)
                 .mapToOne(Event::create).take(1).toFlowable(BackpressureStrategy.LATEST)
                 .switchMap(eventModel -> {
                     if (State.SYNCED.equals(eventModel.state()) || State.TO_DELETE.equals(eventModel.state()) ||
@@ -157,7 +158,7 @@ final class DataValueStore implements DataEntryStore {
                         ContentValues values = eventModel.toContentValues();
                         values.put(EventModel.Columns.STATE, State.TO_UPDATE.toString());
 
-                        if (briteDatabase.update(EventModel.TABLE, values,
+                        if (briteDatabase.update(SqlConstants.EVENT_TABLE, values,
                                 EventModel.Columns.UID + " = ?", eventUid) <= 0) {
 
                             throw new IllegalStateException(String.format(Locale.US, "Event=[%s] " +
@@ -178,6 +179,6 @@ final class DataValueStore implements DataEntryStore {
         tei.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
         tei.put(TrackedEntityInstanceModel.Columns.STATE, State.TO_UPDATE.name());// TODO: Check if state is TO_POST
         // TODO: and if so, keep the TO_POST state
-        briteDatabase.update(TrackedEntityInstanceModel.TABLE, tei, "uid = ?", teiUid);
+        briteDatabase.update(SqlConstants.TEI_TABLE, tei, "uid = ?", teiUid);
     }
 }

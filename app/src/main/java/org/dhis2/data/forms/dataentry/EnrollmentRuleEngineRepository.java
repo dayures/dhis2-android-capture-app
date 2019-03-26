@@ -6,9 +6,8 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.FormRepository;
 import org.dhis2.utils.Result;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.rules.models.RuleAttributeValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEnrollment;
@@ -95,7 +94,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     @NonNull
     private Flowable<RuleEnrollment> queryEnrollment(
             @NonNull List<RuleAttributeValue> attributeValues) {
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, QUERY_ENROLLMENT, enrollmentUid)
+        return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, QUERY_ENROLLMENT, enrollmentUid)
                 .mapToOne(cursor -> {
                     Date enrollmentDate = parseDate(cursor.getString(2));
                     Date incidentDate = cursor.isNull(1) ?
@@ -113,8 +112,8 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
 
     @NonNull
     private Flowable<List<RuleAttributeValue>> queryAttributeValues() {
-        return briteDatabase.createQuery(Arrays.asList(EnrollmentModel.TABLE,
-                TrackedEntityAttributeValueModel.TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid)
+        return briteDatabase.createQuery(Arrays.asList(SqlConstants.ENROLLMENT_TABLE,
+                SqlConstants.TE_ATTR_VALUE_TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid)
                 .mapToList(cursor -> {
                             String value = cursor.getString(1);
                             boolean useCode = cursor.getInt(2) == 1;

@@ -9,6 +9,7 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.utils.CodeGenerator;
 import org.dhis2.utils.DateUtils;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryComboModel;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
@@ -82,8 +83,8 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<Event> event(String eventId) {
         String id = eventId == null ? "" : eventId;
-        String selectEventWithId = SELECT_ALL_FROM + EventModel.TABLE + WHERE + EventModel.Columns.UID + " = '" + id + "' AND " + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
-        return briteDatabase.createQuery(EventModel.TABLE, selectEventWithId)
+        String selectEventWithId = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + EventModel.Columns.UID + " = '" + id + "' AND " + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
+        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, selectEventWithId)
                 .mapToOne(Event::create);
     }
 
@@ -165,7 +166,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         long row = -1;
 
         try {
-            row = briteDatabase.insert(EventModel.TABLE,
+            row = briteDatabase.insert(SqlConstants.EVENT_TABLE,
                     eventModel.toContentValues());
         } catch (Exception e) {
             Timber.e(e);
@@ -218,7 +219,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         long row = -1;
 
         try {
-            row = briteDatabase.insert(EventModel.TABLE,
+            row = briteDatabase.insert(SqlConstants.EVENT_TABLE,
                     eventModel.toContentValues());
         } catch (Exception e) {
             Timber.e(e);
@@ -243,20 +244,20 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         //TODO: Update program causes crash
         /* ContentValues program = new ContentValues();
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
-        briteDatabase.update(ProgramModel.TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
+        briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
     }
 
     @Override
     public Observable<String> updateTrackedEntityInstance(String eventId, String trackedEntityInstanceUid, String orgUnitUid) {
         String teiQuery = "SELECT * FROM TrackedEntityInstance WHERE TrackedEntityInstance.uid = ? LIMIT 1";
-        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, teiQuery, trackedEntityInstanceUid == null ? "" : trackedEntityInstanceUid)
+        return briteDatabase.createQuery(SqlConstants.TEI_TABLE, teiQuery, trackedEntityInstanceUid == null ? "" : trackedEntityInstanceUid)
                 .mapToOne(TrackedEntityInstance::create).distinctUntilChanged()
                 .map(trackedEntityInstanceModel -> {
                     ContentValues contentValues = trackedEntityInstanceModel.toContentValues();
                     contentValues.put(TrackedEntityInstanceModel.Columns.ORGANISATION_UNIT, orgUnitUid);
                     long row = -1;
                     try {
-                        row = briteDatabase.update(TrackedEntityInstanceModel.TABLE, contentValues, "TrackedEntityInstance.uid = ?", trackedEntityInstanceUid == null ? "" : trackedEntityInstanceUid);
+                        row = briteDatabase.update(SqlConstants.TEI_TABLE, contentValues, "TrackedEntityInstance.uid = ?", trackedEntityInstanceUid == null ? "" : trackedEntityInstanceUid);
                     } catch (Exception e) {
                         Timber.e(e);
                     }
@@ -271,16 +272,16 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @NonNull
     @Override
     public Observable<Event> newlyCreatedEvent(long rowId) {
-        String selectEventWithRowid = SELECT_ALL_FROM + EventModel.TABLE + WHERE + EventModel.Columns.ID + " = '" + rowId + "'" + " AND " + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
-        return briteDatabase.createQuery(EventModel.TABLE, selectEventWithRowid).mapToOne(Event::create);
+        String selectEventWithRowid = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + EventModel.Columns.ID + " = '" + rowId + "'" + " AND " + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
+        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, selectEventWithRowid).mapToOne(Event::create);
     }
 
     @NonNull
     @Override
     public Observable<ProgramStage> programStage(String programUid) {
         String id = programUid == null ? "" : programUid;
-        String selectProgramStage = SELECT_ALL_FROM + ProgramStageModel.TABLE + WHERE + ProgramStageModel.Columns.PROGRAM + " = '" + id + QUOTE + LIMIT_1;
-        return briteDatabase.createQuery(ProgramStageModel.TABLE, selectProgramStage)
+        String selectProgramStage = SELECT_ALL_FROM + SqlConstants.PROGRAM_STAGE_TABLE + WHERE + ProgramStageModel.Columns.PROGRAM + " = '" + id + QUOTE + LIMIT_1;
+        return briteDatabase.createQuery(SqlConstants.PROGRAM_STAGE_TABLE, selectProgramStage)
                 .mapToOne(ProgramStage::create);
     }
 
@@ -288,8 +289,8 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<ProgramStage> programStageWithId(String programStageUid) {
         String id = programStageUid == null ? "" : programStageUid;
-        String selectProgramStageWithId = SELECT_ALL_FROM + ProgramStageModel.TABLE + WHERE + ProgramStageModel.Columns.UID + " = '" + id + QUOTE + LIMIT_1;
-        return briteDatabase.createQuery(ProgramStageModel.TABLE, selectProgramStageWithId)
+        String selectProgramStageWithId = SELECT_ALL_FROM + SqlConstants.PROGRAM_STAGE_TABLE + WHERE + ProgramStageModel.Columns.UID + " = '" + id + QUOTE + LIMIT_1;
+        return briteDatabase.createQuery(SqlConstants.PROGRAM_STAGE_TABLE, selectProgramStageWithId)
                 .mapToOne(ProgramStage::create);
     }
 
@@ -326,7 +327,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
         String id = eventUid == null ? "" : eventUid;
 
         try {
-            row = briteDatabase.update(EventModel.TABLE, contentValues, EventModel.Columns.UID + " = ?", id);
+            row = briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, EventModel.Columns.UID + " = ?", id);
         } catch (Exception e) {
             Timber.e(e);
         }
@@ -351,19 +352,19 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                         "WHERE %s.%s = ? " +
                         "AND %s.%s = ? " +
                         "AND %s.%s = ? " +
-                        "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
-                        "AND " + EventModel.TABLE + "." + EventModel.Columns.EVENT_DATE + " > DATE() " +
+                        "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "'" +
+                        "AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.EVENT_DATE + " > DATE() " +
                         "ORDER BY CASE WHEN %s.%s > %s.%s " +
                         "THEN %s.%s ELSE %s.%s END ASC",
-                EventModel.TABLE, EnrollmentModel.TABLE,
-                EnrollmentModel.TABLE, EnrollmentModel.Columns.UID, EventModel.TABLE, EventModel.Columns.ENROLLMENT,
-                EnrollmentModel.TABLE, EnrollmentModel.Columns.PROGRAM,
-                EnrollmentModel.TABLE, EnrollmentModel.Columns.UID,
-                EventModel.TABLE, EventModel.Columns.PROGRAM_STAGE,
-                EventModel.TABLE, EventModel.Columns.DUE_DATE, EventModel.TABLE, EventModel.Columns.EVENT_DATE,
-                EventModel.TABLE, EventModel.Columns.DUE_DATE, EventModel.TABLE, EventModel.Columns.EVENT_DATE);
+                SqlConstants.EVENT_TABLE, SqlConstants.ENROLLMENT_TABLE,
+                SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_UID, SqlConstants.EVENT_TABLE, EventModel.Columns.ENROLLMENT,
+                SqlConstants.ENROLLMENT_TABLE, EnrollmentModel.Columns.PROGRAM,
+                SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_UID,
+                SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
+                SqlConstants.EVENT_TABLE, EventModel.Columns.DUE_DATE, SqlConstants.EVENT_TABLE, EventModel.Columns.EVENT_DATE,
+                SqlConstants.EVENT_TABLE, EventModel.Columns.DUE_DATE, SqlConstants.EVENT_TABLE, EventModel.Columns.EVENT_DATE);
 
-        return briteDatabase.createQuery(EventModel.TABLE, eventsQuery, programUid == null ? "" : programUid,
+        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, eventsQuery, programUid == null ? "" : programUid,
                 enrollmentUid == null ? "" : enrollmentUid,
                 programStageUid == null ? "" : programStageUid)
                 .mapToList(Event::create);
@@ -373,10 +374,10 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     public Observable<Boolean> accessDataWrite(String programId) {
         String writePermission = "SELECT ProgramStage.accessDataWrite FROM ProgramStage WHERE ProgramStage.program = ? LIMIT 1";
         String programWritePermission = "SELECT Program.accessDataWrite FROM Program WHERE Program.uid = ? LIMIT 1";
-        return briteDatabase.createQuery(ProgramStageModel.TABLE, writePermission, programId == null ? "" : programId)
+        return briteDatabase.createQuery(SqlConstants.PROGRAM_STAGE_TABLE, writePermission, programId == null ? "" : programId)
                 .mapToOne(cursor -> cursor.getInt(0) == 1)
                 .flatMap(programStageAccessDataWrite ->
-                        briteDatabase.createQuery(ProgramModel.TABLE, programWritePermission, programId == null ? "" : programId)
+                        briteDatabase.createQuery(SqlConstants.PROGRAM_TABLE, programWritePermission, programId == null ? "" : programId)
                                 .mapToOne(cursor -> (cursor.getInt(0) == 1) && programStageAccessDataWrite));
     }
 
@@ -388,13 +389,13 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 if (eventModel.state() == State.TO_POST) {
                     String deleteWhere = String.format(
                             "%s.%s = ?",
-                            EventModel.TABLE, EventModel.Columns.UID
+                            SqlConstants.EVENT_TABLE, EventModel.Columns.UID
                     );
-                    briteDatabase.delete(EventModel.TABLE, deleteWhere, eventId);
+                    briteDatabase.delete(SqlConstants.EVENT_TABLE, deleteWhere, eventId);
                 } else {
                     ContentValues contentValues = eventModel.toContentValues();
                     contentValues.put(EventModel.Columns.STATE, State.TO_DELETE.name());
-                    briteDatabase.update(EventModel.TABLE, contentValues, EventModel.Columns.UID + " = ?", eventId);
+                    briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, EventModel.Columns.UID + " = ?", eventId);
                 }
 
                 if (!isEmpty(eventModel.enrollment()))
@@ -427,9 +428,9 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 Enrollment enrollment = Enrollment.create(enrollmentCursor);
                 ContentValues cv = enrollment.toContentValues();
                 cv.put(EnrollmentModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-                cv.put(EnrollmentModel.Columns.STATE,
+                cv.put(SqlConstants.ENROLLMENT_STATE,
                         enrollment.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                briteDatabase.update(EnrollmentModel.TABLE, cv, "uid = ?", enrollmentUid);
+                briteDatabase.update(SqlConstants.ENROLLMENT_TABLE, cv, "uid = ?", enrollmentUid);
             }
         }
     }
@@ -443,7 +444,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 cv.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
                 cv.put(TrackedEntityInstanceModel.Columns.STATE,
                         teiModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                briteDatabase.update(TrackedEntityInstanceModel.TABLE, cv, "uid = ?", teiUid);
+                briteDatabase.update(SqlConstants.TEI_TABLE, cv, "uid = ?", teiUid);
             }
         }
     }

@@ -241,7 +241,6 @@ public class DateUtils {
 
     /**********************
      COMPARE DATES REGION*/
-    @Deprecated
     @SuppressWarnings({"squid:MissingDeprecatedCheck", "squid:S1133"})
     public boolean hasExpired(@NonNull Event event, int expiryDays, int completeEventExpiryDays, @Nullable PeriodType expiryPeriodType) {
         Calendar expiredDate = Calendar.getInstance();

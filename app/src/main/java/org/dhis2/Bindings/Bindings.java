@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.List;
 
 import androidx.core.content.ContextCompat;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.databinding.BindingAdapter;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -57,9 +58,13 @@ public class Bindings {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             view.setElevation(elevation);
         } else {
-            Drawable drawable = view.getResources().getDrawable(android.R.drawable.dialog_holo_light_frame);
-            drawable.setColorFilter(new PorterDuffColorFilter(view.getResources().getColor(R.color.colorGreyDefault), PorterDuff.Mode.MULTIPLY));
-            view.setBackground(drawable);
+            Drawable drawable = ResourcesCompat.getDrawable(view.getResources(), android.R.drawable.dialog_holo_light_frame, view.getContext().getTheme());
+            if (drawable != null) {
+                drawable.setColorFilter(new PorterDuffColorFilter(
+                        ResourcesCompat.getColor(view.getResources(), R.color.colorGreyDefault, view.getContext().getTheme()),
+                        PorterDuff.Mode.MULTIPLY));
+                view.setBackground(drawable);
+            }
         }
     }
 

@@ -6,9 +6,9 @@ import android.database.sqlite.SQLiteStatement;
 
 import com.squareup.sqlbrite2.BriteDatabase;
 
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
@@ -99,7 +99,7 @@ public final class AttrValueStore implements AttrEntryStore {
         sqLiteBind(updateStatement, 4, value);
 
         long updated = briteDatabase.executeUpdateDelete(
-                TrackedEntityAttributeValueModel.TABLE, updateStatement);
+                SqlConstants.TE_ATTR_VALUE_TABLE, updateStatement);
         updateStatement.clearBindings();
 
         return updated;
@@ -116,7 +116,7 @@ public final class AttrValueStore implements AttrEntryStore {
         sqLiteBind(insertStatement, 5, enrollment);
 
         long inserted = briteDatabase.executeInsert(
-                TrackedEntityAttributeValueModel.TABLE, insertStatement);
+                SqlConstants.TE_ATTR_VALUE_TABLE, insertStatement);
         insertStatement.clearBindings();
 
         return inserted;
@@ -134,7 +134,7 @@ public final class AttrValueStore implements AttrEntryStore {
 
     @NonNull
     private Flowable<Long> updateEnrollment(long status) {
-        return briteDatabase.createQuery(TrackedEntityInstanceModel.TABLE, SELECT_TEI, enrollment)
+        return briteDatabase.createQuery(SqlConstants.TEI_TABLE, SELECT_TEI, enrollment)
                 .mapToOne(TrackedEntityInstance::create).take(1).toFlowable(BackpressureStrategy.LATEST)
                 .switchMap(tei -> {
                     if (State.SYNCED.equals(tei.state()) || State.TO_DELETE.equals(tei.state()) ||
@@ -142,8 +142,8 @@ public final class AttrValueStore implements AttrEntryStore {
                         ContentValues values = tei.toContentValues();
                         values.put(TrackedEntityInstanceModel.Columns.STATE, State.TO_UPDATE.toString());
 
-                        if (briteDatabase.update(TrackedEntityInstanceModel.TABLE, values,
-                                TrackedEntityInstanceModel.Columns.UID + " = ?", tei.uid()) <= 0) {
+                        if (briteDatabase.update(SqlConstants.TEI_TABLE, values,
+                                SqlConstants.TEI_UID + " = ?", tei.uid()) <= 0) {
 
                             throw new IllegalStateException(String.format(Locale.US, "Tei=[%s] " +
                                     "has not been successfully updated", tei.uid()));

@@ -8,6 +8,7 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.usescases.main.program.ProgramViewModel;
 import org.dhis2.utils.CodeGenerator;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.common.State;
@@ -72,7 +73,7 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
                 "JOIN Program ON Program.uid = Enrollment.program " +
                 "JOIN OrganisationUnit ON OrganisationUnit.uid = Enrollment.organisationUnit " +
                 "WHERE Enrollment.trackedEntityInstance = ? AND Enrollment.status = 'ACTIVE'";
-        String[] tableNames = new String[]{ProgramModel.TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
+        String[] tableNames = new String[]{SqlConstants.PROGRAM_TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
         Set<String> tableSet = new HashSet<>(Arrays.asList(tableNames));
         return briteDatabase.createQuery(tableSet, selectActiveEnrollmentWithTeiId, trackedEntityId == null ? "" : trackedEntityId)
                 .mapToList(EnrollmentViewModel::fromCursor);
@@ -94,7 +95,7 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
                 "JOIN Program ON Program.uid = Enrollment.program " +
                 "JOIN OrganisationUnit ON OrganisationUnit.uid = Enrollment.organisationUnit " +
                 "WHERE Enrollment.trackedEntityInstance = ? AND Enrollment.status != 'ACTIVE'";
-        String[] tableNames = new String[]{ProgramModel.TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
+        String[] tableNames = new String[]{SqlConstants.PROGRAM_TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
         Set<String> tableSet = new HashSet<>(Arrays.asList(tableNames));
         return briteDatabase.createQuery(tableSet, selectActiveEnrollmentWithTeiId, trackedEntityId == null ? "" : trackedEntityId)
                 .mapToList(EnrollmentViewModel::fromCursor);
@@ -115,7 +116,7 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
             "JOIN OrganisationUnitProgramLink ON OrganisationUnitProgramLink.program = Program.uid " +
             "JOIN TrackedEntityInstance ON TrackedEntityInstance.trackedEntityType = Program.trackedEntityType " +
             "WHERE TrackedEntityInstance.uid = ? GROUP BY Program.uid";
-    private static final String[] TABLE_NAMES = new String[]{ProgramModel.TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
+    private static final String[] TABLE_NAMES = new String[]{SqlConstants.PROGRAM_TABLE, ObjectStyleModel.TABLE, OrganisationUnitProgramLinkModel.TABLE};
     private static final Set<String> TABLE_SET = new HashSet<>(Arrays.asList(TABLE_NAMES));
 
     @NonNull
@@ -140,10 +141,10 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
     @NonNull
     @Override
     public Observable<List<Program>> alreadyEnrolledPrograms(String trackedEntityId) {
-        String selectEnrolledProgramsWithTeiId = "SELECT * FROM " + ProgramModel.TABLE + " JOIN " + EnrollmentModel.TABLE +
-                " ON " + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.PROGRAM + "=" + ProgramModel.TABLE + "." + ProgramModel.Columns.UID +
-                " WHERE " + EnrollmentModel.TABLE + "." + EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE + "='%s' GROUP BY " + ProgramModel.TABLE + "." + ProgramModel.Columns.UID;
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, String.format(selectEnrolledProgramsWithTeiId, trackedEntityId == null ? "" : trackedEntityId))
+        String selectEnrolledProgramsWithTeiId = "SELECT * FROM " + SqlConstants.PROGRAM_TABLE + " JOIN " + SqlConstants.ENROLLMENT_TABLE +
+                " ON " + SqlConstants.ENROLLMENT_TABLE + "." + EnrollmentModel.Columns.PROGRAM + "=" + SqlConstants.PROGRAM_TABLE + "." + ProgramModel.Columns.UID +
+                " WHERE " + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + "='%s' GROUP BY " + SqlConstants.PROGRAM_TABLE + "." + ProgramModel.Columns.UID;
+        return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, String.format(selectEnrolledProgramsWithTeiId, trackedEntityId == null ? "" : trackedEntityId))
                 .mapToList(Program::create);
     }
 
@@ -161,8 +162,8 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
             dataValue.put(TrackedEntityInstanceModel.Columns.STATE,
                     State.TO_POST.toString());
 
-            if (briteDatabase.update(TrackedEntityInstanceModel.TABLE, dataValue,
-                    TrackedEntityInstanceModel.Columns.UID + " = ? ", teiUid) <= 0) {
+            if (briteDatabase.update(SqlConstants.TEI_TABLE, dataValue,
+                    SqlConstants.TEI_UID + " = ? ", teiUid) <= 0) {
                 String message = String.format(Locale.US, "Failed to update tracked entity " +
                                 "instance for uid=[%s]",
                         teiUid);
@@ -182,7 +183,7 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
                     .state(State.TO_POST)
                     .build();
 
-            if (briteDatabase.insert(EnrollmentModel.TABLE, enrollmentModel.toContentValues()) < 0) {
+            if (briteDatabase.insert(SqlConstants.ENROLLMENT_TABLE, enrollmentModel.toContentValues()) < 0) {
                 String message = String.format(Locale.US, "Failed to insert new enrollment " +
                         "instance for organisationUnit=[%s] and program=[%s]", orgUnit, programUid);
                 return Observable.error(new SQLiteConstraintException(message));

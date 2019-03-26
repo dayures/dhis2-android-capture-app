@@ -7,23 +7,21 @@ import com.squareup.sqlbrite2.BriteDatabase;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Quartet;
 import org.dhis2.utils.DateUtils;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.constant.Constant;
 import org.hisp.dhis.android.core.constant.ConstantTableInfo;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.program.Program;
-import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramRuleActionModel;
 import org.hisp.dhis.android.core.program.ProgramRuleActionType;
 import org.hisp.dhis.android.core.program.ProgramRuleModel;
 import org.hisp.dhis.android.core.program.ProgramRuleVariableModel;
 import org.hisp.dhis.android.core.program.ProgramRuleVariableSourceType;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.rules.models.Rule;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionAssign;
@@ -158,47 +156,47 @@ public final class RulesRepository {
     /**
      * Query all events except current one from a program without registration
      */
-    private static final String QUERY_OTHER_EVENTS = SELECT + EventModel.TABLE + "." + EventModel.Columns.UID + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.STATUS + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.EVENT_DATE + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.DUE_DATE + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
-            " " + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.DISPLAY_NAME + ",\n" +
-            FROM + EventModel.TABLE + "\n"  +
-            JOIN + ProgramStageModel.TABLE + ON + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.UID + " = " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + "\n" +
+    private static final String QUERY_OTHER_EVENTS = SELECT + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.UID + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATUS + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.EVENT_DATE + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.DUE_DATE + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
+            " " + SqlConstants.PROGRAM_STAGE_TABLE + "." + ProgramStageModel.Columns.DISPLAY_NAME + ",\n" +
+            FROM + SqlConstants.EVENT_TABLE + "\n" +
+            JOIN + SqlConstants.PROGRAM_STAGE_TABLE + ON + SqlConstants.PROGRAM_STAGE_TABLE + "." + ProgramStageModel.Columns.UID + " = " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + "\n" +
             "WHERE Event.program = ? AND Event.uid != ? AND Event.eventDate <= ? \n" +
-            AND + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
+            AND + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
 
     /**
      * Query all events except current one from an enrollment
      */
-    private static final String QUERY_OTHER_EVENTS_ENROLLMENTS = SELECT + EventModel.TABLE + "." + EventModel.Columns.UID + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.STATUS + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.EVENT_DATE + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.DUE_DATE + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
-            " " + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.DISPLAY_NAME + ",\n" +
-            FROM + EventModel.TABLE + "\n"  +
-            JOIN + ProgramStageModel.TABLE + ON + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.UID + " = " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + "\n" +
+    private static final String QUERY_OTHER_EVENTS_ENROLLMENTS = SELECT + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.UID + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATUS + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.EVENT_DATE + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.DUE_DATE + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
+            " " + SqlConstants.PROGRAM_STAGE_TABLE + "." + ProgramStageModel.Columns.DISPLAY_NAME + ",\n" +
+            FROM + SqlConstants.EVENT_TABLE + "\n" +
+            JOIN + SqlConstants.PROGRAM_STAGE_TABLE + ON + SqlConstants.PROGRAM_STAGE_TABLE + "." + ProgramStageModel.Columns.UID + " = " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + "\n" +
             "WHERE Event.enrollment = ? AND Event.uid != ? AND Event.eventDate <= ?\n" +
-            AND + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
+            AND + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
 
     /**
      * Query all events from an enrollment
      */
-    private static final String QUERY_EVENTS_ENROLLMENTS = SELECT + EventModel.TABLE + "." + EventModel.Columns.UID + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.STATUS + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.EVENT_DATE + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.DUE_DATE + ",\n" +
-            " " + EventModel.TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
-            " " + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.DISPLAY_NAME + ",\n" +
-            FROM + EventModel.TABLE + "\n"  +
-            JOIN + ProgramStageModel.TABLE + ON + ProgramStageModel.TABLE + "." + ProgramStageModel.Columns.UID + " = " + EventModel.TABLE + "." + EventModel.Columns.PROGRAM_STAGE + "\n" +
+    private static final String QUERY_EVENTS_ENROLLMENTS = SELECT + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.UID + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATUS + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.EVENT_DATE + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.DUE_DATE + ",\n" +
+            " " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.ORGANISATION_UNIT + ",\n" +
+            " " + SqlConstants.PROGRAM_STAGE_TABLE + "." + ProgramStageModel.Columns.DISPLAY_NAME + ",\n" +
+            FROM + SqlConstants.EVENT_TABLE + "\n" +
+            JOIN + SqlConstants.PROGRAM_STAGE_TABLE + ON + SqlConstants.PROGRAM_STAGE_TABLE + "." + ProgramStageModel.Columns.UID + " = " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + "\n" +
             "WHERE Event.enrollment = ?\n" +
-            AND + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC LIMIT 10";
+            AND + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC LIMIT 10";
 
     private static final String QUERY_VALUES = "SELECT " +
             "  Event.eventDate," +
@@ -213,7 +211,7 @@ public final class RulesRepository {
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
             "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "';";
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "';";
 
     private static final String QUERY_ENROLLMENT = SELECT + "\n" +
             "  Enrollment.uid,\n" +
@@ -548,12 +546,12 @@ public final class RulesRepository {
     }
 
     public Flowable<List<RuleEvent>> otherEvents(String eventUidToEvaluate) {
-        return briteDatabase.createQuery(EventModel.TABLE, "SELECT * FROM Event WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
+        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, "SELECT * FROM Event WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
                 .mapToOne(Event::create)
                 .flatMap(eventModel ->
-                        briteDatabase.createQuery(ProgramModel.TABLE, "SELECT Program.* FROM Program JOIN Event ON Event.program = Program.uid WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
+                        briteDatabase.createQuery(SqlConstants.PROGRAM_TABLE, "SELECT Program.* FROM Program JOIN Event ON Event.program = Program.uid WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
                                 .mapToOne(Program::create).flatMap(programModel ->
-                                briteDatabase.createQuery(EventModel.TABLE, eventModel.enrollment() == null ? QUERY_OTHER_EVENTS : QUERY_OTHER_EVENTS_ENROLLMENTS,
+                                briteDatabase.createQuery(SqlConstants.EVENT_TABLE, eventModel.enrollment() == null ? QUERY_OTHER_EVENTS : QUERY_OTHER_EVENTS_ENROLLMENTS,
                                         eventModel.enrollment() == null ? programModel.uid() : eventModel.enrollment(),
                                         eventUidToEvaluate == null ? "" : eventUidToEvaluate,
                                         DateUtils.databaseDateFormat().format(eventModel.eventDate()))
@@ -606,7 +604,7 @@ public final class RulesRepository {
 
 
     public Flowable<List<RuleEvent>> enrollmentEvents(String enrollmentUid) {
-        return briteDatabase.createQuery(EventModel.TABLE, QUERY_EVENTS_ENROLLMENTS, enrollmentUid)
+        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, QUERY_EVENTS_ENROLLMENTS, enrollmentUid)
                 .mapToList(cursor -> {
                     List<RuleDataValue> dataValues = new ArrayList<>();
                     String eventUid = cursor.getString(0);
@@ -654,7 +652,7 @@ public final class RulesRepository {
     }
 
     public Flowable<RuleEnrollment> enrollment(String eventUid) {
-        return briteDatabase.createQuery(EventModel.TABLE, "SELECT Event.*, Program.displayName FROM Event JOIN Program ON Program.uid = Event.program WHERE Event.uid = ? LIMIT 1", eventUid == null ? "" : eventUid)
+        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, "SELECT Event.*, Program.displayName FROM Event JOIN Program ON Program.uid = Event.program WHERE Event.uid = ? LIMIT 1", eventUid == null ? "" : eventUid)
                 .mapToOne(cursor -> Pair.create(Event.create(cursor), cursor.getString(cursor.getColumnIndex("displayName"))))
                 .flatMap(pair -> {
                             Event eventModel = pair.val0();
@@ -694,8 +692,8 @@ public final class RulesRepository {
 
     @NonNull
     private Flowable<List<RuleAttributeValue>> queryAttributeValues(String enrollmentUid) {
-        return briteDatabase.createQuery(Arrays.asList(EnrollmentModel.TABLE,
-                TrackedEntityAttributeValueModel.TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid)
+        return briteDatabase.createQuery(Arrays.asList(SqlConstants.ENROLLMENT_TABLE,
+                SqlConstants.TE_ATTR_VALUE_TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid)
                 .mapToList(cursor -> RuleAttributeValue.create(
                         cursor.getString(0), cursor.getString(1))
                 ).toFlowable(BackpressureStrategy.LATEST);
@@ -703,7 +701,7 @@ public final class RulesRepository {
 
     @NonNull
     private Flowable<RuleEnrollment> queryEnrollment(@NonNull List<RuleAttributeValue> attributeValues, @NonNull String enrollmentUid) {
-        return briteDatabase.createQuery(EnrollmentModel.TABLE, QUERY_ENROLLMENT, enrollmentUid)
+        return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, QUERY_ENROLLMENT, enrollmentUid)
                 .mapToOne(cursor -> {
                     Date enrollmentDate = BaseIdentifiableObject.DATE_FORMAT.parse(cursor.getString(2));
                     Date incidentDate = cursor.isNull(1) ?
