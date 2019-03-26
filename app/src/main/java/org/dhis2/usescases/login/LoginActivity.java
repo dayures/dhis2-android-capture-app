@@ -48,12 +48,12 @@ import static android.text.TextUtils.isEmpty;
 import static org.dhis2.utils.Constants.RQ_QR_SCANNER;
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class LoginActivity extends ActivityGlobalAbstract implements LoginContracts.View {
+public class LoginActivity extends ActivityGlobalAbstract implements LoginContracts.EventSummaryView {
 
     ActivityLoginBinding binding;
 
     @Inject
-    LoginContracts.Presenter presenter;
+    LoginContracts.EventSummaryPresenter presenter;
 
     List<String> users;
     List<String> urls;

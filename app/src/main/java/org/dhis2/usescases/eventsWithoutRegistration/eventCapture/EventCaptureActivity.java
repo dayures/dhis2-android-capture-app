@@ -46,7 +46,7 @@ import static org.dhis2.utils.Constants.PROGRAM_UID;
  */
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class EventCaptureActivity extends ActivityGlobalAbstract implements EventCaptureContract.View,
+public class EventCaptureActivity extends ActivityGlobalAbstract implements EventCaptureContract.EventCaptureView,
         View.OnTouchListener, GestureDetector.OnGestureListener {
 
     private static final int SWIPE_THRESHOLD = 100;
@@ -56,7 +56,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
 
     private ActivityEventCaptureBinding binding;
     @Inject
-    EventCaptureContract.Presenter presenter;
+    EventCaptureContract.EventCapturePresenter presenter;
     private int completionPercentage = 0;
     private String programStageUid;
     private Boolean isEventCompleted = false;
@@ -311,7 +311,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
     }
 
     @Override
-    public EventCaptureContract.Presenter getPresenter() {
+    public EventCaptureContract.EventCapturePresenter getPresenter() {
         return presenter;
     }
 

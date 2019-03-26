@@ -30,7 +30,7 @@ import androidx.databinding.DataBindingUtil;
 public class DataSetSectionFragment extends FragmentGlobalAbstract {
 
     private FragmentDatasetSectionBinding binding;
-    private DataSetTableContract.Presenter presenter;
+    private DataSetTableContract.DataSetTablePresenter presenter;
 
     @NonNull
     public static DataSetSectionFragment create(@NonNull String sectionUid) {

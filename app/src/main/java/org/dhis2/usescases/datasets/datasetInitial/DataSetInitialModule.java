@@ -21,13 +21,13 @@ public class DataSetInitialModule {
 
     @Provides
     @PerActivity
-    DataSetInitialContract.View provideView(DataSetInitialActivity activity) {
+    DataSetInitialContract.DataSetDetailView provideView(DataSetInitialActivity activity) {
         return activity;
     }
 
     @Provides
     @PerActivity
-    DataSetInitialContract.Presenter providesPresenter(DataSetInitialRepository dataSetInitialRepository) {
+    DataSetInitialContract.DataSetDetailPresenter providesPresenter(DataSetInitialRepository dataSetInitialRepository) {
         return new DataSetInitialPresenter(dataSetInitialRepository);
     }
 

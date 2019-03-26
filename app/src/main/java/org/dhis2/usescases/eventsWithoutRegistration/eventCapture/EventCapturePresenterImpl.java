@@ -48,7 +48,7 @@ import static android.text.TextUtils.isEmpty;
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
  */
-public class EventCapturePresenterImpl implements EventCaptureContract.Presenter, RulesActionCallbacks {
+public class EventCapturePresenterImpl implements EventCaptureContract.EventCapturePresenter, RulesActionCallbacks {
 
     private final EventCaptureContract.EventCaptureRepository eventCaptureRepository;
     private final RulesUtilsProvider rulesUtils;
@@ -56,7 +56,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     private final MetadataRepository metadataRepository;
     private final String eventUid;
     private CompositeDisposable compositeDisposable;
-    private EventCaptureContract.View view;
+    private EventCaptureContract.EventCaptureView view;
     private int currentPosition;
     private ObservableField<String> currentSection;
     private FlowableProcessor<Integer> currentSectionPosition;
@@ -95,7 +95,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     }
 
     @Override
-    public void init(EventCaptureContract.View view) {
+    public void init(EventCaptureContract.EventCaptureView view) {
         this.compositeDisposable = new CompositeDisposable();
         this.view = view;
 

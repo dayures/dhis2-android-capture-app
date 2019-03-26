@@ -19,10 +19,10 @@ import androidx.fragment.app.FragmentStatePagerAdapter;
  */
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class TeiDashboardActivity extends ActivityGlobalAbstract implements TeiDashboardContracts.View {
+public class TeiDashboardActivity extends ActivityGlobalAbstract implements TeiDashboardContracts.TeiDashboardView {
 
     @Inject
-    public TeiDashboardContracts.Presenter presenter;
+    public TeiDashboardContracts.TeiDashboardPresenter presenter;
 
     protected DashboardProgramModel programModel;
 

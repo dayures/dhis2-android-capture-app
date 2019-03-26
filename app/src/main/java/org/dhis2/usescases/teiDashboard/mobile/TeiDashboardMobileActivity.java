@@ -48,7 +48,7 @@ import me.toptas.fancyshowcase.FocusShape;
  */
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class TeiDashboardMobileActivity extends TeiDashboardActivity implements TeiDashboardContracts.View {
+public class TeiDashboardMobileActivity extends TeiDashboardActivity implements TeiDashboardContracts.TeiDashboardView {
 
     ActivityDashboardMobileBinding binding;
     protected FragmentStatePagerAdapter adapter;
@@ -236,7 +236,7 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
         return binding.toolbarTitle.getText().toString();
     }
 
-    public TeiDashboardContracts.Presenter getPresenter() {
+    public TeiDashboardContracts.TeiDashboardPresenter getPresenter() {
         return presenter;
     }
 

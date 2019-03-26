@@ -63,13 +63,13 @@ import timber.log.Timber;
  * QUADRAM. Created by ppajuelo on 30/11/2017.
  */
 
-public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
+public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashboardPresenter {
 
     private final DashboardRepository dashboardRepository;
     private final MetadataRepository metadataRepository;
     private final D2 d2;
     private final RuleEngineRepository ruleRepository;
-    private TeiDashboardContracts.View view;
+    private TeiDashboardContracts.TeiDashboardView view;
 
     private String teUid;
     private String teType;
@@ -79,8 +79,8 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     private CompositeDisposable compositeDisposable;
     private DashboardProgramModel dashboardProgramModel;
 
-    TeiDashboardPresenter(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository,
-                          RuleEngineRepository formRepository) {
+    TeiDashboardPresenterImpl(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository,
+                              RuleEngineRepository formRepository) {
         this.d2 = d2;
         this.dashboardRepository = dashboardRepository;
         this.metadataRepository = metadataRepository;
@@ -89,7 +89,7 @@ public class TeiDashboardPresenter implements TeiDashboardContracts.Presenter {
     }
 
     @Override
-    public void init(TeiDashboardContracts.View view, String teiUid, String programUid) {
+    public void init(TeiDashboardContracts.TeiDashboardView view, String teiUid, String programUid) {
         this.view = view;
         this.teUid = teiUid;
         this.programUid = programUid;

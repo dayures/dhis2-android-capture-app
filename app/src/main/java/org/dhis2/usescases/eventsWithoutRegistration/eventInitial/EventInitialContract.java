@@ -30,7 +30,7 @@ import io.reactivex.functions.Consumer;
 @SuppressWarnings("squid:S00107")
 public class EventInitialContract {
 
-    public interface View extends AbstractActivityContracts.View {
+    public interface EventInitialView extends AbstractActivityContracts.View {
         void setProgram(@NonNull Program program);
 
         void setCatComboOptions(CategoryCombo catCombo, List<CategoryOptionCombo> catComboList);
@@ -81,8 +81,8 @@ public class EventInitialContract {
         void renderObjectStyle(ObjectStyle objectStyleModel);
     }
 
-    public interface Presenter extends AbstractActivityContracts.Presenter {
-        void init(EventInitialContract.View view, String programId, String eventId, String orgUnitId, String programStageId);
+    public interface EventInitialPresenter extends AbstractActivityContracts.Presenter {
+        void init(EventInitialView view, String programId, String eventId, String orgUnitId, String programStageId);
 
         void getProgramStage(String programStageUid);
 

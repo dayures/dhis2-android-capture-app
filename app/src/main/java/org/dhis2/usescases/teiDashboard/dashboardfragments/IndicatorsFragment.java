@@ -34,7 +34,7 @@ public class IndicatorsFragment extends FragmentGlobalAbstract {
     private static IndicatorsFragment instance;
     private IndicatorsAdapter adapter;
 
-    private TeiDashboardContracts.Presenter presenter;
+    private TeiDashboardContracts.TeiDashboardPresenter presenter;
 
     public static IndicatorsFragment getInstance() {
         if (instance == null)

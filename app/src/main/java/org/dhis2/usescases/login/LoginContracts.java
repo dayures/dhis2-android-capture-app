@@ -9,7 +9,7 @@ import retrofit2.Response;
 
 public class LoginContracts {
 
-    public interface View extends AbstractActivityContracts.View {
+    public interface EventSummaryView extends AbstractActivityContracts.View {
         @UiThread
         void showUnlockButton();
 
@@ -49,8 +49,8 @@ public class LoginContracts {
         void checkSecuredCredentials();
     }
 
-    public interface Presenter {
-        void init(View view);
+    public interface EventSummaryPresenter {
+        void init(EventSummaryView view);
 
         void logIn(String serverUrl, String userName, String pass);
 

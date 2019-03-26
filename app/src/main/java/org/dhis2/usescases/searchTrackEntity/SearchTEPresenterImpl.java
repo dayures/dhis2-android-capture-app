@@ -53,13 +53,13 @@ import static android.text.TextUtils.isEmpty;
  * QUADRAM. Created by ppajuelo on 02/11/2017.
  */
 
-public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
+public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPresenter {
 
     private static final int MAX_NO_SELECTED_PROGRAM_RESULTS = 5;
     private final MetadataRepository metadataRepository;
     private final SearchRepository searchRepository;
     private final D2 d2;
-    private SearchTEContractsModule.View view;
+    private SearchTEContractsModule.SearchTEView view;
 
     private Program selectedProgram;
 
@@ -72,7 +72,7 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
     private Integer currentPage;
     private Date selectedEnrollmentDate;
 
-    public SearchTEPresenter(SearchRepository searchRepository, MetadataRepository metadataRepository, D2 d2) {
+    public SearchTEPresenterImpl(SearchRepository searchRepository, MetadataRepository metadataRepository, D2 d2) {
         this.metadataRepository = metadataRepository;
         this.searchRepository = searchRepository;
         this.d2 = d2;
@@ -84,7 +84,7 @@ public class SearchTEPresenter implements SearchTEContractsModule.Presenter {
     //region LIFECYCLE
 
     @Override
-    public void init(SearchTEContractsModule.View view, String trackedEntityType, String initialProgram) {
+    public void init(SearchTEContractsModule.SearchTEView view, String trackedEntityType, String initialProgram) {
         this.view = view;
         compositeDisposable = new CompositeDisposable();
 

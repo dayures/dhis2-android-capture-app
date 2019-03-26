@@ -41,11 +41,11 @@ import static org.dhis2.utils.Constants.PROGRAM_UID;
  * QUADRAM. Created by Cristian on 13/02/2018.
  */
 
-public class ProgramEventDetailPresenter implements ProgramEventDetailContract.Presenter {
+public class ProgramEventDetailPresenterImpl implements ProgramEventDetailContract.ProgramEventDetailPresenter {
 
     private final ProgramEventDetailRepository eventRepository;
     private final MetadataRepository metaRepository;
-    private ProgramEventDetailContract.View view;
+    private ProgramEventDetailContract.ProgramEventDetailView view;
     protected Program program;
     protected String programId;
     private CompositeDisposable compositeDisposable;
@@ -62,7 +62,7 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
     private String orgUnitQuery;
     private Period currentPeriod;
 
-    ProgramEventDetailPresenter(
+    ProgramEventDetailPresenterImpl(
             @NonNull String programUid, @NonNull ProgramEventDetailRepository programEventDetailRepository,
             @NonNull MetadataRepository metadataRepository) {
         this.eventRepository = programEventDetailRepository;
@@ -71,7 +71,7 @@ public class ProgramEventDetailPresenter implements ProgramEventDetailContract.P
     }
 
     @Override
-    public void init(ProgramEventDetailContract.View mview, Period period) {
+    public void init(ProgramEventDetailContract.ProgramEventDetailView mview, Period period) {
         view = mview;
         compositeDisposable = new CompositeDisposable();
         this.currentPeriod = period;

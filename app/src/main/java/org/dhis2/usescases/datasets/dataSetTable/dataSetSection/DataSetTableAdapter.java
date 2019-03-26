@@ -41,7 +41,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionCombo, Data
     }
 
     /**
-     * That is where you set Cell View Model data to your custom Cell ViewHolder. This method is
+     * That is where you set Cell DataSetTableView Model data to your custom Cell ViewHolder. This method is
      * Called by Cell RecyclerView of the TableView to display the data at the specified position.
      * This method gives you everything you need about a cell item.
      *
@@ -81,7 +81,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionCombo, Data
     }
 
     /**
-     * That is where you set Column Header View Model data to your custom Column Header ViewHolder.
+     * That is where you set Column Header DataSetTableView Model data to your custom Column Header ViewHolder.
      * This method is Called by ColumnHeader RecyclerView of the TableView to display the data at
      * the specified position. This method gives you everything you need about a column header
      * item.
@@ -121,7 +121,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionCombo, Data
 
 
     /**
-     * That is where you set Row Header View Model data to your custom Row Header ViewHolder. This
+     * That is where you set Row Header DataSetTableView Model data to your custom Row Header ViewHolder. This
      * method is Called by RowHeader RecyclerView of the TableView to display the data at the
      * specified position. This method gives you everything you need about a row header item.
      *
@@ -149,7 +149,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionCombo, Data
     @Override
     public int getColumnHeaderItemViewType(int columnPosition) {
         // The unique ID for this type of column header item
-        // If you have different items for Cell View by X (Column) position,
+        // If you have different items for Cell DataSetTableView by X (Column) position,
         // then you should fill this method to be able create different
         // type of CellViewHolder on "onCreateCellViewHolder"
         return 0;
@@ -158,7 +158,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionCombo, Data
     @Override
     public int getRowHeaderItemViewType(int rowPosition) {
         // The unique ID for this type of row header item
-        // If you have different items for Row Header View by Y (Row) position,
+        // If you have different items for Row Header DataSetTableView by Y (Row) position,
         // then you should fill this method to be able create different
         // type of RowHeaderViewHolder on "onCreateRowHeaderViewHolder"
         return 0;
@@ -167,7 +167,7 @@ class DataSetTableAdapter extends AbstractTableAdapter<CategoryOptionCombo, Data
     @Override
     public int getCellItemViewType(int columnPosition) {
         // The unique ID for this type of cell item
-        // If you have different items for Cell View by X (Column) position,
+        // If you have different items for Cell DataSetTableView by X (Column) position,
         // then you should fill this method to be able create different
         // type of CellViewHolder on "onCreateCellViewHolder"
         return 0;

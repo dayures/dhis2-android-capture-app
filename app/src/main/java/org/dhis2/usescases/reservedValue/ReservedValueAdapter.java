@@ -15,10 +15,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class ReservedValueAdapter extends RecyclerView.Adapter<ReservedValueViewHolder> {
 
-    private ReservedValueContracts.Presenter presenter;
+    private ReservedValueContracts.ReservedValuePresenter presenter;
     private List<ReservedValueModel> dataElements;
 
-    public ReservedValueAdapter(ReservedValueContracts.Presenter presenter) {
+    public ReservedValueAdapter(ReservedValueContracts.ReservedValuePresenter presenter) {
         this.presenter = presenter;
         dataElements = new ArrayList<>();
     }

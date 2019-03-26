@@ -64,7 +64,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
     private FragmentTeiDataBinding binding;
 
     private static TEIDataFragment instance;
-    private TeiDashboardContracts.Presenter presenter;
+    private TeiDashboardContracts.TeiDashboardPresenter presenter;
 
     private EventAdapter adapter;
     private CustomDialog dialog;

@@ -35,8 +35,8 @@ import timber.log.Timber;
  * QUADRAM. Created by Cristian on 01/03/2018.
  */
 
-public class EventSummaryInteractor implements EventSummaryContract.Interactor {
-    private EventSummaryContract.View view;
+public class EventSummaryInteractorImpl implements EventSummaryContract.EventSummaryInteractor {
+    private EventSummaryContract.EventSummaryView view;
     @NonNull
     private final MetadataRepository metadataRepository;
     @NonNull
@@ -50,9 +50,9 @@ public class EventSummaryInteractor implements EventSummaryContract.Interactor {
     private EventStatus currentStatus;
 
 
-    EventSummaryInteractor(@NonNull EventSummaryRepository eventSummaryRepository,
-                           @NonNull MetadataRepository metadataRepository,
-                           @NonNull SchedulerProvider schedulerProvider) {
+    EventSummaryInteractorImpl(@NonNull EventSummaryRepository eventSummaryRepository,
+                               @NonNull MetadataRepository metadataRepository,
+                               @NonNull SchedulerProvider schedulerProvider) {
         this.metadataRepository = metadataRepository;
         this.eventSummaryRepository = eventSummaryRepository;
         this.schedulerProvider = schedulerProvider;
@@ -60,7 +60,7 @@ public class EventSummaryInteractor implements EventSummaryContract.Interactor {
     }
 
     @Override
-    public void init(@NonNull EventSummaryContract.View view, @NonNull String programId, @NonNull String eventId) {
+    public void init(@NonNull EventSummaryContract.EventSummaryView view, @NonNull String programId, @NonNull String eventId) {
         this.view = view;
         this.eventUid = eventId;
         getEvent(eventId);

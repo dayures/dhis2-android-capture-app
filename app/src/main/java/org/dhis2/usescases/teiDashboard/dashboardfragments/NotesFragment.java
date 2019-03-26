@@ -33,7 +33,7 @@ public class NotesFragment extends FragmentGlobalAbstract {
     private FragmentNotesBinding binding;
     private static NotesFragment instance;
     private NotesAdapter noteAdapter;
-    private TeiDashboardContracts.Presenter presenter;
+    private TeiDashboardContracts.TeiDashboardPresenter presenter;
     private ActivityGlobalAbstract activity;
 
     public static NotesFragment getInstance() {

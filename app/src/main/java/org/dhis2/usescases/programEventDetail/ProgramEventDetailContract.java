@@ -25,7 +25,7 @@ import io.reactivex.functions.Consumer;
 
 public class ProgramEventDetailContract {
 
-    public interface View extends AbstractActivityContracts.View {
+    public interface ProgramEventDetailView extends AbstractActivityContracts.View {
         void setData(List<ProgramEventViewModel> events);
 
         void addTree(TreeNode treeNode);
@@ -55,8 +55,8 @@ public class ProgramEventDetailContract {
         Consumer<Pair<TreeNode, List<TreeNode>>> addNodeToTree();
     }
 
-    public interface Presenter extends AbstractActivityContracts.Presenter {
-        void init(View view, Period period);
+    public interface ProgramEventDetailPresenter extends AbstractActivityContracts.Presenter {
+        void init(ProgramEventDetailView view, Period period);
 
         void updateDateFilter(List<DatePeriod> datePeriodList);
 

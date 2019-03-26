@@ -23,10 +23,10 @@ import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
 @SuppressWarnings("squid:CommentedOutCodeLine")
-public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
+public class DataSetDetailPresenterImpl implements DataSetDetailContract.DataSetDetailPresenter {
 
     private DataSetDetailRepository dataSetDetailRepository;
-    private DataSetDetailContract.View view;
+    private DataSetDetailContract.DataSetDetailView view;
     private int lastSearchType;
     private Date fromDate;
     private Date toDate;
@@ -44,13 +44,13 @@ public class DataSetDetailPresenter implements DataSetDetailContract.Presenter {
         int DATE_RANGES = 32;
     }
 
-    public DataSetDetailPresenter(DataSetDetailRepository dataSetDetailRepository) {
+    public DataSetDetailPresenterImpl(DataSetDetailRepository dataSetDetailRepository) {
         this.dataSetDetailRepository = dataSetDetailRepository;
         compositeDisposable = new CompositeDisposable();
     }
 
     @Override
-    public void init(DataSetDetailContract.View view) {
+    public void init(DataSetDetailContract.DataSetDetailView view) {
         this.view = view;
         getOrgUnits(null);
         compositeDisposable.add(

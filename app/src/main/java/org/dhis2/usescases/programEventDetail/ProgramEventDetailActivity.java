@@ -68,12 +68,12 @@ import static org.dhis2.utils.Period.YEARLY;
  */
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class ProgramEventDetailActivity extends ActivityGlobalAbstract implements ProgramEventDetailContract.View {
+public class ProgramEventDetailActivity extends ActivityGlobalAbstract implements ProgramEventDetailContract.ProgramEventDetailView {
 
     private ActivityProgramEventDetailBinding binding;
 
     @Inject
-    ProgramEventDetailContract.Presenter presenter;
+    ProgramEventDetailContract.ProgramEventDetailPresenter presenter;
 
     @Inject
     ProgramEventDetailAdapter adapter;

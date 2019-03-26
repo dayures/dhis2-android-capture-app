@@ -33,10 +33,10 @@ import okhttp3.ResponseBody;
 import retrofit2.Response;
 import timber.log.Timber;
 
-public class LoginPresenter implements LoginContracts.Presenter {
+public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
 
     private final ConfigurationRepository configurationRepository;
-    private LoginContracts.View view;
+    private LoginContracts.EventSummaryView view;
 
     private UserManager userManager;
     private CompositeDisposable disposable;
@@ -49,7 +49,7 @@ public class LoginPresenter implements LoginContracts.Presenter {
 
     @SuppressWarnings({"squid:S2583", "squid:S1125"})
     @Override
-    public void init(LoginContracts.View view) {
+    public void init(LoginContracts.EventSummaryView view) {
         this.view = view;
         this.disposable = new CompositeDisposable();
 

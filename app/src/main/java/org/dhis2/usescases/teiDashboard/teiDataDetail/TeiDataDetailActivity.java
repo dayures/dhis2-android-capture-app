@@ -24,11 +24,11 @@ import androidx.databinding.DataBindingUtil;
 import io.reactivex.functions.Consumer;
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class TeiDataDetailActivity extends ActivityGlobalAbstract implements TeiDataDetailContracts.View {
+public class TeiDataDetailActivity extends ActivityGlobalAbstract implements TeiDataDetailContracts.TeiDataDetailView {
     ActivityTeidataDetailBinding binding;
 
     @Inject
-    TeiDataDetailContracts.Presenter presenter;
+    TeiDataDetailContracts.TeiDataDetailPresenter presenter;
 
     private DashboardProgramModel dashboardProgramModel;
 

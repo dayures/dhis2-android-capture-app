@@ -19,20 +19,20 @@ import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
 @SuppressWarnings("squid:CommentedOutCodeLine")
-public class SyncPresenter implements SyncContracts.Presenter {
+public class SyncPresenterImpl implements SyncContracts.SyncPresenter {
 
     private final MetadataRepository metadataRepository;
-    private SyncContracts.View view;
+    private SyncContracts.SyncView view;
 
     private CompositeDisposable disposable;
 
 
-    SyncPresenter(MetadataRepository metadataRepository) {
+    SyncPresenterImpl(MetadataRepository metadataRepository) {
         this.metadataRepository = metadataRepository;
     }
 
     @Override
-    public void init(SyncContracts.View view) {
+    public void init(SyncContracts.SyncView view) {
         this.view = view;
         this.disposable = new CompositeDisposable();
     }

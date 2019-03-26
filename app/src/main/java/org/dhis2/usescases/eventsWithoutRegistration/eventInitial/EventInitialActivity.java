@@ -91,11 +91,11 @@ import static org.dhis2.utils.Constants.TRACKED_ENTITY_INSTANCE;
  */
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class EventInitialActivity extends ActivityGlobalAbstract implements EventInitialContract.View, DatePickerDialog.OnDateSetListener, ProgressBarAnimation.OnUpdate {
+public class EventInitialActivity extends ActivityGlobalAbstract implements EventInitialContract.EventInitialView, DatePickerDialog.OnDateSetListener, ProgressBarAnimation.OnUpdate {
 
     private static final int PROGRESS_TIME = 2000;
     @Inject
-    EventInitialContract.Presenter presenter;
+    EventInitialContract.EventInitialPresenter presenter;
 
     private Event eventModel;
 
@@ -717,7 +717,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         // If request is cancelled, the result arrays are empty.
-        if (requestCode == EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST &&
+        if (requestCode == EventInitialPresenterImpl.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST &&
                 grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             presenter.onLocationClick();
         }

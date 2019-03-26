@@ -20,10 +20,10 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class SearchRelationshipAdapter extends RecyclerView.Adapter<SearchRelationshipViewHolder> {
 
-    private SearchTEContractsModule.Presenter presenter;
+    private SearchTEContractsModule.SearchTEPresenter presenter;
     private List<SearchTeiModel> trackedEntityInstances;
 
-    public SearchRelationshipAdapter(SearchTEContractsModule.Presenter presenter) {
+    public SearchRelationshipAdapter(SearchTEContractsModule.SearchTEPresenter presenter) {
         this.presenter = presenter;
         this.trackedEntityInstances = new ArrayList<>();
     }

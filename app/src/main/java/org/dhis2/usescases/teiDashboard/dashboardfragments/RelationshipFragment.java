@@ -44,7 +44,7 @@ import static android.app.Activity.RESULT_OK;
 public class RelationshipFragment extends FragmentGlobalAbstract {
 
     private FragmentRelationshipsBinding binding;
-    private TeiDashboardContracts.Presenter presenter;
+    private TeiDashboardContracts.TeiDashboardPresenter presenter;
 
     private static RelationshipFragment instance;
     private RelationshipAdapter relationshipAdapter;

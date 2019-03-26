@@ -51,11 +51,11 @@ import timber.log.Timber;
  */
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class EventDetailActivity extends ActivityGlobalAbstract implements EventDetailContracts.View {
+public class EventDetailActivity extends ActivityGlobalAbstract implements EventDetailContracts.EventDetailView {
 
     ActivityEventDetailBinding binding;
     @Inject
-    EventDetailContracts.Presenter presenter;
+    EventDetailContracts.EventDetailPresenter presenter;
 
     EventDetailModel eventDetailModel;
     private String eventUid;

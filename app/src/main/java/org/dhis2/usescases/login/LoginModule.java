@@ -16,7 +16,7 @@ public class LoginModule {
 
     @Provides
     @PerActivity
-    LoginContracts.Presenter providePresenter(ConfigurationRepository configurationRepository) {
+    LoginContracts.EventSummaryPresenter providePresenter(ConfigurationRepository configurationRepository) {
         return new LoginPresenter(configurationRepository);
     }
 

@@ -14,7 +14,7 @@ import io.reactivex.functions.Consumer;
 
 public class SyncManagerContracts {
 
-    interface View extends AbstractActivityContracts.View {
+    interface SyncManagerView extends AbstractActivityContracts.View {
 
         Consumer<Pair<Integer, Integer>> setSyncData();
 
@@ -29,9 +29,9 @@ public class SyncManagerContracts {
         void showLocalDataDeleted(boolean error);
     }
 
-    public interface Presenter {
+    public interface SyncManagerPresenter {
 
-        void init(SyncManagerContracts.View view);
+        void init(SyncManagerView view);
 
         void syncData(int seconds, String scheduleTag);
 

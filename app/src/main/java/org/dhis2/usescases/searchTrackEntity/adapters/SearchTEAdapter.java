@@ -22,11 +22,11 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class SearchTEAdapter extends RecyclerView.Adapter<SearchTEViewHolder> {
 
-    private SearchTEContractsModule.Presenter presenter;
+    private SearchTEContractsModule.SearchTEPresenter presenter;
     private List<TrackedEntityInstance> trackedEntityInstances;
     private List<SearchTeiModel> teis;
 
-    public SearchTEAdapter(SearchTEContractsModule.Presenter presenter) {
+    public SearchTEAdapter(SearchTEContractsModule.SearchTEPresenter presenter) {
         this.presenter = presenter;
         this.trackedEntityInstances = new ArrayList<>();
         this.teis = new ArrayList<>();

@@ -14,14 +14,14 @@ public class DataSetDetailModule {
 
     @Provides
     @PerActivity
-    DataSetDetailContract.View provideView(DataSetDetailActivity activity) {
+    DataSetDetailContract.DataSetDetailView provideView(DataSetDetailActivity activity) {
         return activity;
     }
 
     @Provides
     @PerActivity
-    DataSetDetailContract.Presenter providesPresenter(DataSetDetailRepository dataSetDetailRepository) {
-        return new DataSetDetailPresenter(dataSetDetailRepository);
+    DataSetDetailContract.DataSetDetailPresenter providesPresenter(DataSetDetailRepository dataSetDetailRepository) {
+        return new DataSetDetailPresenterImpl(dataSetDetailRepository);
     }
 
     @Provides

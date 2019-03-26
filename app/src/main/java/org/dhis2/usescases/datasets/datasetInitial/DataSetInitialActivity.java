@@ -35,12 +35,12 @@ import androidx.annotation.Nullable;
 import androidx.databinding.DataBindingUtil;
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class DataSetInitialActivity extends ActivityGlobalAbstract implements DataSetInitialContract.View {
+public class DataSetInitialActivity extends ActivityGlobalAbstract implements DataSetInitialContract.DataSetDetailView {
 
     private ActivityDatasetInitialBinding binding;
     View selectedView;
     @Inject
-    DataSetInitialContract.Presenter presenter;
+    DataSetInitialContract.DataSetDetailPresenter presenter;
 
     private HashMap<String, CategoryOption> selectedCatOptions;
     private OrganisationUnit selectedOrgUnit;

@@ -16,7 +16,7 @@ public class DataSetInitialContract {
         ACTION_CHECK
     }
 
-    public interface View extends AbstractActivityContracts.View {
+    public interface DataSetDetailView extends AbstractActivityContracts.View {
 
         void setAccessDataWrite(Boolean canWrite);
 
@@ -39,8 +39,8 @@ public class DataSetInitialContract {
         String getPeriodType();
     }
 
-    public interface Presenter extends AbstractActivityContracts.Presenter {
-        void init(View view);
+    public interface DataSetDetailPresenter extends AbstractActivityContracts.Presenter {
+        void init(DataSetDetailView view);
 
         void onBackClick();
 

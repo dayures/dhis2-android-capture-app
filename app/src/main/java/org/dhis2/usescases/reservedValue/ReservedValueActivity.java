@@ -15,12 +15,12 @@ import javax.inject.Inject;
 import androidx.databinding.DataBindingUtil;
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class ReservedValueActivity extends ActivityGlobalAbstract implements ReservedValueContracts.View {
+public class ReservedValueActivity extends ActivityGlobalAbstract implements ReservedValueContracts.ReservedValueView {
 
     private ActivityReservedValueBinding reservedBinding;
     private ReservedValueAdapter adapter;
     @Inject
-    ReservedValueContracts.Presenter presenter;
+    ReservedValueContracts.ReservedValuePresenter presenter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

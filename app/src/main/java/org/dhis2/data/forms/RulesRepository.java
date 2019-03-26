@@ -7,7 +7,6 @@ import com.squareup.sqlbrite2.BriteDatabase;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Quartet;
 import org.dhis2.utils.DateUtils;
-import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
@@ -53,7 +52,6 @@ import org.hisp.dhis.rules.models.RuleVariableNewestEvent;
 import org.hisp.dhis.rules.models.RuleVariableNewestStageEvent;
 import org.hisp.dhis.rules.models.RuleVariablePreviousEvent;
 
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -269,7 +267,7 @@ public final class RulesRepository {
     }
 
     @NonNull
-    public Flowable<Map<String, String>> queryConstants(){
+    public Flowable<Map<String, String>> queryConstants() {
         return briteDatabase.createQuery(ConstantTableInfo.TABLE_INFO.name(), QUERY_CONSTANTS)
                 .mapToList(Constant::create)
                 .map(constants -> {
@@ -425,12 +423,12 @@ public final class RulesRepository {
     }
 
     @NonNull
-    private static Map<String, String> mapToConstantsMap(@NonNull Cursor cursor){
+    private static Map<String, String> mapToConstantsMap(@NonNull Cursor cursor) {
         String uid = cursor.getString(0);
         String value = cursor.getString(1);
 
         Map<String, String> constants = new HashMap<>();
-        if(cursor.moveToFirst())
+        if (cursor.moveToFirst())
             constants.put(uid, value);
         return constants;
     }

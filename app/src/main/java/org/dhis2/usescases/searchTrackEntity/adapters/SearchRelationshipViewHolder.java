@@ -20,7 +20,7 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
 
     private ItemSearchRelationshipTrackedEntityBinding binding;
     private CompositeDisposable compositeDisposable;
-    private SearchTEContractsModule.Presenter presenter;
+    private SearchTEContractsModule.SearchTEPresenter presenter;
     private SearchTeiModel trackedEntityInstanceModel;
 
     private RelationshipType relationshipType;
@@ -33,7 +33,7 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
     }
 
 
-    public void bind(SearchTEContractsModule.Presenter presenter, SearchTeiModel teiModel) {
+    public void bind(SearchTEContractsModule.SearchTEPresenter presenter, SearchTeiModel teiModel) {
         this.presenter = presenter;
         this.trackedEntityInstanceModel = teiModel;
         binding.setPresenter(presenter);
@@ -67,7 +67,7 @@ public class SearchRelationshipViewHolder extends RecyclerView.ViewHolder {
         binding.relationshipSpinner.setSelection(0);
         binding.relationshipSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+            public void onItemSelected(AdapterView<?> parent, DataSetTableView view, int position, long id) {
                 if (position > 0) {
                     Pair<RelationshipTypeModel, String> selectedRelationShip = (Pair<RelationshipTypeModel, String>) parent.getItemAtPosition(position);
                     presenter.addRelationship(trackedEntityInstanceModel.getTei().uid(), selectedRelationShip.val0().uid(),trackedEntityInstanceModel.isOnline());

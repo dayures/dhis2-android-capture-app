@@ -19,7 +19,7 @@ import io.reactivex.functions.Consumer;
 
 public class EventDetailContracts {
 
-    interface View extends AbstractActivityContracts.View {
+    interface EventDetailView extends AbstractActivityContracts.View {
 
         void setData(EventDetailModel eventDetailModel, MetadataRepository metadataRepository);
 
@@ -47,8 +47,8 @@ public class EventDetailContracts {
         void showCatOptionDialog();
     }
 
-    public interface Presenter extends AbstractActivityContracts.Presenter {
-        void init(EventDetailContracts.View view);
+    public interface EventDetailPresenter extends AbstractActivityContracts.Presenter {
+        void init(EventDetailView view);
 
         void getEventData(String eventUid);
 

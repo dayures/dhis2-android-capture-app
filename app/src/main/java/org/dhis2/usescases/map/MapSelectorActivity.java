@@ -17,7 +17,7 @@ import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 
 import org.dhis2.R;
-import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialPresenter;
+import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialPresenterImpl;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 
 import androidx.annotation.NonNull;
@@ -111,7 +111,7 @@ public class MapSelectorActivity extends ActivityGlobalAbstract implements OnMap
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         // If request is cancelled, the result arrays are empty.
-        if (requestCode == EventInitialPresenter.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST &&
+        if (requestCode == EventInitialPresenterImpl.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST &&
                 grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
             centerMapOnCurrentLocation();
         }

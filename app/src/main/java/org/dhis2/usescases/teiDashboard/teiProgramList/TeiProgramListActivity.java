@@ -31,12 +31,12 @@ import androidx.databinding.DataBindingUtil;
  */
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class TeiProgramListActivity extends ActivityGlobalAbstract implements TeiProgramListContract.View {
+public class TeiProgramListActivity extends ActivityGlobalAbstract implements TeiProgramListContract.TeiProgramListView {
 
     private ActivityTeiProgramListBinding binding;
 
     @Inject
-    TeiProgramListContract.Presenter presenter;
+    TeiProgramListContract.TeiProgramListPresenter presenter;
     @Inject
     TeiProgramListAdapter adapter;
 

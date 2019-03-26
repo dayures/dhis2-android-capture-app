@@ -28,7 +28,7 @@ import io.reactivex.Observable;
 
 public class TeiDashboardContracts {
 
-    public interface View extends AbstractActivityContracts.View {
+    public interface TeiDashboardView extends AbstractActivityContracts.View {
 
         void init(String teUid, String programUid);
 
@@ -49,8 +49,8 @@ public class TeiDashboardContracts {
         void showCatComboDialog(String eventId, String programStage, List<CategoryOptionCombo> catComboOptions, String title);
     }
 
-    public interface Presenter {
-        void init(View view, String uid, String programUid);
+    public interface TeiDashboardPresenter {
+        void init(TeiDashboardView view, String uid, String programUid);
 
         void showDescription(String description);
 

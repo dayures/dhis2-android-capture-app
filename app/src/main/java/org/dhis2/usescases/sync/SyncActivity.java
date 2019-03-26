@@ -30,12 +30,12 @@ import androidx.databinding.DataBindingUtil;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
-public class SyncActivity extends ActivityGlobalAbstract implements SyncContracts.View {
+public class SyncActivity extends ActivityGlobalAbstract implements SyncContracts.SyncView {
 
     ActivitySynchronizationBinding binding;
 
     @Inject
-    SyncContracts.Presenter presenter;
+    SyncContracts.SyncPresenter presenter;
 
     private BroadcastReceiver syncReceiver = new BroadcastReceiver() {
         @Override
