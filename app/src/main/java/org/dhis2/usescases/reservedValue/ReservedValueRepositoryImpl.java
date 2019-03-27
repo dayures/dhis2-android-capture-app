@@ -3,7 +3,7 @@ package org.dhis2.usescases.reservedValue;
 
 import com.squareup.sqlbrite2.BriteDatabase;
 
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeModel;
+import org.dhis2.utils.SqlConstants;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public class ReservedValueRepositoryImpl implements ReservedValueRepository {
     @Override
     public Flowable<List<ReservedValueModel>> getDataElements() {
 
-        return briteDatabase.createQuery(TrackedEntityAttributeModel.TABLE, SELECT_DATA_ELEMENTS)
+        return briteDatabase.createQuery(SqlConstants.TE_ATTR_TABLE, SELECT_DATA_ELEMENTS)
                 .mapToList(cursor -> {
                     String uid = cursor.getString(0);
                     String displayName = cursor.getString(1);

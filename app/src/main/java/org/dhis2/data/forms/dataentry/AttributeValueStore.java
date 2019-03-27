@@ -14,7 +14,6 @@ import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -294,7 +293,7 @@ public final class AttributeValueStore implements DataEntryStore {
                     if (State.SYNCED.equals(tei.state()) || State.TO_DELETE.equals(tei.state()) ||
                             State.ERROR.equals(tei.state())) {
                         ContentValues values = tei.toContentValues();
-                        values.put(TrackedEntityInstanceModel.Columns.STATE, State.TO_UPDATE.toString());
+                        values.put(SqlConstants.TEI_STATE, State.TO_UPDATE.toString());
 
                         String teiUid = tei.uid() == null ? "" : tei.uid();
                         if (briteDatabase.update(SqlConstants.TEI_TABLE, values,

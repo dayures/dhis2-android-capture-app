@@ -11,7 +11,7 @@ import android.widget.TextView;
 import com.unnamed.b.atv.model.TreeNode;
 
 import org.dhis2.R;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 
 import java.util.Locale;
 
@@ -21,14 +21,14 @@ import androidx.core.content.ContextCompat;
  * QUADRAM. Created by ppajuelo on 19/10/2017.
  */
 
-public class OrgUnitHolder extends TreeNode.BaseNodeViewHolder<OrganisationUnitModel> {
+public class OrgUnitHolder extends TreeNode.BaseNodeViewHolder<OrganisationUnit> {
 
     private final Boolean isMultiSelection;
     private TextView textView;
     private ImageView imageView;
     private CheckBox checkBox;
     private TreeNode node;
-    private OrganisationUnitModel value;
+    private OrganisationUnit value;
     private int numberOfSelections;
 
     public OrgUnitHolder(Context context, Boolean isMultiSelection) {
@@ -37,7 +37,7 @@ public class OrgUnitHolder extends TreeNode.BaseNodeViewHolder<OrganisationUnitM
     }
 
     @Override
-    public View createNodeView(TreeNode node, OrganisationUnitModel value) {
+    public View createNodeView(TreeNode node, OrganisationUnit value) {
         this.value = value;
         this.node = node;
         final LayoutInflater layoutInflater = LayoutInflater.from(context);

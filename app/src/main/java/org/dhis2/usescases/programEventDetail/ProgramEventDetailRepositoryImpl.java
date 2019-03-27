@@ -6,6 +6,7 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.utils.DateUtils;
+import org.dhis2.utils.SqlConstants;
 import org.dhis2.utils.ValueUtils;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.Category;
@@ -17,7 +18,6 @@ import org.hisp.dhis.android.core.dataelement.DataElement;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventCollectionRepository;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.DatePeriod;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStageDataElement;
@@ -150,10 +150,10 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
     @NonNull
     @Override
     public Observable<List<OrganisationUnit>> orgUnits() {
-        String selectOrgUnits = SELECT_ALL_FROM + OrganisationUnitModel.TABLE + " " +
+        String selectOrgUnits = SELECT_ALL_FROM + SqlConstants.ORG_UNIT_TABLE + " " +
                 "WHERE uid IN (SELECT UserOrganisationUnit.organisationUnit FROM UserOrganisationUnit " +
                 "WHERE UserOrganisationUnit.organisationUnitScope = 'SCOPE_DATA_CAPTURE')";
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, selectOrgUnits)
+        return briteDatabase.createQuery(SqlConstants.ORG_UNIT_TABLE, selectOrgUnits)
                 .mapToList(OrganisationUnit::create);
     }
 
@@ -165,7 +165,7 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
                 "WHERE OrganisationUnit.parent = ? AND UserOrganisationUnit.organisationUnitScope = 'SCOPE_DATA_CAPTURE' " +
                 "ORDER BY OrganisationUnit.displayName ASC";
 
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, selectOrgUnitsByParent, parentUid)
+        return briteDatabase.createQuery(SqlConstants.ORG_UNIT_TABLE, selectOrgUnitsByParent, parentUid)
                 .mapToList(OrganisationUnit::create);
     }
 

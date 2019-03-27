@@ -15,7 +15,6 @@ import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
@@ -197,7 +196,7 @@ final class ProgramStageRepository implements DataEntryRepository {
 
     @Override
     public Observable<List<OrganisationUnit>> getOrgUnits() {
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, "SELECT * FROM " + OrganisationUnitModel.TABLE)
+        return briteDatabase.createQuery(SqlConstants.ORG_UNIT_TABLE, "SELECT * FROM " + SqlConstants.ORG_UNIT_TABLE)
                 .mapToList(OrganisationUnit::create);
     }
 

@@ -13,10 +13,8 @@ import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 import org.hisp.dhis.android.core.user.UserCredentials;
 
 import java.util.Calendar;
@@ -106,26 +104,26 @@ public final class DataValueStore implements DataEntryStore {
                     SqlConstants.TEI_DATA_VALUE_DATA_ELEMENT + EQUAL + QUESTION_MARK + AND +
                             SqlConstants.TEI_DATA_VALUE_EVENT + " = ?", uid, eventUid);
         } else {
-            dataValue.put(TrackedEntityAttributeValueModel.Columns.LAST_UPDATED,
+            dataValue.put(SqlConstants.TE_ATTR_VALUE_LAST_UPDATED,
                     BaseIdentifiableObject.DATE_FORMAT.format(Calendar.getInstance().getTime()));
             if (value == null) {
-                dataValue.putNull(TrackedEntityAttributeValueModel.Columns.VALUE);
+                dataValue.putNull(SqlConstants.TE_ATTR_VALUE_VALUE);
             } else {
-                dataValue.put(TrackedEntityAttributeValueModel.Columns.VALUE, value);
+                dataValue.put(SqlConstants.TE_ATTR_VALUE_VALUE, value);
             }
 
             String teiUid = "";
             try (Cursor enrollmentCursor = briteDatabase.query(
                     SELECT + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + FROM + SqlConstants.TE_ATTR_VALUE_TABLE + " " +
                             JOIN + SqlConstants.ENROLLMENT_TABLE + ON + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + EQUAL + SqlConstants.TE_ATTR_VALUE_TABLE + "." + SqlConstants.TE_ATTR_VALUE_TEI +
-                            WHERE + SqlConstants.TE_ATTR_VALUE_TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK, uid)) {
+                            WHERE + SqlConstants.TE_ATTR_VALUE_TABLE + "." + SqlConstants.TE_ATTR_VALUE_TE_ATTR + EQUAL + QUESTION_MARK, uid)) {
                 if (enrollmentCursor.moveToFirst()) {
                     teiUid = enrollmentCursor.getString(0);
                 }
             }
 
             return (long) briteDatabase.update(SqlConstants.TE_ATTR_VALUE_TABLE, dataValue,
-                    TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK + AND +
+                    SqlConstants.TE_ATTR_VALUE_TE_ATTR + EQUAL + QUESTION_MARK + AND +
                             SqlConstants.TE_ATTR_VALUE_TEI + " = ? ",
                     uid, teiUid);
         }
@@ -183,7 +181,7 @@ public final class DataValueStore implements DataEntryStore {
             try (Cursor enrollmentCursor = briteDatabase.query(
                     SELECT + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + FROM + SqlConstants.TE_ATTR_VALUE_TABLE + " " +
                             JOIN + SqlConstants.ENROLLMENT_TABLE + ON + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + EQUAL + SqlConstants.TE_ATTR_VALUE_TABLE + "." + SqlConstants.TE_ATTR_VALUE_TEI +
-                            WHERE + SqlConstants.TE_ATTR_VALUE_TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK, uid)) {
+                            WHERE + SqlConstants.TE_ATTR_VALUE_TABLE + "." + SqlConstants.TE_ATTR_VALUE_TE_ATTR + EQUAL + QUESTION_MARK, uid)) {
                 if (enrollmentCursor.moveToFirst()) {
                     teiUid = enrollmentCursor.getString(0);
                 }
@@ -212,14 +210,14 @@ public final class DataValueStore implements DataEntryStore {
             try (Cursor enrollmentCursor = briteDatabase.query(
                     SELECT + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + FROM + SqlConstants.TE_ATTR_VALUE_TABLE + " " +
                             JOIN + SqlConstants.ENROLLMENT_TABLE + ON + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + EQUAL + SqlConstants.TE_ATTR_VALUE_TABLE + "." + SqlConstants.TE_ATTR_VALUE_TEI +
-                            WHERE + SqlConstants.TE_ATTR_VALUE_TABLE + "." + TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK, uid)) {
+                            WHERE + SqlConstants.TE_ATTR_VALUE_TABLE + "." + SqlConstants.TE_ATTR_VALUE_TE_ATTR + EQUAL + QUESTION_MARK, uid)) {
                 if (enrollmentCursor.moveToFirst()) {
                     teiUid = enrollmentCursor.getString(0);
                 }
             }
 
             return (long) briteDatabase.delete(SqlConstants.TE_ATTR_VALUE_TABLE,
-                    TrackedEntityAttributeValueModel.Columns.TRACKED_ENTITY_ATTRIBUTE + EQUAL + QUESTION_MARK + AND +
+                    SqlConstants.TE_ATTR_VALUE_TE_ATTR + EQUAL + QUESTION_MARK + AND +
                             SqlConstants.TE_ATTR_VALUE_TEI + " = ? ",
                     uid, teiUid);
         }
@@ -252,8 +250,8 @@ public final class DataValueStore implements DataEntryStore {
                         } finally {
                             if (tei != null) {
                                 ContentValues cv = tei.toContentValues();
-                                cv.put(TrackedEntityInstanceModel.Columns.STATE, tei.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                                cv.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+                                cv.put(SqlConstants.TEI_STATE, tei.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+                                cv.put(SqlConstants.TEI_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
 
                                 briteDatabase.update(SqlConstants.TEI_TABLE, cv, "uid = ?", tei.uid());
                             }

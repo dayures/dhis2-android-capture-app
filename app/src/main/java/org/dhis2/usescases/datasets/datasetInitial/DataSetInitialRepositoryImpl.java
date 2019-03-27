@@ -4,12 +4,10 @@ import android.database.Cursor;
 
 import com.squareup.sqlbrite2.BriteDatabase;
 
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.category.Category;
 import org.hisp.dhis.android.core.category.CategoryOption;
-import org.hisp.dhis.android.core.category.CategoryOptionModel;
-import org.hisp.dhis.android.core.dataset.DataSetModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.PeriodType;
 
 import java.util.ArrayList;
@@ -52,7 +50,7 @@ public class DataSetInitialRepositoryImpl implements DataSetInitialRepository {
     @NonNull
     @Override
     public Observable<DataSetInitialModel> dataSet() {
-        return briteDatabase.createQuery(DataSetModel.TABLE, GET_DATA_SET_INFO, dataSetUid)
+        return briteDatabase.createQuery(SqlConstants.DATA_SET_TABLE, GET_DATA_SET_INFO, dataSetUid)
                 .mapToOne(cursor -> {
 
                     String displayName = cursor.getString(0);
@@ -91,14 +89,14 @@ public class DataSetInitialRepositoryImpl implements DataSetInitialRepository {
     @NonNull
     @Override
     public Observable<List<OrganisationUnit>> orgUnits() {
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, GET_ORG_UNITS, dataSetUid)
+        return briteDatabase.createQuery(SqlConstants.ORG_UNIT_TABLE, GET_ORG_UNITS, dataSetUid)
                 .mapToList(OrganisationUnit::create);
     }
 
     @NonNull
     @Override
     public Observable<List<CategoryOption>> catCombo(String categoryUid) {
-        return briteDatabase.createQuery(CategoryOptionModel.TABLE, GET_CATEGORY_OPTION, categoryUid)
+        return briteDatabase.createQuery(SqlConstants.CAT_OPTION_TABLE, GET_CATEGORY_OPTION, categoryUid)
                 .mapToList(CategoryOption::create);
     }
 }

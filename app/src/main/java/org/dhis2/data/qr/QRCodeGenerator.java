@@ -17,7 +17,6 @@ import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
@@ -58,7 +57,7 @@ public class QRCodeGenerator implements QRInterface {
 
     private static final String TEI_ENROLLMENTS = SELECT_ALL_FROM + SqlConstants.ENROLLMENT_TABLE + WHERE + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI + " = ?";
 
-    private static final String TEI_EVENTS = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.ENROLLMENT + " =?";
+    private static final String TEI_EVENTS = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_ENROLLMENT + " =?";
 
     QRCodeGenerator(BriteDatabase briteDatabase) {
         this.briteDatabase = briteDatabase;
@@ -122,7 +121,7 @@ public class QRCodeGenerator implements QRInterface {
                         .flatMap(data ->
                                 Observable.fromIterable(data)
                                         .flatMap(enrollment -> briteDatabase.createQuery(SqlConstants.EVENT_TABLE, TEI_EVENTS, enrollment.uid() == null ? "" : enrollment.uid())
-                                                .mapToList(EventModel::create)
+                                                .mapToList(Event::create)
                                         )
                         )
                         .flatMap(data ->

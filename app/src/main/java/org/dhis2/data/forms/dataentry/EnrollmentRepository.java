@@ -19,9 +19,7 @@ import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.maintenance.D2Error;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -32,6 +30,7 @@ import io.reactivex.Observable;
 import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SqlConstants.SELECT_ALL_FROM;
 import static org.hisp.dhis.android.core.utils.StoreUtils.sqLiteBind;
 
 final class EnrollmentRepository implements DataEntryRepository {
@@ -120,7 +119,7 @@ final class EnrollmentRepository implements DataEntryRepository {
 
     @Override
     public Observable<List<OrganisationUnit>> getOrgUnits() {
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, "SELECT * FROM " + OrganisationUnitModel.TABLE)
+        return briteDatabase.createQuery(SqlConstants.ORG_UNIT_TABLE, SELECT_ALL_FROM + SqlConstants.ORG_UNIT_TABLE)
                 .mapToList(OrganisationUnit::create);
     }
 
@@ -234,7 +233,7 @@ final class EnrollmentRepository implements DataEntryRepository {
             if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
                 TrackedEntityAttributeValue dataValue = TrackedEntityAttributeValue.create(dataValueCursor);
                 ContentValues contentValues = dataValue.toContentValues();
-                contentValues.put(TrackedEntityAttributeValueModel.Columns.VALUE, content);
+                contentValues.put(SqlConstants.TE_ATTR_VALUE_VALUE, content);
                 int row = briteDatabase.update(SqlConstants.TE_ATTR_VALUE_TABLE, contentValues, "trackedEntityAttribute = ?", field == null ? "" : field);
                 if (row == -1) {
                     Timber.d("Error updating field %s", field == null ? "" : field);

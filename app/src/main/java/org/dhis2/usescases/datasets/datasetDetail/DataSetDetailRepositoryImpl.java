@@ -5,10 +5,9 @@ import android.database.Cursor;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.utils.DateUtils;
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.State;
-import org.hisp.dhis.android.core.datavalue.DataValueModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.Period;
 import org.hisp.dhis.android.core.period.PeriodType;
 
@@ -19,6 +18,8 @@ import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
+
+import static org.dhis2.utils.SqlConstants.SELECT_ALL_FROM;
 
 public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
 
@@ -44,8 +45,8 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
     @NonNull
     @Override
     public Observable<List<OrganisationUnit>> orgUnits() {
-        String selectOrgUnits = "SELECT * FROM " + OrganisationUnitModel.TABLE;
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, selectOrgUnits)
+        String selectOrgUnits = SELECT_ALL_FROM + SqlConstants.ORG_UNIT_TABLE;
+        return briteDatabase.createQuery(SqlConstants.ORG_UNIT_TABLE, selectOrgUnits)
                 .mapToList(OrganisationUnit::create);
     }
 
@@ -67,7 +68,7 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
 
         sql = String.format(sql, orgUnitFilter);
 
-        return briteDatabase.createQuery(DataValueModel.TABLE, sql, dataSetUid)
+        return briteDatabase.createQuery(SqlConstants.DATA_VALUE_TABLE, sql, dataSetUid)
                 .mapToList(cursor -> {
                     String organisationUnitUid = cursor.getString(0);
                     String period = cursor.getString(1);

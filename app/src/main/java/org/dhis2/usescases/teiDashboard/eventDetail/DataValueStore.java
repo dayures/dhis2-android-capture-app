@@ -10,10 +10,8 @@ import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 import org.hisp.dhis.android.core.user.UserCredentials;
 
 import java.util.Calendar;
@@ -71,17 +69,17 @@ final class DataValueStore implements DataEntryStore {
     public void updateEventStatus(Event eventModel) {
         ContentValues contentValues = new ContentValues();
         Date currentDate = Calendar.getInstance().getTime();
-        contentValues.put(EventModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
+        contentValues.put(SqlConstants.EVENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
         String eventStatus = null;
         switch (eventModel.status()) {
             case SCHEDULE:
             case COMPLETED:
                 eventStatus = EventStatus.ACTIVE.name(); //TODO: should check if visited/skiped/overdue
-                contentValues.putNull(EventModel.Columns.COMPLETE_DATE);
+                contentValues.putNull(SqlConstants.EVENT_COMPLETE_DATE);
                 break;
             default:
                 eventStatus = EventStatus.COMPLETED.name();
-                contentValues.put(EventModel.Columns.COMPLETE_DATE, DateUtils.databaseDateFormat().format(currentDate));
+                contentValues.put(SqlConstants.EVENT_COMPLETE_DATE, DateUtils.databaseDateFormat().format(currentDate));
                 break;
 
         }
@@ -97,7 +95,7 @@ final class DataValueStore implements DataEntryStore {
     public void updateEvent(@NonNull Date eventDate, @NonNull Event eventModel) {
         ContentValues contentValues = new ContentValues();
         Date currentDate = Calendar.getInstance().getTime();
-        contentValues.put(EventModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
+        contentValues.put(SqlConstants.EVENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
         contentValues.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(eventDate));
         if (eventDate.before(currentDate))
             contentValues.put(SqlConstants.EVENT_STATUS, EventStatus.ACTIVE.name());
@@ -108,7 +106,7 @@ final class DataValueStore implements DataEntryStore {
     @SuppressWarnings({"squid:S1172", "squid:CommentedOutCodeLine"})
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues(); //TODO: Crash if active
-        program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
+        program.put(SqlConstants.ENROLLMENT_LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
         briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, SqlConstants.PROGRAM_UID + " = ?", programUid);*/
     }
 
@@ -175,8 +173,8 @@ final class DataValueStore implements DataEntryStore {
     private void updateTEi() {
 
         ContentValues tei = new ContentValues();
-        tei.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-        tei.put(TrackedEntityInstanceModel.Columns.STATE, State.TO_UPDATE.name());// TODO: Check if state is TO_POST
+        tei.put(SqlConstants.TEI_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+        tei.put(SqlConstants.TEI_STATE, State.TO_UPDATE.name());// TODO: Check if state is TO_POST
         // TODO: and if so, keep the TO_POST state
         briteDatabase.update(SqlConstants.TEI_TABLE, tei, "uid = ?", teiUid);
     }

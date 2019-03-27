@@ -12,7 +12,6 @@ import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.util.Calendar;
 import java.util.Locale;
@@ -130,7 +129,7 @@ public final class EnrollmentStatusStore implements EnrollmentStatusEntryStore {
                     if (State.SYNCED.equals(tei.state()) || State.TO_DELETE.equals(tei.state()) ||
                             State.ERROR.equals(tei.state())) {
                         ContentValues values = tei.toContentValues();
-                        values.put(TrackedEntityInstanceModel.Columns.STATE, State.TO_UPDATE.toString());
+                        values.put(SqlConstants.TEI_STATE, State.TO_UPDATE.toString());
 
                         if (briteDatabase.update(SqlConstants.TEI_TABLE, values,
                                 SqlConstants.TEI_UID + " = ?", tei.uid()) <= 0) {

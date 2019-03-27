@@ -1,25 +1,24 @@
 package org.dhis2.usescases.teiDashboard.teiProgramList;
 
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.DiffUtil;
-
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
 
 import java.util.List;
 
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.DiffUtil;
+
 /**
  * Created by ppajuelo on 29/01/2018.
- *
  */
 
 class TeiProgramListDiffCallback extends DiffUtil.Callback {
 
     @NonNull
-    private List<EnrollmentModel> oldList;
+    private List<Enrollment> oldList;
     @NonNull
-    private List<EnrollmentModel> newList;
+    private List<Enrollment> newList;
 
-    TeiProgramListDiffCallback(@NonNull List<EnrollmentModel> oldList, @NonNull List<EnrollmentModel> newList) {
+    TeiProgramListDiffCallback(@NonNull List<Enrollment> oldList, @NonNull List<Enrollment> newList) {
         this.oldList = oldList;
         this.newList = newList;
     }

@@ -11,38 +11,22 @@ import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.category.Category;
 import org.hisp.dhis.android.core.category.CategoryCombo;
-import org.hisp.dhis.android.core.category.CategoryComboModel;
-import org.hisp.dhis.android.core.category.CategoryModel;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionComboCategoryOptionLinkTableInfo;
-import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
-import org.hisp.dhis.android.core.category.CategoryOptionModel;
 import org.hisp.dhis.android.core.common.ObjectStyle;
-import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.maintenance.D2Error;
 import org.hisp.dhis.android.core.option.Option;
 import org.hisp.dhis.android.core.option.OptionGroupOptionLinkTableInfo;
-import org.hisp.dhis.android.core.option.OptionModel;
-import org.hisp.dhis.android.core.option.OptionSetModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttribute;
-import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttributeModel;
 import org.hisp.dhis.android.core.resource.Resource;
-import org.hisp.dhis.android.core.resource.ResourceModel;
 import org.hisp.dhis.android.core.settings.SystemSetting;
-import org.hisp.dhis.android.core.settings.SystemSettingModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityType;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityTypeModel;
-import org.hisp.dhis.android.core.user.AuthenticatedUserModel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -87,7 +71,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                     "WHERE %s.%s = ?",
             SqlConstants.PROGRAM_TABLE,
             SqlConstants.PROGRAM_TABLE,
-            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TABLE, EnrollmentModel.Columns.PROGRAM, SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_UID,
+            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_PROGRAM, SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_UID,
             SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI);
 
     private static final Set<String> ACTIVE_TEI_PROGRAMS_TABLES = new HashSet<>(Arrays.asList(SqlConstants.PROGRAM_TABLE, SqlConstants.ENROLLMENT_TABLE));
@@ -97,20 +81,20 @@ public class MetadataRepositoryImpl implements MetadataRepository {
             SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_TABLE, SqlConstants.PROGRAM_UID);
 
     private static final String TRACKED_ENTITY_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            TrackedEntityTypeModel.TABLE, TrackedEntityTypeModel.TABLE, TrackedEntityTypeModel.Columns.UID);
+            SqlConstants.TE_TYPE_TABLE, SqlConstants.TE_TYPE_TABLE, SqlConstants.TE_TYPE_UID);
 
     private static final String TRACKED_ENTITY_INSTANCE_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
             SqlConstants.TEI_TABLE, SqlConstants.TEI_TABLE, SqlConstants.TEI_UID);
 
     private static final String ORG_UNIT_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            OrganisationUnitModel.TABLE, OrganisationUnitModel.TABLE, OrganisationUnitModel.Columns.UID);
+            SqlConstants.ORG_UNIT_TABLE, SqlConstants.ORG_UNIT_TABLE, SqlConstants.ORG_UNIT_UID);
 
     private static final String TEI_ORG_UNIT_QUERY = String.format(
             "SELECT * FROM %s " +
                     JOIN_TABLE_ON +
                     "WHERE  %s.%s = ? LIMIT 1",
-            OrganisationUnitModel.TABLE,
-            SqlConstants.TEI_TABLE, SqlConstants.TEI_TABLE, TrackedEntityInstanceModel.Columns.ORGANISATION_UNIT, OrganisationUnitModel.TABLE, OrganisationUnitModel.Columns.UID,
+            SqlConstants.ORG_UNIT_TABLE,
+            SqlConstants.TEI_TABLE, SqlConstants.TEI_TABLE, SqlConstants.TEI_ORG_UNIT, SqlConstants.ORG_UNIT_TABLE, SqlConstants.ORG_UNIT_UID,
             SqlConstants.TEI_TABLE, SqlConstants.TEI_UID);
 
     private static final String ENROLLMENT_ORG_UNIT_QUERY =
@@ -120,25 +104,25 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                     "JOIN Program ON Program.uid = Enrollment.program WHERE Enrollment.trackedEntityInstance = ? AND Program.uid = ? LIMIT 1)";
 
 
-    private static final Set<String> TEI_ORG_UNIT_TABLES = new HashSet<>(Arrays.asList(OrganisationUnitModel.TABLE, SqlConstants.TEI_TABLE));
+    private static final Set<String> TEI_ORG_UNIT_TABLES = new HashSet<>(Arrays.asList(SqlConstants.ORG_UNIT_TABLE, SqlConstants.TEI_TABLE));
 
     private static final String PROGRAM_TRACKED_ENTITY_ATTRIBUTES_QUERY = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.PROGRAM);
+            SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_PROGRAM);
 
     private static final String PROGRAM_TRACKED_ENTITY_ATTRIBUTES_NO_PROGRAM_QUERY = String.format(
             "SELECT DISTINCT %s.* FROM %s " +
                     JOIN_TABLE_ON +
                     "WHERE %s.%s = '1' GROUP BY %s.%s",
-            ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.TABLE,
-            TrackedEntityAttributeModel.TABLE, TrackedEntityAttributeModel.TABLE, TrackedEntityAttributeModel.Columns.UID, ProgramTrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.Columns.TRACKED_ENTITY_ATTRIBUTE,
-            TrackedEntityAttributeModel.TABLE, TrackedEntityAttributeModel.Columns.DISPLAY_IN_LIST_NO_PROGRAM, TrackedEntityAttributeModel.TABLE, TrackedEntityAttributeModel.Columns.UID);
-    private static final Set<String> PROGRAM_TRACKED_ENTITY_ATTRIBUTES_NO_PROGRAM_TABLES = new HashSet<>(Arrays.asList(TrackedEntityAttributeModel.TABLE, ProgramTrackedEntityAttributeModel.TABLE));
+            SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_TABLE,
+            SqlConstants.TE_ATTR_TABLE, SqlConstants.TE_ATTR_TABLE, SqlConstants.TE_ATTR_UID, SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_TE_ATTR,
+            SqlConstants.TE_ATTR_TABLE, SqlConstants.TE_ATTR_DISPLAY_IN_LIST_NO_PROGRAM, SqlConstants.TE_ATTR_TABLE, SqlConstants.TE_ATTR_UID);
+    private static final Set<String> PROGRAM_TRACKED_ENTITY_ATTRIBUTES_NO_PROGRAM_TABLES = new HashSet<>(Arrays.asList(SqlConstants.TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_TABLE));
 
     private static final String SELECT_PROGRAM_STAGE = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
             SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_UID);
 
     private static final String SELECT_CATEGORY_OPTION_COMBO = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            SqlConstants.CAT_OPTION_COMBO_TABLE, SqlConstants.CAT_OPTION_COMBO_TABLE, CategoryOptionComboModel.Columns.UID);
+            SqlConstants.CAT_OPTION_COMBO_TABLE, SqlConstants.CAT_OPTION_COMBO_TABLE, SqlConstants.CAT_OPTION_COMBO_UID);
 
     private static final String SELECT_CATEGORY_OPTIONS_COMBO = String.format("SELECT %s.* FROM %s " +
                     JOIN_TABLE_ON +
@@ -147,20 +131,20 @@ public class MetadataRepositoryImpl implements MetadataRepository {
             SqlConstants.CAT_OPTION_COMBO_TABLE, SqlConstants.CAT_OPTION_COMBO_TABLE,
             CategoryOptionComboCategoryOptionLinkTableInfo.TABLE_INFO.name(),
             CategoryOptionComboCategoryOptionLinkTableInfo.TABLE_INFO.name(), CategoryOptionComboCategoryOptionLinkTableInfo.Columns.CATEGORY_OPTION_COMBO,
-            SqlConstants.CAT_OPTION_COMBO_TABLE, CategoryOptionComboModel.Columns.UID,
-            CategoryOptionModel.TABLE, CategoryOptionComboCategoryOptionLinkTableInfo.TABLE_INFO.name(), CategoryOptionComboCategoryOptionLinkTableInfo.Columns.CATEGORY_OPTION,
-            CategoryOptionModel.TABLE, CategoryOptionModel.Columns.UID,
-            CategoryOptionModel.TABLE, CategoryOptionModel.Columns.ACCESS_DATA_WRITE, SqlConstants.CAT_OPTION_COMBO_TABLE, CategoryOptionComboModel.Columns.CATEGORY_COMBO);
+            SqlConstants.CAT_OPTION_COMBO_TABLE, SqlConstants.CAT_OPTION_COMBO_UID,
+            SqlConstants.CAT_OPTION_TABLE, CategoryOptionComboCategoryOptionLinkTableInfo.TABLE_INFO.name(), CategoryOptionComboCategoryOptionLinkTableInfo.Columns.CATEGORY_OPTION,
+            SqlConstants.CAT_OPTION_TABLE, SqlConstants.CAT_OPTION_UID,
+            SqlConstants.CAT_OPTION_TABLE, SqlConstants.CAT_OPTION_ACCESS_DATA_WRITE, SqlConstants.CAT_OPTION_COMBO_TABLE, SqlConstants.CAT_OPTION_COMBO_CAT_COMBO);
 
     private static final String SELECT_CATEGORY = "SELECT * FROM Category " +
             "JOIN CategoryCategoryComboLink ON CategoryCategoryComboLink.category = Category.uid " +
             "WHERE CategoryCategoryComboLink.categoryCombo = ?";
 
     private static final String SELECT_CATEGORY_COMBO = String.format(SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS,
-            SqlConstants.CAT_COMBO_TABLE, SqlConstants.CAT_COMBO_TABLE, CategoryComboModel.Columns.UID);
+            SqlConstants.CAT_COMBO_TABLE, SqlConstants.CAT_COMBO_TABLE, SqlConstants.CAT_COMBO_UID);
 
     private static final String SELECT_DEFAULT_CAT_COMBO = String.format("SELECT %s FROM %s WHERE %s.%s = '1' LIMIT 1",
-            CategoryComboModel.Columns.UID, SqlConstants.CAT_COMBO_TABLE, SqlConstants.CAT_COMBO_TABLE, CategoryComboModel.Columns.IS_DEFAULT);
+            SqlConstants.CAT_COMBO_UID, SqlConstants.CAT_COMBO_TABLE, SqlConstants.CAT_COMBO_TABLE, SqlConstants.CAT_COMBO_IS_DEFAULT);
 
     private static final String EXPIRY_DATE_PERIOD_QUERY = String.format(
             "SELECT program.* FROM %s " +
@@ -181,7 +165,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<TrackedEntityType> getTrackedEntity(String trackedEntityUid) {
         String id = trackedEntityUid == null ? "" : trackedEntityUid;
         return briteDatabase
-                .createQuery(TrackedEntityTypeModel.TABLE, TRACKED_ENTITY_QUERY + QUOTE + id + QUOTE + LIMIT_1)
+                .createQuery(SqlConstants.TE_TYPE_TABLE, TRACKED_ENTITY_QUERY + QUOTE + id + QUOTE + LIMIT_1)
                 .mapToOne(TrackedEntityType::create);
     }
 
@@ -212,7 +196,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<CategoryOptionCombo> getCategoryOptionComboWithId(String categoryOptionComboId) {
         String id = categoryOptionComboId == null ? "" : categoryOptionComboId;
         return briteDatabase
-                .createQuery(CategoryOptionModel.TABLE, SELECT_CATEGORY_OPTION_COMBO + QUOTE + id + QUOTE + LIMIT_1)
+                .createQuery(SqlConstants.CAT_OPTION_TABLE, SELECT_CATEGORY_OPTION_COMBO + QUOTE + id + QUOTE + LIMIT_1)
                 .mapToOne(CategoryOptionCombo::create);
     }
 
@@ -221,13 +205,13 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<List<CategoryOptionCombo>> getCategoryComboOptions(String categoryComboId) {
         String id = categoryComboId == null ? "" : categoryComboId;
         return briteDatabase
-                .createQuery(CategoryOptionModel.TABLE, SELECT_CATEGORY_OPTIONS_COMBO + QUOTE + id + QUOTE)
+                .createQuery(SqlConstants.CAT_OPTION_TABLE, SELECT_CATEGORY_OPTIONS_COMBO + QUOTE + id + QUOTE)
                 .mapToList(CategoryOptionCombo::create);
     }
 
     @Override
     public Observable<Category> getCategoryFromCategoryCombo(String categoryComboId) {
-        return briteDatabase.createQuery(CategoryModel.TABLE, SELECT_CATEGORY, categoryComboId)
+        return briteDatabase.createQuery(SqlConstants.CATEGORY_TABLE, SELECT_CATEGORY, categoryComboId)
                 .mapToOne(Category::create);
     }
 
@@ -242,7 +226,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<OrganisationUnit> getOrganisationUnit(String orgUnitUid) {
         String id = orgUnitUid == null ? "" : orgUnitUid;
         return briteDatabase
-                .createQuery(OrganisationUnitModel.TABLE, ORG_UNIT_QUERY + QUOTE + id + QUOTE + LIMIT_1)
+                .createQuery(SqlConstants.ORG_UNIT_TABLE, ORG_UNIT_QUERY + QUOTE + id + QUOTE + LIMIT_1)
                 .mapToOne(OrganisationUnit::create);
     }
 
@@ -267,7 +251,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     public Observable<List<ProgramTrackedEntityAttribute>> getProgramTrackedEntityAttributes(String programUid) {
         if (programUid != null)
             return briteDatabase
-                    .createQuery(ProgramTrackedEntityAttributeModel.TABLE, PROGRAM_TRACKED_ENTITY_ATTRIBUTES_QUERY + QUOTE + programUid + QUOTE)
+                    .createQuery(SqlConstants.PROGRAM_TE_ATTR_TABLE, PROGRAM_TRACKED_ENTITY_ATTRIBUTES_QUERY + QUOTE + programUid + QUOTE)
                     .mapToList(ProgramTrackedEntityAttribute::create);
         else
             return briteDatabase
@@ -298,7 +282,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     @Override
     public List<Option> optionSet(String optionSetId) {
         List<Option> options = new ArrayList<>();
-        String selectOptionSet = SELECT_ALL_FROM + OptionModel.TABLE + " WHERE Option.optionSet = ?";
+        String selectOptionSet = SELECT_ALL_FROM + SqlConstants.OPTION_TABLE + " WHERE Option.optionSet = ?";
         try (Cursor cursor = briteDatabase.query(selectOptionSet, optionSetId == null ? "" : optionSetId)) {
             if (cursor != null && cursor.moveToFirst()) {
                 for (int i = 0; i < cursor.getCount(); i++) {
@@ -352,7 +336,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     @Override
     public Observable<Pair<String, Integer>> getTheme() {
         return briteDatabase
-                .createQuery(SystemSettingModel.TABLE, SELECT_ALL_FROM + SystemSettingModel.TABLE)
+                .createQuery(SqlConstants.SYSTEM_SETTING_TABLE, SELECT_ALL_FROM + SqlConstants.SYSTEM_SETTING_TABLE)
                 .mapToList(SystemSetting::create)
                 .map(systemSettingModels -> {
                     String flag = "";
@@ -377,13 +361,13 @@ public class MetadataRepositoryImpl implements MetadataRepository {
 
     @Override
     public Observable<ObjectStyle> getObjectStyle(String uid) {
-        return briteDatabase.createQuery(ObjectStyleModel.TABLE, "SELECT * FROM ObjectStyle WHERE uid = ? LIMIT 1", uid == null ? "" : uid)
+        return briteDatabase.createQuery(SqlConstants.OBJECT_STYLE_TABLE, "SELECT * FROM ObjectStyle WHERE uid = ? LIMIT 1", uid == null ? "" : uid)
                 .mapToOneOrDefault((ObjectStyle::create), ObjectStyle.builder().build());
     }
 
     @Override
     public Observable<List<OrganisationUnit>> getOrganisationUnits() {
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, "SELECT * FROM OrganisationUnit")
+        return briteDatabase.createQuery(SqlConstants.ORG_UNIT_TABLE, "SELECT * FROM OrganisationUnit")
                 .mapToList(OrganisationUnit::create);
     }
 
@@ -407,9 +391,9 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     @NonNull
     @Override
     public Observable<List<Resource>> syncState(Program program) {
-        String syncState = SELECT_ALL_FROM + ResourceModel.TABLE;
+        String syncState = SELECT_ALL_FROM + SqlConstants.RESOURCE_TABLE;
         return briteDatabase
-                .createQuery(ResourceModel.TABLE, syncState)
+                .createQuery(SqlConstants.RESOURCE_TABLE, syncState)
                 .mapToList(Resource::create);
     }
 
@@ -438,7 +422,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
 
     @Override
     public Observable<String> getServerUrl() {
-        return briteDatabase.createQuery(AuthenticatedUserModel.TABLE, "SELECT SystemInfo.contextPath FROM SystemInfo LIMIT 1")
+        return briteDatabase.createQuery(SqlConstants.AUTH_USER_TABLE, "SELECT SystemInfo.contextPath FROM SystemInfo LIMIT 1")
                 .mapToOne(cursor -> cursor.getString(0));
     }
 
@@ -485,7 +469,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                                         "where OptionSet.uid = ? " +
                                         "AND Option.uid NOT IN (" + formattedOptionsToHide + ") " + pageQuery;
 
-                        return briteDatabase.createQuery(OptionSetModel.TABLE, optionQuery, idOptionSet)
+                        return briteDatabase.createQuery(SqlConstants.OPTION_SET_TABLE, optionQuery, idOptionSet)
                                 .mapToList(Option::create);
                     } else {
                         Iterator<Option> iterator = list.iterator();

@@ -2,11 +2,10 @@ package org.dhis2.usescases.main.program;
 
 import com.squareup.sqlbrite2.BriteDatabase;
 
+import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.DatePeriod;
-import org.hisp.dhis.android.core.user.UserOrganisationUnitLinkModel;
 
 import java.util.List;
 
@@ -88,7 +87,7 @@ class HomeRepositoryImpl implements HomeRepository {
                 "WHERE OrganisationUnit.parent = ? AND UserOrganisationUnit.organisationUnitScope = 'SCOPE_DATA_CAPTURE' " +
                 "ORDER BY OrganisationUnit.displayName ASC";
 
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, selectOrgUnitsByParent, parentUid)
+        return briteDatabase.createQuery(SqlConstants.ORG_UNIT_TABLE, selectOrgUnitsByParent, parentUid)
                 .mapToList(OrganisationUnit::create);
     }
 
@@ -97,12 +96,12 @@ class HomeRepositoryImpl implements HomeRepository {
     @Override
     public Observable<List<OrganisationUnit>> orgUnits() {
         String selectOrgUnits =
-                "SELECT * FROM " + OrganisationUnitModel.TABLE + ", " + UserOrganisationUnitLinkModel.TABLE + " " +
-                        "WHERE " + OrganisationUnitModel.TABLE + "." + OrganisationUnitModel.Columns.UID + " = " + UserOrganisationUnitLinkModel.TABLE + "." + UserOrganisationUnitLinkModel.Columns.ORGANISATION_UNIT +
-                        " AND " + UserOrganisationUnitLinkModel.TABLE + "." + UserOrganisationUnitLinkModel.Columns.ORGANISATION_UNIT_SCOPE + " = '" + OrganisationUnitModel.Scope.SCOPE_DATA_CAPTURE +
+                "SELECT * FROM " + SqlConstants.ORG_UNIT_TABLE + ", " + SqlConstants.USER_ORG_UNIT_LINK_TABLE + " " +
+                        "WHERE " + SqlConstants.ORG_UNIT_TABLE + "." + SqlConstants.ORG_UNIT_UID + " = " + SqlConstants.USER_ORG_UNIT_LINK_TABLE + "." + SqlConstants.USER_ORG_UNIT_LINK_ORG_UNIT +
+                        " AND " + SqlConstants.USER_ORG_UNIT_LINK_TABLE + "." + SqlConstants.USER_ORG_UNIT_LINK_ORG_UNIT_SCOPE + " = '" + OrganisationUnit.Scope.SCOPE_DATA_CAPTURE +
                         "' AND UserOrganisationUnit.root = '1' " +
-                        " ORDER BY " + OrganisationUnitModel.TABLE + "." + OrganisationUnitModel.Columns.DISPLAY_NAME + " ASC";
-        return briteDatabase.createQuery(OrganisationUnitModel.TABLE, selectOrgUnits)
+                        " ORDER BY " + SqlConstants.ORG_UNIT_TABLE + "." + SqlConstants.ORG_UNIT_DISPLAY_NAME + " ASC";
+        return briteDatabase.createQuery(SqlConstants.ORG_UNIT_TABLE, selectOrgUnits)
                 .mapToList(OrganisationUnit::create);
     }
 }

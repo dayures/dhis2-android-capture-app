@@ -19,7 +19,6 @@ import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.Program;
@@ -350,7 +349,7 @@ public class EventRepository implements FormRepository {
     @NonNull
     @Override
     public Observable<String> getTrackedEntityInstanceUid() {
-        String selectTe = "SELECT " + SqlConstants.EVENT_TABLE + "." + EventModel.Columns.TRACKED_ENTITY_INSTANCE +
+        String selectTe = "SELECT " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_TEI +
                 " FROM " + SqlConstants.EVENT_TABLE +
                 " WHERE " + SqlConstants.EVENT_UID + " = ? LIMIT 1";
         return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, selectTe, eventUid == null ? "" : eventUid).mapToOne(cursor -> cursor.getString(0));
@@ -484,7 +483,7 @@ public class EventRepository implements FormRepository {
     @SuppressWarnings({"squid:S1172", "squid:CommentedOutCodeLine"})
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues();TODO: Crash if active
-        program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
+        program.put(SqlConstants.ENROLLMENT_LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
         briteDatabase.update(SqlConstants.PROGRAM_TABLE, program, SqlConstants.PROGRAM_UID + " = ?", programUid);*/
     }
 }

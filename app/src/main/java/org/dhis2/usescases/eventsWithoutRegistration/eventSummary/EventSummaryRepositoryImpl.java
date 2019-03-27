@@ -23,10 +23,8 @@ import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.Program;
-import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.rules.models.RuleDataValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEvent;
@@ -312,7 +310,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
                     case VISITED:
                     case SCHEDULE:
                         values.put(SqlConstants.EVENT_STATUS, EventStatus.COMPLETED.name()); //TODO: Can this happen?
-                        values.put(EventModel.Columns.COMPLETE_DATE, lastUpdated);
+                        values.put(SqlConstants.EVENT_COMPLETE_DATE, lastUpdated);
                         break;
                     case COMPLETED:
                         values.put(SqlConstants.EVENT_STATUS, EventStatus.ACTIVE.name()); //TODO: This should check dates?
@@ -323,7 +321,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
 
 
                 values.put(SqlConstants.EVENT_STATE, State.TO_UPDATE.toString());
-                values.put(EventModel.Columns.LAST_UPDATED, lastUpdated);
+                values.put(SqlConstants.EVENT_LAST_UPDATED, lastUpdated);
 
                 if (briteDatabase.update(SqlConstants.EVENT_TABLE, values,
                         SqlConstants.EVENT_UID + " = ?", eventUid == null ? "" : eventUid) <= 0) {
@@ -336,7 +334,7 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
                     if (programCursor != null && cursor.moveToNext()) {
                         Program program = Program.create(programCursor);
                         ContentValues programValues = program.toContentValues();
-                        values.put(ProgramModel.Columns.LAST_UPDATED, lastUpdated);
+                        values.put(SqlConstants.PROGRAM_LAST_UPDATED, lastUpdated);
                         if (briteDatabase.update(SqlConstants.PROGRAM_TABLE, programValues,
                                 SqlConstants.PROGRAM_UID + " = ?", program.uid() == null ? "" : program.uid()) <= 0) {
 

@@ -23,10 +23,8 @@ import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.ProgramRule;
@@ -37,7 +35,6 @@ import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageSectionDeviceRendering;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 import org.hisp.dhis.rules.models.Rule;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleDataValue;
@@ -536,7 +533,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         ContentValues contentValues = new ContentValues();
         contentValues.put(SqlConstants.EVENT_STATUS, EventStatus.COMPLETED.name());
         String completeDate = DateUtils.databaseDateFormat().format(DateUtils.getInstance().getToday());
-        contentValues.put(EventModel.Columns.COMPLETE_DATE, completeDate);
+        contentValues.put(SqlConstants.EVENT_COMPLETE_DATE, completeDate);
         return Observable.just(briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, UID_EQUALS_QUESTION_MARK, eventUid) > 0);
     }
 
@@ -579,7 +576,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 Enrollment enrollmentModel = Enrollment.create(enrollmentCursor);
 
                 ContentValues cv = enrollmentModel.toContentValues();
-                cv.put(EnrollmentModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+                cv.put(SqlConstants.ENROLLMENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
                 cv.put(SqlConstants.ENROLLMENT_STATE, enrollmentModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
                 briteDatabase.update(SqlConstants.ENROLLMENT_TABLE, cv, UID_EQUALS_QUESTION_MARK, enrollmentUid);
                 updateTei(enrollmentModel.trackedEntityInstance());
@@ -593,8 +590,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             if (teiCursor != null && teiCursor.moveToFirst()) {
                 TrackedEntityInstance teiModel = TrackedEntityInstance.create(teiCursor);
                 ContentValues cv = teiModel.toContentValues();
-                cv.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-                cv.put(TrackedEntityInstanceModel.Columns.STATE,
+                cv.put(SqlConstants.TEI_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+                cv.put(SqlConstants.TEI_STATE,
                         teiModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
                 briteDatabase.update(SqlConstants.TEI_TABLE, cv, UID_EQUALS_QUESTION_MARK, teiUid);
             }
@@ -607,7 +604,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         ContentValues contentValues = new ContentValues();
         contentValues.put(SqlConstants.EVENT_STATUS, status.name());
         String updateDate = DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime());
-        contentValues.put(EventModel.Columns.LAST_UPDATED, updateDate);
+        contentValues.put(SqlConstants.EVENT_LAST_UPDATED, updateDate);
         return Observable.just(briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, UID_EQUALS_QUESTION_MARK, eventUid) > 0);
     }
 

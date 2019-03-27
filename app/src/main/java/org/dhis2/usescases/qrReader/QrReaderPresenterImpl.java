@@ -11,13 +11,10 @@ import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.common.Coordinates;
 import org.hisp.dhis.android.core.common.State;
-import org.hisp.dhis.android.core.dataelement.DataElementModel;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
-import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
@@ -143,8 +140,8 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                     if (attrValue.has(DATA_ELEMENT) && attrValue.getString(DATA_ELEMENT) != null) {
                         // LOOK FOR dataElement ON LOCAL DATABASE.
                         // IF FOUND, OPEN DASHBOARD
-                        try (Cursor cursor = briteDatabase.query(SELECT_ALL_FROM + DataElementModel.TABLE +
-                                WHERE + DataElementModel.Columns.UID + " = ?", attrValue.getString(DATA_ELEMENT))) {
+                        try (Cursor cursor = briteDatabase.query(SELECT_ALL_FROM + SqlConstants.DATA_ELEMENT_TABLE +
+                                WHERE + SqlConstants.DATA_ELEMENT_UID + " = ?", attrValue.getString(DATA_ELEMENT))) {
                             if (cursor != null && cursor.moveToFirst() && cursor.getCount() > 0) {
                                 this.dataJson.add(attrValue);
                                 attributes.add(Trio.create(trackedEntityDataValueModelBuilder.build(), cursor.getString(cursor.getColumnIndex("formName")), true));
@@ -200,8 +197,8 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 if (attrValue.has(DATA_ELEMENT) && attrValue.getString(DATA_ELEMENT) != null) {
                     // LOOK FOR dataElement ON LOCAL DATABASE.
                     // IF FOUND, OPEN DASHBOARD
-                    try (Cursor cursor = briteDatabase.query(SELECT_ALL_FROM + DataElementModel.TABLE +
-                            WHERE + DataElementModel.Columns.UID + " = ?", attrValue.getString(DATA_ELEMENT))) {
+                    try (Cursor cursor = briteDatabase.query(SELECT_ALL_FROM + SqlConstants.DATA_ELEMENT_TABLE +
+                            WHERE + SqlConstants.DATA_ELEMENT_UID + " = ?", attrValue.getString(DATA_ELEMENT))) {
                         if (cursor != null && cursor.moveToFirst() && cursor.getCount() > 0) {
                             this.teiDataJson.add(attrValue);
                             attributes.add(Trio.create(trackedEntityDataValueModelBuilder.build(), cursor.getString(cursor.getColumnIndex("formName")), true));
@@ -260,10 +257,10 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 JSONObject attrValue = jsonArray.getJSONObject(i);
                 if (attrValue.has(TE_ATTR) && attrValue.getString(TE_ATTR) != null) {
                     try (Cursor cursor = briteDatabase.query(SELECT +
-                                    TrackedEntityAttributeModel.Columns.UID + ", " +
-                                    TrackedEntityAttributeModel.Columns.DISPLAY_NAME +
-                                    FROM + TrackedEntityAttributeModel.TABLE +
-                                    WHERE + TrackedEntityAttributeModel.Columns.UID + " = ?",
+                                    SqlConstants.TE_ATTR_UID + ", " +
+                                    SqlConstants.TE_ATTR_DISPLAY_NAME +
+                                    FROM + SqlConstants.TE_ATTR_TABLE +
+                                    WHERE + SqlConstants.TE_ATTR_UID + " = ?",
                             attrValue.getString(TE_ATTR))) {
                         // TRACKED ENTITY ATTRIBUTE FOUND, TRACKED ENTITY ATTRIBUTE VALUE CAN BE SAVED.
                         if (cursor != null && cursor.moveToFirst() && cursor.getCount() > 0) {
@@ -294,7 +291,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 if (attrValue.has(PROGRAM) && attrValue.getString(PROGRAM) != null) {
                     try (Cursor cursor = briteDatabase.query(SELECT +
                                     SqlConstants.PROGRAM_UID + ", " +
-                                    ProgramModel.Columns.DISPLAY_NAME +
+                                    SqlConstants.PROGRAM_DISPLAY_NAME +
                                     FROM + SqlConstants.PROGRAM_TABLE +
                                     WHERE + SqlConstants.PROGRAM_UID + " = ?",
                             attrValue.getString(PROGRAM))) {
