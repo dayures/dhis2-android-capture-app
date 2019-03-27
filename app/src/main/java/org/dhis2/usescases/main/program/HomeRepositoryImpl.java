@@ -6,6 +6,7 @@ import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.DatePeriod;
+import org.hisp.dhis.android.core.program.Program;
 
 import java.util.List;
 
@@ -27,6 +28,35 @@ class HomeRepositoryImpl implements HomeRepository {
         this.d2 = d2;
     }
 
+    private String getTypeName(Program program) {
+        String typeName;
+        if (program.programType() == WITH_REGISTRATION) {
+            typeName = program.trackedEntityType() != null ? program.trackedEntityType().displayName() : "TEI";
+            if (typeName == null)
+                typeName = d2.trackedEntityModule().trackedEntityTypes.uid(program.trackedEntityType().uid()).get().displayName();
+        } else if (program.programType() == WITHOUT_REGISTRATION)
+            typeName = "Events";
+        else
+            typeName = "DataSets";
+        return typeName;
+    }
+
+    private int getCount(Program program, List<DatePeriod> dateFilter) {
+        int count = 0;
+        if (program.programType() == WITHOUT_REGISTRATION)
+            if (!dateFilter.isEmpty())
+                count = d2.eventModule().events.byProgramUid().eq(program.uid()).byEventDate().inDatePeriods(dateFilter).count();
+            else
+                count = d2.eventModule().events.byProgramUid().eq(program.uid()).count();
+        else {
+            if (!dateFilter.isEmpty()) {
+                count = d2.eventModule().events.byProgramUid().eq(program.uid()).byEventDate().inDatePeriods(dateFilter).countTrackedEntityInstances();
+            } else
+                count = d2.eventModule().events.byProgramUid().eq(program.uid()).countTrackedEntityInstances();
+        }
+        return count;
+    }
+
     @NonNull
     @Override
     public Flowable<List<ProgramViewModel>> programModels(List<DatePeriod> dateFilter, List<String> orgUnitFilter) {
@@ -39,29 +69,8 @@ class HomeRepositoryImpl implements HomeRepository {
                         return Flowable.fromIterable(programRepo.withObjectStyle().withAllChildren().get());
                 })
                 .map(program -> {
-
-                    String typeName;
-                    if (program.programType() == WITH_REGISTRATION) {
-                        typeName = program.trackedEntityType() != null ? program.trackedEntityType().displayName() : "TEI";
-                        if (typeName == null)
-                            typeName = d2.trackedEntityModule().trackedEntityTypes.uid(program.trackedEntityType().uid()).get().displayName();
-                    } else if (program.programType() == WITHOUT_REGISTRATION)
-                        typeName = "Events";
-                    else
-                        typeName = "DataSets";
-
-                    int count = 0;
-                    if (program.programType() == WITHOUT_REGISTRATION)
-                        if (!dateFilter.isEmpty())
-                            count = d2.eventModule().events.byProgramUid().eq(program.uid()).byEventDate().inDatePeriods(dateFilter).count();
-                        else
-                            count = d2.eventModule().events.byProgramUid().eq(program.uid()).count();
-                    else {
-                        if (!dateFilter.isEmpty()) {
-                            count = d2.eventModule().events.byProgramUid().eq(program.uid()).byEventDate().inDatePeriods(dateFilter).countTrackedEntityInstances();
-                        } else
-                            count = d2.eventModule().events.byProgramUid().eq(program.uid()).countTrackedEntityInstances();
-                    }
+                    String typeName = getTypeName(program);
+                    int count = getCount(program, dateFilter);
 
                     return ProgramViewModel.create(
                             program.uid(),

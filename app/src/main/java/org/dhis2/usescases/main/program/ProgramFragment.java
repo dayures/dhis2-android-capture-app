@@ -146,71 +146,83 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
             if (currentPeriod != DAILY && currentPeriod != NONE) {
                 new RxDateDialog(getAbstractActivity(), currentPeriod).create().show().subscribe(selectedDates -> {
                     if (!selectedDates.isEmpty()) {
-                        String textToShow;
-                        if (currentPeriod == WEEKLY) {
-                            textToShow = weeklyFormat.format(selectedDates.get(0)) + ", " + yearFormat.format(selectedDates.get(0));
-                            chosenDateWeek = (ArrayList<Date>) selectedDates;
-                            if (selectedDates.size() > 1)
-                                textToShow += "... " /*+ weeklyFormat.format(selectedDates.get(1))*/;
-                        } else if (currentPeriod == MONTHLY) {
-                            String dateFormatted = monthFormat.format(selectedDates.get(0));
-                            textToShow = dateFormatted.substring(0, 1).toUpperCase() + dateFormatted.substring(1);
-                            chosenDateMonth = (ArrayList<Date>) selectedDates;
-                            if (selectedDates.size() > 1)
-                                textToShow += "... " /*+ monthFormat.format(selectedDates.get(1))*/;
-                        } else {
-                            textToShow = yearFormat.format(selectedDates.get(0));
-                            chosenDateYear = (ArrayList<Date>) selectedDates;
-                            if (selectedDates.size() > 1)
-                                textToShow += "... " /*+ yearFormat.format(selectedDates.get(1))*/;
-
-                        }
-                        binding.buttonPeriodText.setText(textToShow);
+                        binding.buttonPeriodText.setText(getSelectedDatesTextToShow(selectedDates, weeklyFormat));
                         presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(selectedDates, currentPeriod));
 
                     } else {
-                        ArrayList<Date> date = new ArrayList<>();
-                        date.add(new Date());
-
-                        String text = "";
-
-                        switch (currentPeriod) {
-                            case WEEKLY:
-                                text = weeklyFormat.format(date.get(0)) + ", " + yearFormat.format(date.get(0));
-                                chosenDateWeek = date;
-                                break;
-                            case MONTHLY:
-                                String dateFormatted = monthFormat.format(date.get(0));
-                                text = dateFormatted.substring(0, 1).toUpperCase() + dateFormatted.substring(1);
-                                chosenDateMonth = date;
-                                break;
-                            case YEARLY:
-                                text = yearFormat.format(date.get(0));
-                                chosenDateYear = date;
-                                break;
-                            default:
-                                break;
-                        }
-                        binding.buttonPeriodText.setText(text);
+                        binding.buttonPeriodText.setText(getDailyTextToShow(weeklyFormat));
                         presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(selectedDates, currentPeriod));
                     }
                 }, Timber::d);
             } else if (currentPeriod == DAILY) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(chosenDateDay);
-                DatePickerDialog pickerDialog;
-                pickerDialog = new DatePickerDialog(context, (datePicker, year, monthOfYear, dayOfMonth) -> {
-                    calendar.set(year, monthOfYear, dayOfMonth);
-                    Date[] dates = DateUtils.getInstance().getDateFromDateAndPeriod(calendar.getTime(), currentPeriod);
-                    ArrayList<Date> selectedDates = new ArrayList<>();
-                    selectedDates.add(dates[0]);
-                    presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(selectedDates, currentPeriod));
-                    binding.buttonPeriodText.setText(DateUtils.getInstance().formatDate(dates[0]));
-                    chosenDateDay = dates[0];
-                }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
-                pickerDialog.show();
+                showDailyPicker(calendar);
             }
         }
+    }
+
+    private String getSelectedDatesTextToShow(List<Date> selectedDates, SimpleDateFormat weeklyFormat) {
+        String textToShow;
+        if (currentPeriod == WEEKLY) {
+            textToShow = weeklyFormat.format(selectedDates.get(0)) + ", " + yearFormat.format(selectedDates.get(0));
+            chosenDateWeek = (ArrayList<Date>) selectedDates;
+            if (selectedDates.size() > 1)
+                textToShow += "... " /*+ weeklyFormat.format(selectedDates.get(1))*/;
+        } else if (currentPeriod == MONTHLY) {
+            String dateFormatted = monthFormat.format(selectedDates.get(0));
+            textToShow = dateFormatted.substring(0, 1).toUpperCase() + dateFormatted.substring(1);
+            chosenDateMonth = (ArrayList<Date>) selectedDates;
+            if (selectedDates.size() > 1)
+                textToShow += "... " /*+ monthFormat.format(selectedDates.get(1))*/;
+        } else {
+            textToShow = yearFormat.format(selectedDates.get(0));
+            chosenDateYear = (ArrayList<Date>) selectedDates;
+            if (selectedDates.size() > 1)
+                textToShow += "... " /*+ yearFormat.format(selectedDates.get(1))*/;
+        }
+        return textToShow;
+    }
+
+    private String getDailyTextToShow(SimpleDateFormat weeklyFormat) {
+        ArrayList<Date> date = new ArrayList<>();
+        date.add(new Date());
+
+        String text = "";
+
+        switch (currentPeriod) {
+            case WEEKLY:
+                text = weeklyFormat.format(date.get(0)) + ", " + yearFormat.format(date.get(0));
+                chosenDateWeek = date;
+                break;
+            case MONTHLY:
+                String dateFormatted = monthFormat.format(date.get(0));
+                text = dateFormatted.substring(0, 1).toUpperCase() + dateFormatted.substring(1);
+                chosenDateMonth = date;
+                break;
+            case YEARLY:
+                text = yearFormat.format(date.get(0));
+                chosenDateYear = date;
+                break;
+            default:
+                break;
+        }
+        binding.buttonPeriodText.setText(text);
+        return text;
+    }
+
+    private void showDailyPicker(Calendar calendar) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(chosenDateDay);
+        DatePickerDialog pickerDialog;
+        pickerDialog = new DatePickerDialog(context, (datePicker, year, monthOfYear, dayOfMonth) -> {
+            calendar.set(year, monthOfYear, dayOfMonth);
+            Date[] dates = DateUtils.getInstance().getDateFromDateAndPeriod(calendar.getTime(), currentPeriod);
+            ArrayList<Date> selectedDates = new ArrayList<>();
+            selectedDates.add(dates[0]);
+            presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(selectedDates, currentPeriod));
+            binding.buttonPeriodText.setText(DateUtils.getInstance().formatDate(dates[0]));
+            chosenDateDay = dates[0];
+        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
+        pickerDialog.show();
     }
 
     public Period getCurrentPeriod() {

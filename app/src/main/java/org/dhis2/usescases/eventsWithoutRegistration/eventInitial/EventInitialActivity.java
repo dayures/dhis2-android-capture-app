@@ -149,6 +149,17 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         return bundle;
     }
 
+    private void setActionButtonText() {
+        if (eventUid == null) {
+            if (binding.actionButton != null)
+                binding.actionButton.setText(R.string.create);
+        } else {
+            if (binding.actionButton != null)
+                binding.actionButton.setText(R.string.update);
+
+        }
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         setScreenName(this.getLocalClassName());
@@ -243,51 +254,16 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         });
 
         initProgressBar();
+        setActionButtonText();
+        setActionButtonOnClickListener();
+    }
 
-        if (eventUid == null) {
-            if (binding.actionButton != null)
-                binding.actionButton.setText(R.string.create);
-        } else {
-            if (binding.actionButton != null)
-                binding.actionButton.setText(R.string.update);
-
-        }
-
+    private void setActionButtonOnClickListener() {
         if (binding.actionButton != null) {
             binding.actionButton.setOnClickListener(v -> {
                 String programStageModelUid = programStageModel == null ? "" : programStageModel.uid();
                 if (eventUid == null) { // This is a new Event
-                    if (eventCreationType == EventCreationType.REFERAL && tempCreate.equals(PERMANENT)) {
-                        presenter.createEventPermanent(
-                                enrollmentUid,
-                                getTrackedEntityInstance,
-                                programStageModelUid,
-                                selectedDate,
-                                selectedOrgUnit,
-                                null,
-                                catComboIsDefaultOrNull() ? null : selectedCatOptionCombo.uid(),
-                                selectedLat, selectedLon);
-                    } else if (eventCreationType == EventCreationType.SCHEDULE) {
-                        presenter.scheduleEvent(
-                                enrollmentUid,
-                                programStageModelUid,
-                                selectedDate,
-                                selectedOrgUnit,
-                                null,
-                                catComboIsDefaultOrNull() ? null : selectedCatOptionCombo.uid(),
-                                selectedLat, selectedLon);
-                    } else {
-                        presenter.createEvent(
-                                enrollmentUid,
-                                programStageModelUid,
-                                selectedDate,
-                                selectedOrgUnit,
-                                null,
-                                catComboIsDefaultOrNull() ? null : selectedCatOptionCombo.uid(),
-                                selectedLat,
-                                selectedLon,
-                                getTrackedEntityInstance);
-                    }
+                    newEventClick(programStageModelUid);
                 } else {
                     presenter.editEvent(getTrackedEntityInstance, programStageModelUid, eventUid, DateUtils.databaseDateFormat().format(selectedDate), selectedOrgUnit, null,
                             catComboIsDefaultOrNull() ? null : selectedCatOptionCombo.uid(), selectedLat, selectedLon);
@@ -295,6 +271,40 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
                     startFormActivity(eventUid);
                 }
             });
+        }
+    }
+
+    private void newEventClick(String programStageModelUid) {
+        if (eventCreationType == EventCreationType.REFERAL && tempCreate.equals(PERMANENT)) {
+            presenter.createEventPermanent(
+                    enrollmentUid,
+                    getTrackedEntityInstance,
+                    programStageModelUid,
+                    selectedDate,
+                    selectedOrgUnit,
+                    null,
+                    catComboIsDefaultOrNull() ? null : selectedCatOptionCombo.uid(),
+                    selectedLat, selectedLon);
+        } else if (eventCreationType == EventCreationType.SCHEDULE) {
+            presenter.scheduleEvent(
+                    enrollmentUid,
+                    programStageModelUid,
+                    selectedDate,
+                    selectedOrgUnit,
+                    null,
+                    catComboIsDefaultOrNull() ? null : selectedCatOptionCombo.uid(),
+                    selectedLat, selectedLon);
+        } else {
+            presenter.createEvent(
+                    enrollmentUid,
+                    programStageModelUid,
+                    selectedDate,
+                    selectedOrgUnit,
+                    null,
+                    catComboIsDefaultOrNull() ? null : selectedCatOptionCombo.uid(),
+                    selectedLat,
+                    selectedLon,
+                    getTrackedEntityInstance);
         }
     }
 
@@ -399,40 +409,39 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         return field != null && !field.isEmpty();
     }
 
-    @Override
-    public void setProgram(@NonNull Program program) {
-        this.program = program;
-
+    private void setActivityTitle() {
         String activityTitle;
         if (eventCreationType == EventCreationType.REFERAL) {
             activityTitle = program.displayName() + " - " + getString(R.string.referral);
         } else {
             activityTitle = eventUid == null ? program.displayName() + " - " + getString(R.string.new_event) : program.displayName();
         }
+
         binding.setName(activityTitle);
+    }
 
-        if (eventModel == null) {
-            Calendar now = DateUtils.getInstance().getCalendar();
-            if (periodType == null) {
-
-                if (eventCreationType != EventCreationType.SCHEDULE)
-                    selectedDate = now.getTime();
-                else {
-                    now.add(Calendar.DAY_OF_YEAR, getIntent().getIntExtra(Constants.EVENT_SCHEDULE_INTERVAL, 0));
-                    selectedDate = DateUtils.getInstance().getNextPeriod(null, now.getTime(), 1);
-                }
-
-                selectedDateString = DateUtils.uiDateFormat().format(selectedDate);
-
-            } else {
-                now.setTime(DateUtils.getInstance().getNextPeriod(periodType, now.getTime(), eventCreationType != EventCreationType.SCHEDULE ? 0 : 1));
+    private void setDefaultDate() {
+        Calendar now = DateUtils.getInstance().getCalendar();
+        if (periodType == null) {
+            if (eventCreationType != EventCreationType.SCHEDULE)
                 selectedDate = now.getTime();
-                selectedDateString = DateUtils.getInstance().getPeriodUIString(periodType, selectedDate, Locale.getDefault());
+            else {
+                now.add(Calendar.DAY_OF_YEAR, getIntent().getIntExtra(Constants.EVENT_SCHEDULE_INTERVAL, 0));
+                selectedDate = DateUtils.getInstance().getNextPeriod(null, now.getTime(), 1);
             }
 
-            binding.date.setText(selectedDateString);
+            selectedDateString = DateUtils.uiDateFormat().format(selectedDate);
+
+        } else {
+            now.setTime(DateUtils.getInstance().getNextPeriod(periodType, now.getTime(), eventCreationType != EventCreationType.SCHEDULE ? 0 : 1));
+            selectedDate = now.getTime();
+            selectedDateString = DateUtils.getInstance().getPeriodUIString(periodType, selectedDate, Locale.getDefault());
         }
 
+        binding.date.setText(selectedDateString);
+    }
+
+    private void setOnDateClickListener() {
         binding.date.setOnClickListener(view -> {
             if (periodType == null)
                 presenter.onDateClick(EventInitialActivity.this);
@@ -449,16 +458,9 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
                         })
                         .show(getSupportFragmentManager(), PeriodDialog.class.getSimpleName());
         });
+    }
 
-        presenter.filterOrgUnits(DateUtils.uiDateFormat().format(selectedDate));
-
-
-        if (program.captureCoordinates()) {
-            binding.coordinatesLayout.setVisibility(View.VISIBLE);
-            binding.location1.setOnClickListener(v -> presenter.onLocationClick());
-            binding.location2.setOnClickListener(v -> presenter.onLocation2Click());
-        }
-
+    private void setEnabledFields() {
         if (eventModel != null &&
                 (DateUtils.getInstance().isEventExpired(null, eventModel.completedDate(), program.completeEventsExpiryDays()) ||
                         eventModel.status() == EventStatus.COMPLETED ||
@@ -474,6 +476,30 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             binding.actionButton.setText(getString(R.string.check_event));
 
         }
+    }
+
+    private void setUpCoordinatesLayout() {
+        if (program.captureCoordinates()) {
+            binding.coordinatesLayout.setVisibility(View.VISIBLE);
+            binding.location1.setOnClickListener(v -> presenter.onLocationClick());
+            binding.location2.setOnClickListener(v -> presenter.onLocation2Click());
+        }
+    }
+
+    @Override
+    public void setProgram(@NonNull Program program) {
+        this.program = program;
+        setActivityTitle();
+
+        if (eventModel == null) {
+            setDefaultDate();
+        }
+
+        setOnDateClickListener();
+        setUpCoordinatesLayout();
+        setEnabledFields();
+
+        presenter.filterOrgUnits(DateUtils.uiDateFormat().format(selectedDate));
     }
 
     @Override
@@ -635,43 +661,8 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
                 binding.catCombo.setVisibility(View.GONE);
                 binding.catComboLine.setVisibility(View.GONE);
             } else {
-
-                if (!catComboList.isEmpty()) {
-                    selectedCatOptionCombo = catComboList.get(0);
-                }
-                binding.catCombo.setVisibility(View.VISIBLE);
-                binding.catComboLine.setVisibility(View.VISIBLE);
-
-                categoryOptionComboModels = catComboList;
-
-                CatComboAdapter2 adapter = new CatComboAdapter2(EventInitialActivity.this,
-                        R.layout.spinner_layout,
-                        R.id.spinner_text,
-                        catComboList,
-                        catCombo.displayName() != null ? catCombo.displayName() : getString(R.string.category_option));
-
-                binding.catCombo.setAdapter(adapter);
-                binding.catCombo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                    @Override
-                    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                        if (catComboList.size() > position - 1 && position > 0)
-                            selectedCatOptionCombo = catComboList.get(position - 1);
-                        else
-                            selectedCatOptionCombo = null;
-                        checkActionButtonVisibility();
-                    }
-
-                    @Override
-                    public void onNothingSelected(AdapterView<?> parent) {
-                        //unused
-                    }
-                });
-
-
-                if (eventModel != null)
-                    presenter.getCatOption(eventModel.attributeOptionCombo());
+                setUpCatCombo(catCombo, catComboList);
             }
-
 
             if (periodType != null) {
                 binding.dateLayout.setHint(periodType.name());
@@ -679,6 +670,41 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             }
             checkActionButtonVisibility();
         });
+    }
+
+    private void setUpCatCombo(CategoryCombo catCombo, List<CategoryOptionCombo> catComboList) {
+        selectedCatOptionCombo = catComboList.get(0);
+        binding.catCombo.setVisibility(View.VISIBLE);
+        binding.catComboLine.setVisibility(View.VISIBLE);
+
+        categoryOptionComboModels = catComboList;
+
+        CatComboAdapter2 adapter = new CatComboAdapter2(EventInitialActivity.this,
+                R.layout.spinner_layout,
+                R.id.spinner_text,
+                catComboList,
+                catCombo.displayName() != null ? catCombo.displayName() : getString(R.string.category_option));
+
+        binding.catCombo.setAdapter(adapter);
+        binding.catCombo.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (catComboList.size() > position - 1 && position > 0)
+                    selectedCatOptionCombo = catComboList.get(position - 1);
+                else
+                    selectedCatOptionCombo = null;
+                checkActionButtonVisibility();
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                //unused
+            }
+        });
+
+
+        if (eventModel != null)
+            presenter.getCatOption(eventModel.attributeOptionCombo());
     }
 
     @Override

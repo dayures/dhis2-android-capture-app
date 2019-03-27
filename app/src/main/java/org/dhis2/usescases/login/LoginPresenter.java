@@ -49,6 +49,38 @@ public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
         this.configurationRepository = configurationRepository;
     }
 
+    private void showUnlockOrStartMain(boolean isUserLoggedIn) {
+        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
+                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
+        if (isUserLoggedIn && !prefs.getBoolean(SESSION_LOCKED, false)) {
+            view.startActivity(MainActivity.class, null, true, true, null);
+        } else if (prefs.getBoolean(SESSION_LOCKED, false)) {
+            view.showUnlockButton();
+        }
+    }
+
+    private void setUrl(SystemInfo systemInfo) {
+        if (systemInfo.contextPath() != null)
+            view.setUrl(systemInfo.contextPath());
+        else
+            view.setUrl(view.getContext().getString(R.string.login_https));
+    }
+
+    private void showBiometricButton() {
+        if (false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) //TODO: REMOVE FALSE WHEN GREEN LIGHT
+            disposable.add(RxPreconditions
+                    .hasBiometricSupport(view.getContext())
+                    .filter(canHandleBiometricsResult -> {
+                        this.canHandleBiometrics = canHandleBiometricsResult;
+                        return canHandleBiometrics && SecurePreferences.contains(Constants.SECURE_SERVER_URL);
+                    })
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(
+                            canHandleBiometricsResult -> view.showBiometricButton(),
+                            Timber::e));
+    }
+
     @SuppressWarnings({"squid:S2583", "squid:S1125"})
     @Override
     public void init(LoginContracts.EventSummaryView view) {
@@ -63,16 +95,9 @@ public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
             disposable.add(userManager.isUserLoggedIn()
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(isUserLoggedIn -> {
-                        SharedPreferences prefs = view.getAbstracContext().getSharedPreferences(
-                                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
-                        if (isUserLoggedIn && !prefs.getBoolean(SESSION_LOCKED, false)) {
-                            view.startActivity(MainActivity.class, null, true, true, null);
-                        } else if (prefs.getBoolean(SESSION_LOCKED, false)) {
-                            view.showUnlockButton();
-                        }
-
-                    }, Timber::e));
+                    .subscribe(
+                            this::showUnlockOrStartMain,
+                            Timber::e));
 
             disposable.add(
                     Observable.just(userManager.getD2().systemInfoModule().systemInfo.get() != null ?
@@ -80,31 +105,13 @@ public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(
-                                    systemInfo -> {
-                                        if (systemInfo.contextPath() != null)
-                                            view.setUrl(systemInfo.contextPath());
-                                        else
-                                            view.setUrl(view.getContext().getString(R.string.login_https));
-                                    },
+                                    this::setUrl,
                                     Timber::e));
         } else
             view.setUrl(view.getContext().getString(R.string.login_https));
 
 
-        if (false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) //TODO: REMOVE FALSE WHEN GREEN LIGHT
-            disposable.add(RxPreconditions
-                    .hasBiometricSupport(view.getContext())
-                    .filter(canHandleBiometricsResult -> {
-                        this.canHandleBiometrics = canHandleBiometricsResult;
-                        return canHandleBiometrics && SecurePreferences.contains(Constants.SECURE_SERVER_URL);
-                    })
-                    .subscribeOn(Schedulers.io())
-                    .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(
-                            canHandleBiometricsResult -> view.showBiometricButton(),
-                            Timber::e));
-
-
+        showBiometricButton();
     }
 
     @Override

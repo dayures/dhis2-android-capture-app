@@ -106,21 +106,28 @@ public class OrgUnitHolder extends TreeNode.BaseNodeViewHolder<OrganisationUnit>
 
     private void setSelectedSizeText() {
         numberOfSelections = 0;
-        if (node != null) {
-            for (TreeNode n : node.getChildren()) {
-                if (n.getViewHolder() instanceof OrgUnitHolder) {
-                    numberOfSelections += n.isSelected() ? 1 : 0;
-                    numberOfSelections += ((OrgUnitHolder) n.getViewHolder()).numberOfSelections;
-                }
-            }
 
-            if (numberOfSelections == 0)
-                textView.setText(value.displayName());
-            else
-                textView.setText(String.format(Locale.getDefault(), "%s (%d)", value.displayName(), numberOfSelections));
+        if (node == null) {
+            return;
+        }
 
-            if (node.getLevel() > 1 && node.getParent().getViewHolder() instanceof OrgUnitHolder) {
-                ((OrgUnitHolder) node.getParent().getViewHolder()).setSelectedSizeText();
+        getNumberOfSelections();
+
+        if (numberOfSelections == 0)
+            textView.setText(value.displayName());
+        else
+            textView.setText(String.format(Locale.getDefault(), "%s (%d)", value.displayName(), numberOfSelections));
+
+        if (node.getLevel() > 1 && node.getParent().getViewHolder() instanceof OrgUnitHolder) {
+            ((OrgUnitHolder) node.getParent().getViewHolder()).setSelectedSizeText();
+        }
+    }
+
+    private void getNumberOfSelections() {
+        for (TreeNode n : node.getChildren()) {
+            if (n.getViewHolder() instanceof OrgUnitHolder) {
+                numberOfSelections += n.isSelected() ? 1 : 0;
+                numberOfSelections += ((OrgUnitHolder) n.getViewHolder()).numberOfSelections;
             }
         }
     }

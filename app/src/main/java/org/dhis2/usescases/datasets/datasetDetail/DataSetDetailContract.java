@@ -24,7 +24,7 @@ public class DataSetDetailContract {
 
         void showTimeUnitPicker();
 
-        void showRageDatePicker();
+        void showRangeDatePicker();
 
         void renderError(String message);
 

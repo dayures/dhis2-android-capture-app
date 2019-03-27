@@ -73,7 +73,7 @@ public class DataSetDetailPresenterImpl implements DataSetDetailContract.DataSet
 
     @Override
     public void onDateRangeButtonClick() {
-        view.showRageDatePicker();
+        view.showRangeDatePicker();
     }
 
     @Override

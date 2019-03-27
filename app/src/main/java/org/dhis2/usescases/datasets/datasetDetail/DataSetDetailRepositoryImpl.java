@@ -41,7 +41,6 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
         this.briteDatabase = briteDatabase;
     }
 
-
     @NonNull
     @Override
     public Observable<List<OrganisationUnit>> orgUnits() {
@@ -50,9 +49,7 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
                 .mapToList(OrganisationUnit::create);
     }
 
-    @Override
-    public Flowable<List<DataSetDetailModel>> dataSetGroups(String dataSetUid, List<String> orgUnits,
-                                                            PeriodType selectedPeriodType, int page) {
+    private String getSqlQuery(List<String> orgUnits) {
         String sql = GET_DATA_SETS;
         String orgUnitFilter = "";
         if (orgUnits != null && !orgUnits.isEmpty()) {
@@ -67,6 +64,86 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
         }
 
         sql = String.format(sql, orgUnitFilter);
+        return sql;
+    }
+
+    private String getOrgUnitName(String organisationUnitUid) {
+        String orgUnitName = "";
+        try (Cursor orgUnitCursor = briteDatabase.query("SELECT OrganisationUnit.displayName FROM OrganisationUnit WHERE uid = ?", organisationUnitUid)) {
+            if (orgUnitCursor != null && orgUnitCursor.moveToFirst()) {
+                orgUnitName = orgUnitCursor.getString(0);
+            }
+        }
+        return orgUnitName;
+    }
+
+    private String getPeriodName(String period) {
+        String periodName = "";
+        try (Cursor periodCursor = briteDatabase.query("SELECT Period.* FROM Period WHERE Period.periodId = ?", period)) {
+            if (periodCursor != null && periodCursor.moveToFirst()) {
+                Period periodModel = Period.create(periodCursor);
+                periodName = DateUtils.getInstance().getPeriodUIString(periodModel.periodType(),
+                        periodModel.startDate(), Locale.getDefault());
+            }
+        }
+        return periodName;
+    }
+
+    private String getCatOptComboName(String categoryOptionCombo) {
+        String catOptCombName = "";
+        try (Cursor catOptCombCursor = briteDatabase.query("SELECT CategoryOptionCombo.displayName FROM CategoryOptionCombo WHERE uid = ?", categoryOptionCombo)) {
+            if (catOptCombCursor != null && catOptCombCursor.moveToFirst()) {
+                catOptCombName = catOptCombCursor.getString(0);
+            }
+        }
+        return catOptCombName;
+    }
+
+    private State getState(Cursor cursor, String period, String organisationUnitUid, String categoryOptionCombo) {
+        State state = State.SYNCED;
+
+        try (Cursor stateCursor = briteDatabase.query("SELECT DataValue.state FROM DataValue " +
+                        "WHERE period = ? AND organisationUnit = ? AND attributeOptionCombo = ? " +
+                        "AND state != 'SYNCED'",
+                period, organisationUnitUid, categoryOptionCombo)) {
+            if (stateCursor != null && stateCursor.moveToFirst()) {
+                State errorState = null;
+                State toPost = null;
+                State toUpdate = null;
+                for (int i = 0; i < cursor.getCount(); i++) {
+                    State stateValue = State.valueOf(cursor.getString(0));
+                    switch (stateValue) {
+                        case ERROR:
+                            errorState = State.ERROR;
+                            break;
+                        case TO_POST:
+                            toPost = State.TO_POST;
+                            break;
+                        case TO_UPDATE:
+                            toUpdate = State.TO_UPDATE;
+                            break;
+                        default:
+                            break;
+                    }
+                    cursor.moveToNext();
+                }
+
+                if (errorState != null)
+                    state = errorState;
+                else if (toUpdate != null)
+                    state = toUpdate;
+                else if (toPost != null)
+                    state = toPost;
+            }
+        }
+
+        return state;
+    }
+
+    @Override
+    public Flowable<List<DataSetDetailModel>> dataSetGroups(String dataSetUid, List<String> orgUnits,
+                                                            PeriodType selectedPeriodType, int page) {
+        String sql = getSqlQuery(orgUnits);
 
         return briteDatabase.createQuery(SqlConstants.DATA_VALUE_TABLE, sql, dataSetUid)
                 .mapToList(cursor -> {
@@ -74,64 +151,10 @@ public class DataSetDetailRepositoryImpl implements DataSetDetailRepository {
                     String period = cursor.getString(1);
                     String categoryOptionCombo = cursor.getString(2);
 
-                    String orgUnitName = "";
-                    String periodName = "";
-                    String catOptCombName = "";
-                    State state = State.SYNCED;
-                    try (Cursor orgUnitCursor = briteDatabase.query("SELECT OrganisationUnit.displayName FROM OrganisationUnit WHERE uid = ?", organisationUnitUid)) {
-                        if (orgUnitCursor != null && orgUnitCursor.moveToFirst()) {
-                            orgUnitName = orgUnitCursor.getString(0);
-                        }
-                    }
-
-                    try (Cursor periodCursor = briteDatabase.query("SELECT Period.* FROM Period WHERE Period.periodId = ?", period)) {
-                        if (periodCursor != null && periodCursor.moveToFirst()) {
-                            Period periodModel = Period.create(periodCursor);
-                            periodName = DateUtils.getInstance().getPeriodUIString(periodModel.periodType(),
-                                    periodModel.startDate(), Locale.getDefault());
-                        }
-                    }
-
-                    try (Cursor catOptCombCursor = briteDatabase.query("SELECT CategoryOptionCombo.displayName FROM CategoryOptionCombo WHERE uid = ?", categoryOptionCombo)) {
-                        if (catOptCombCursor != null && catOptCombCursor.moveToFirst()) {
-                            catOptCombName = catOptCombCursor.getString(0);
-                        }
-                    }
-
-                    try (Cursor stateCursor = briteDatabase.query("SELECT DataValue.state FROM DataValue " +
-                                    "WHERE period = ? AND organisationUnit = ? AND attributeOptionCombo = ? " +
-                                    "AND state != 'SYNCED'",
-                            period, organisationUnitUid, categoryOptionCombo)) {
-                        if (stateCursor != null && stateCursor.moveToFirst()) {
-                            State errorState = null;
-                            State toPost = null;
-                            State toUpdate = null;
-                            for (int i = 0; i < cursor.getCount(); i++) {
-                                State stateValue = State.valueOf(cursor.getString(0));
-                                switch (stateValue) {
-                                    case ERROR:
-                                        errorState = State.ERROR;
-                                        break;
-                                    case TO_POST:
-                                        toPost = State.TO_POST;
-                                        break;
-                                    case TO_UPDATE:
-                                        toUpdate = State.TO_UPDATE;
-                                        break;
-                                    default:
-                                        break;
-                                }
-                                cursor.moveToNext();
-                            }
-
-                            if (errorState != null)
-                                state = errorState;
-                            else if (toUpdate != null)
-                                state = toUpdate;
-                            else if (toPost != null)
-                                state = toPost;
-                        }
-                    }
+                    String orgUnitName = getOrgUnitName(organisationUnitUid);
+                    String periodName = getPeriodName(period);
+                    String catOptCombName = getCatOptComboName(categoryOptionCombo);
+                    State state = getState(cursor, period, organisationUnitUid, categoryOptionCombo);
 
                     return DataSetDetailModel.create(organisationUnitUid, categoryOptionCombo, period, orgUnitName, catOptCombName, periodName, state);
                 }).toFlowable(BackpressureStrategy.LATEST);
