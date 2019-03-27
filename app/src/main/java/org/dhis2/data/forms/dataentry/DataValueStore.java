@@ -242,24 +242,28 @@ public final class DataValueStore implements DataEntryStore {
                     }
 
                     if (eventModel.enrollment() != null) {
-                        TrackedEntityInstance tei = null;
-                        try (Cursor teiCursor = briteDatabase.query("SELECT TrackedEntityInstance .* FROM TrackedEntityInstance " +
-                                "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityInstance.uid WHERE Enrollment.uid = ?", eventModel.enrollment())) {
-                            if (teiCursor.moveToFirst())
-                                tei = TrackedEntityInstance.create(teiCursor);
-                        } finally {
-                            if (tei != null) {
-                                ContentValues cv = tei.toContentValues();
-                                cv.put(SqlConstants.TEI_STATE, tei.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                                cv.put(SqlConstants.TEI_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-
-                                briteDatabase.update(SqlConstants.TEI_TABLE, cv, "uid = ?", tei.uid());
-                            }
-                        }
+                        updateTei(eventModel);
                     }
 
                     return Flowable.just(status);
                 });
+    }
+
+    private void updateTei(Event event) {
+        TrackedEntityInstance tei = null;
+        try (Cursor teiCursor = briteDatabase.query("SELECT TrackedEntityInstance .* FROM TrackedEntityInstance " +
+                "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityInstance.uid WHERE Enrollment.uid = ?", event.enrollment())) {
+            if (teiCursor.moveToFirst())
+                tei = TrackedEntityInstance.create(teiCursor);
+        } finally {
+            if (tei != null) {
+                ContentValues cv = tei.toContentValues();
+                cv.put(SqlConstants.TEI_STATE, tei.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+                cv.put(SqlConstants.TEI_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+
+                briteDatabase.update(SqlConstants.TEI_TABLE, cv, "uid = ?", tei.uid());
+            }
+        }
     }
 
 }

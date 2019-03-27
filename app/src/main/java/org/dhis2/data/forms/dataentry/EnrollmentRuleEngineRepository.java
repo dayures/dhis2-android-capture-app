@@ -96,6 +96,45 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     private Map<String, List<Rule>> attributeRules = new HashMap<>();
     private String lastUpdatedAttr = null;
 
+    private String getAttrValue(TrackedEntityAttributeValue attributeValue) {
+        String value = attributeValue.value();
+        TrackedEntityAttribute attr = d2.trackedEntityModule().trackedEntityAttributes.uid(attributeValue.trackedEntityAttribute()).withAllChildren().get();
+        if (attr.optionSet() != null) {
+            ProgramRuleVariable ruleVariable = attrRuleVariableMap.get(attr.uid());
+            if (ruleVariable != null && (ruleVariable.useCodeForOptionSet() == null || !ruleVariable.useCodeForOptionSet())) {
+                for (Option option : attr.optionSet().options()) {
+                    if (value.equals(option.code()))
+                        value = option.displayName();
+                }
+            }
+        }
+        return value;
+    }
+
+    private Map<String, String> getAttrValueMap(List<TrackedEntityAttributeValue> attributeValueList, Program program) {
+        Map<String, String> attrValueMap = new HashMap<>();
+        for (TrackedEntityAttributeValue attributeValue : attributeValueList) {
+            String uid = attributeValue.trackedEntityAttribute();
+            String value = getAttrValue(attributeValue);
+            attrValueMap.put(uid, value);
+        }
+
+        for (ProgramTrackedEntityAttribute prgAttr : program.programTrackedEntityAttributes()) {
+            if (!attrValueMap.containsKey(prgAttr.uid()))
+                attrValueMap.put(prgAttr.uid(), "");
+        }
+
+        return attrValueMap;
+    }
+
+    private void getAttrRuleVariableMap(Program program) {
+        attrRuleVariableMap = new HashMap<>();
+        for (ProgramRuleVariable ruleVariable : program.programRuleVariables()) {
+            if (ruleVariable.trackedEntityAttribute() != null)
+                attrRuleVariableMap.put(ruleVariable.trackedEntityAttribute().uid(), ruleVariable);
+        }
+    }
+
     public EnrollmentRuleEngineRepository(
             @NonNull BriteDatabase briteDatabase,
             @NonNull FormRepository formRepository,
@@ -113,34 +152,9 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                 .byTrackedEntityInstance().eq(enrollment.trackedEntityInstance())
                 .withAllChildren().get();
 
-        attrRuleVariableMap = new HashMap<>();
-        for (ProgramRuleVariable ruleVariable : program.programRuleVariables()) {
-            if (ruleVariable.trackedEntityAttribute() != null)
-                attrRuleVariableMap.put(ruleVariable.trackedEntityAttribute().uid(), ruleVariable);
-        }
+        getAttrRuleVariableMap(program);
 
-        Map<String, String> attrValueMap = new HashMap<>();
-        for (TrackedEntityAttributeValue attributeValue : attributeValueList) {
-            String uid = attributeValue.trackedEntityAttribute();
-            String value = attributeValue.value();
-            TrackedEntityAttribute attr = d2.trackedEntityModule().trackedEntityAttributes.uid(attributeValue.trackedEntityAttribute()).withAllChildren().get();
-            if (attr.optionSet() != null) {
-                ProgramRuleVariable ruleVariable = attrRuleVariableMap.get(attr.uid());
-                if (ruleVariable != null && (ruleVariable.useCodeForOptionSet() == null || !ruleVariable.useCodeForOptionSet())) {
-                    for (Option option : attr.optionSet().options()) {
-                        if (value.equals(option.code()))
-                            value = option.displayName();
-                    }
-                }
-            }
-
-            attrValueMap.put(uid, value);
-        }
-
-        for (ProgramTrackedEntityAttribute prgAttr : program.programTrackedEntityAttributes()) {
-            if (!attrValueMap.containsKey(prgAttr.uid()))
-                attrValueMap.put(prgAttr.uid(), "");
-        }
+        Map<String, String> attrValueMap = getAttrValueMap(attributeValueList, program);
 
         initRuleAttributeMap(attrValueMap);
 
@@ -154,13 +168,10 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                 .programName(program.displayName());
 
         loadAttrRules(program.uid());
-
     }
 
-    private void loadAttrRules(String programUid) {
-        List<ProgramRule> rules = d2.programModule().programRules.byProgramUid().eq(programUid).withAllChildren().get();
+    private List<ProgramRule> getMandatoryRules(Iterator<ProgramRule> ruleIterator) {
         List<ProgramRule> mandatoryRules = new ArrayList<>();
-        Iterator<ProgramRule> ruleIterator = rules.iterator();
         while (ruleIterator.hasNext()) {
             ProgramRule rule = ruleIterator.next();
             if (rule.condition() == null)
@@ -177,16 +188,10 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                     mandatoryRules.add(rule);
                 }
         }
+        return mandatoryRules;
+    }
 
-        List<ProgramRuleVariable> variables = d2.programModule().programRuleVariables
-                .byProgramUid().eq(programUid)
-                .withAllChildren().get();
-        Iterator<ProgramRuleVariable> variableIterator = variables.iterator();
-        while (variableIterator.hasNext()) {
-            ProgramRuleVariable variable = variableIterator.next();
-            if (variable.trackedEntityAttribute() == null)
-                variableIterator.remove();
-        }
+    private void getAttributeRules(List<ProgramRule> rules, List<ProgramRuleVariable> variables, List<ProgramRule> mandatoryRules) {
         for (ProgramRuleVariable variable : variables) {
             if (variable.trackedEntityAttribute() != null && !attributeRules.containsKey(variable.trackedEntityAttribute().uid()))
                 attributeRules.put(variable.trackedEntityAttribute().uid(), trasformToRule(mandatoryRules));
@@ -198,7 +203,22 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                 }
             }
         }
+    }
 
+    private void loadAttrRules(String programUid) {
+        List<ProgramRule> rules = d2.programModule().programRules.byProgramUid().eq(programUid).withAllChildren().get();
+        Iterator<ProgramRule> ruleIterator = rules.iterator();
+        List<ProgramRule> mandatoryRules = getMandatoryRules(ruleIterator);
+        List<ProgramRuleVariable> variables = d2.programModule().programRuleVariables
+                .byProgramUid().eq(programUid)
+                .withAllChildren().get();
+        Iterator<ProgramRuleVariable> variableIterator = variables.iterator();
+        while (variableIterator.hasNext()) {
+            ProgramRuleVariable variable = variableIterator.next();
+            if (variable.trackedEntityAttribute() == null)
+                variableIterator.remove();
+        }
+        getAttributeRules(rules, variables, mandatoryRules);
     }
 
     private Rule trasformToRule(ProgramRule rule) {
@@ -227,20 +247,22 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
         List<RuleAction> ruleActions = new ArrayList<>();
         if (programRuleActions != null)
             for (ProgramRuleAction programRuleAction : programRuleActions)
-                ruleActions.add(
-                        RulesRepository.create(
-                                programRuleAction.programRuleActionType(),
-                                programRuleAction.programStage() != null ? programRuleAction.programStage().uid() : null,
-                                programRuleAction.programStageSection() != null ? programRuleAction.programStageSection().uid() : null,
-                                programRuleAction.trackedEntityAttribute() != null ? programRuleAction.trackedEntityAttribute().uid() : null,
-                                programRuleAction.dataElement() != null ? programRuleAction.dataElement().uid() : null,
-                                programRuleAction.location(),
-                                programRuleAction.content(),
-                                programRuleAction.data(),
-                                programRuleAction.option() != null ? programRuleAction.option().uid() : null,
-                                programRuleAction.optionGroup() != null ? programRuleAction.optionGroup().uid() : null)
-                );
+                ruleActions.add(createRuleAction(programRuleAction));
         return ruleActions;
+    }
+
+    private RuleAction createRuleAction(ProgramRuleAction programRuleAction) {
+        return RulesRepository.create(
+                programRuleAction.programRuleActionType(),
+                programRuleAction.programStage() != null ? programRuleAction.programStage().uid() : null,
+                programRuleAction.programStageSection() != null ? programRuleAction.programStageSection().uid() : null,
+                programRuleAction.trackedEntityAttribute() != null ? programRuleAction.trackedEntityAttribute().uid() : null,
+                programRuleAction.dataElement() != null ? programRuleAction.dataElement().uid() : null,
+                programRuleAction.location(),
+                programRuleAction.content(),
+                programRuleAction.data(),
+                programRuleAction.option() != null ? programRuleAction.option().uid() : null,
+                programRuleAction.optionGroup() != null ? programRuleAction.optionGroup().uid() : null);
     }
 
     private boolean actionsContainsAttr(List<ProgramRuleAction> programRuleActions, String variableName) {

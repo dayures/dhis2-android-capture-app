@@ -462,8 +462,6 @@ public class Bindings {
 
     @BindingAdapter("fromResBgColor")
     public static void setFromResBgColor(View view, int color) {
-        String tintedColor;
-
         ArrayList<Double> rgb = new ArrayList<>();
         rgb.add(Color.red(color) / 255.0d);
         rgb.add(Color.green(color) / 255.0d);
@@ -492,7 +490,11 @@ public class Bindings {
 
         double l = 0.2126d * r + 0.7152d * g + 0.0722d * b;
 
+        setColorFilter(view, l);
+    }
 
+    private static void setColorFilter(View view, double l) {
+        String tintedColor;
         if (l > 0.179d)
             tintedColor = "#000000"; // bright colors - black font
         else

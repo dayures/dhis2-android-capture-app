@@ -158,6 +158,15 @@ public final class DataEntryAdapter extends Adapter {
         return viewModels.size();
     }
 
+    private int getDateTimeItemViewType(DateTimeViewModel viewModel) {
+        if (viewModel.valueType() == ValueType.DATE)
+            return DATE;
+        if (viewModel.valueType() == ValueType.TIME)
+            return TIME;
+        else
+            return DATETIME;
+    }
+
     @Override
     public int getItemViewType(int position) {
 
@@ -170,14 +179,8 @@ public final class DataEntryAdapter extends Adapter {
             return SPINNER;
         } else if (viewModel instanceof CoordinateViewModel) {
             return COORDINATES;
-
         } else if (viewModel instanceof DateTimeViewModel) {
-            if (((DateTimeViewModel) viewModel).valueType() == ValueType.DATE)
-                return DATE;
-            if (((DateTimeViewModel) viewModel).valueType() == ValueType.TIME)
-                return TIME;
-            else
-                return DATETIME;
+            return getDateTimeItemViewType((DateTimeViewModel) viewModel);
         } else if (viewModel instanceof AgeViewModel) {
             return AGEVIEW;
         } else if (viewModel instanceof FileViewModel) {

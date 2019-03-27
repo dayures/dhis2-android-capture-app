@@ -26,6 +26,7 @@ import java.util.Calendar;
 import java.util.List;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.reactivex.Observable;
 import timber.log.Timber;
 
@@ -123,9 +124,84 @@ final class EnrollmentRepository implements DataEntryRepository {
                 .mapToList(OrganisationUnit::create);
     }
 
+    @Nullable
+    private String getTeiUid() {
+        String teiUid = null;
+        try (Cursor tei = briteDatabase.query("SELECT TrackedEntityInstance.uid FROM TrackedEntityInstance " +
+                "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityInstance.uid " +
+                "WHERE Enrollment.uid = ?", enrollment)) {
+            if (tei != null && tei.moveToFirst()) {
+                teiUid = tei.getString(0);
+            }
+        }
+        return teiUid;
+    }
+
+    private String getDataValue(String uid, String pattern, String orgUnitUid, ValueType valueType) throws D2Error {
+        String dataValue = d2.trackedEntityModule().reservedValueManager.getValue(uid, pattern == null || pattern.contains("OU") ? null : orgUnitUid);
+
+        //Checks if ValueType is Numeric and that it start with a 0, then removes the 0
+        if (valueType == ValueType.NUMBER) {
+            while (dataValue.startsWith("0")) {
+                dataValue = d2.trackedEntityModule().reservedValueManager.getValue(uid, pattern == null || pattern.contains("OU") ? null : orgUnitUid);
+            }
+        }
+        return dataValue;
+    }
+
+    private ValueTypeDeviceRendering getFieldRendering(String uid) {
+        ValueTypeDeviceRendering fieldRendering = null;
+        try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering " +
+                "JOIN ProgramTrackedEntityAttribute ON ProgramTrackedEntityAttribute.uid = ValueTypeDeviceRendering.uid WHERE ProgramTrackedEntityAttribute.trackedEntityAttribute = ?", uid)) {
+            if (rendering != null && rendering.moveToFirst()) {
+                fieldRendering = ValueTypeDeviceRendering.create(rendering);
+            }
+        }
+        return fieldRendering;
+    }
+
+    private ObjectStyle getObjectStyle(String uid) {
+        ObjectStyle objectStyle = ObjectStyle.builder().build();
+        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
+            if (objStyleCursor != null && objStyleCursor.moveToFirst())
+                objectStyle = ObjectStyle.create(objStyleCursor);
+        }
+        return objectStyle;
+    }
+
+    private int getOptionCount(String optionSet) {
+        int optionCount = 0;
+        if (!isEmpty(optionSet)) {
+            try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSet)) {
+                if (countCursor != null && countCursor.moveToFirst()) {
+                    optionCount = countCursor.getInt(0);
+                }
+            } catch (Exception e) {
+                Timber.e(e);
+            }
+        }
+        return optionCount;
+    }
+
+    private String getDataValue(Cursor cursor, String optionCodeName) {
+        String dataValue = cursor.getString(5);
+        if (!isEmpty(optionCodeName)) {
+            dataValue = optionCodeName;
+        }
+        return dataValue;
+    }
+
+    private String getUid(Cursor cursor) {
+        String uid = cursor.getString(0);
+        if (uid == null) {
+            uid = "";
+        }
+        return uid;
+    }
+
     @NonNull
     private FieldViewModel transform(@NonNull Cursor cursor) {
-        String uid = cursor.getString(0);
+        String uid = getUid(cursor);
         String label = cursor.getString(1);
         ValueType valueType = ValueType.valueOf(cursor.getString(2));
         boolean mandatory = cursor.getInt(3) == 1;
@@ -134,48 +210,24 @@ final class EnrollmentRepository implements DataEntryRepository {
         boolean generated = cursor.getInt(8) == 1;
         String orgUnitUid = cursor.getString(9);
 
-        String dataValue = cursor.getString(5);
         String optionCodeName = cursor.getString(6);
+        String dataValue = getDataValue(cursor, optionCodeName);
 
         EnrollmentStatus enrollmentStatus = EnrollmentStatus.valueOf(cursor.getString(10));
         String description = cursor.getString(11);
         String pattern = cursor.getString(12);
-        if (!isEmpty(optionCodeName)) {
-            dataValue = optionCodeName;
-        }
 
-        int optionCount = 0;
-        if (!isEmpty(optionSet))
-            try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSet)) {
-                if (countCursor != null && countCursor.moveToFirst()) {
-                    optionCount = countCursor.getInt(0);
-                }
-            } catch (Exception e) {
-                Timber.e(e);
-            }
+        int optionCount = getOptionCount(optionSet);
 
         String warning = null;
 
         if (generated && dataValue == null) {
             try {
-                String teiUid = null;
-                try (Cursor tei = briteDatabase.query("SELECT TrackedEntityInstance.uid FROM TrackedEntityInstance " +
-                        "JOIN Enrollment ON Enrollment.trackedEntityInstance = TrackedEntityInstance.uid " +
-                        "WHERE Enrollment.uid = ?", enrollment)) {
-                    if (tei != null && tei.moveToFirst()) {
-                        teiUid = tei.getString(0);
-                    }
-                }
+                String teiUid = getTeiUid();
 
                 //checks if tei has been deleted
                 if (teiUid != null) {
-                    dataValue = d2.trackedEntityModule().reservedValueManager.getValue(uid, pattern == null || pattern.contains("OU") ? null : orgUnitUid);
-
-                    //Checks if ValueType is Numeric and that it start with a 0, then removes the 0
-                    if (valueType == ValueType.NUMBER)
-                        while (dataValue.startsWith("0")) {
-                            dataValue = d2.trackedEntityModule().reservedValueManager.getValue(uid, pattern == null || pattern.contains("OU") ? null : orgUnitUid);
-                        }
+                    dataValue = getDataValue(uid, pattern, orgUnitUid, valueType);
 
                     String insert = "INSERT INTO TrackedEntityAttributeValue\n" +
                             "(lastUpdated, value, trackedEntityAttribute, trackedEntityInstance)\n" +
@@ -186,7 +238,7 @@ final class EnrollmentRepository implements DataEntryRepository {
                             .format(Calendar.getInstance().getTime()));
                     sqLiteBind(updateStatement, 2, dataValue == null ? "" : dataValue);
                     sqLiteBind(updateStatement, 3, uid == null ? "" : uid);
-                    sqLiteBind(updateStatement, 4, teiUid == null ? "" : teiUid);
+                    sqLiteBind(updateStatement, 4, teiUid);
 
                     briteDatabase.executeInsert(
                             SqlConstants.TE_ATTR_VALUE_TABLE, updateStatement);
@@ -198,23 +250,20 @@ final class EnrollmentRepository implements DataEntryRepository {
             }
         }
 
-        ValueTypeDeviceRendering fieldRendering = null;
-        if (uid == null) {
-            uid = "";
-        }
-        try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering " +
-                "JOIN ProgramTrackedEntityAttribute ON ProgramTrackedEntityAttribute.uid = ValueTypeDeviceRendering.uid WHERE ProgramTrackedEntityAttribute.trackedEntityAttribute = ?", uid)) {
-            if (rendering != null && rendering.moveToFirst()) {
-                fieldRendering = ValueTypeDeviceRendering.create(rendering);
-            }
-        }
+        ValueTypeDeviceRendering fieldRendering = getFieldRendering(uid);
 
-        ObjectStyle objectStyle = ObjectStyle.builder().build();
-        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
-            if (objStyleCursor != null && objStyleCursor.moveToFirst())
-                objectStyle = ObjectStyle.create(objStyleCursor);
-        }
+        ObjectStyle objectStyle = getObjectStyle(uid);
 
+        return createFieldViewModel(warning, uid, label, valueType, mandatory, optionSet,
+                dataValue, allowFutureDates, generated,
+                enrollmentStatus, description,
+                fieldRendering, optionCount, objectStyle);
+    }
+
+    private FieldViewModel createFieldViewModel(String warning, String uid, String label, ValueType valueType, boolean mandatory, String optionSet,
+                                                String dataValue, boolean allowFutureDates, boolean generated,
+                                                EnrollmentStatus enrollmentStatus, String description,
+                                                ValueTypeDeviceRendering fieldRendering, int optionCount, ObjectStyle objectStyle) {
         if (warning != null) {
             return fieldFactory.create(uid,
                     label, valueType, mandatory, optionSet, dataValue, null, allowFutureDates,
