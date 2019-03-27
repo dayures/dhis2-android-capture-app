@@ -250,10 +250,14 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
                     this::applyEffects)
                     .map(fields -> {
                         //Clear all sections fields from map
+                        List<String> toRemoveKeys = new ArrayList<>();
                         for (Map.Entry<String, FieldViewModel> entry : emptyMandatoryFields.entrySet()) {
                             if (entry.getValue().programStageSection().equals(sectionUid))
-                                emptyMandatoryFields.remove(entry.getKey());
+                                toRemoveKeys.add(entry.getKey());
                         }
+                        for (String key : toRemoveKeys)
+                            emptyMandatoryFields.remove(key);
+
                         for (FieldViewModel fieldViewModel : fields) {
                             if (fieldViewModel.mandatory() && isEmpty(fieldViewModel.value()))
                                 emptyMandatoryFields.put(fieldViewModel.uid(), fieldViewModel);

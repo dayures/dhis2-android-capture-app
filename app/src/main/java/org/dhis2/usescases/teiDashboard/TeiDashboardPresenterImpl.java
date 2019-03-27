@@ -42,6 +42,7 @@ import org.hisp.dhis.android.core.relationship.RelationshipType;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionDisplayKeyValuePair;
+import org.hisp.dhis.rules.models.RuleActionDisplayText;
 import org.hisp.dhis.rules.models.RuleEffect;
 
 import java.util.ArrayList;
@@ -481,6 +482,11 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
             if (ruleAction instanceof RuleActionDisplayKeyValuePair) {
                 Trio<ProgramIndicator, String, String> indicator = Trio.create(
                         ProgramIndicator.builder().displayName(((RuleActionDisplayKeyValuePair) ruleAction).content()).build(),
+                        ruleEffect.data(), "");
+                indicatorsFragment.addIndicator(indicator);
+            } else if (ruleAction instanceof RuleActionDisplayText) {
+                Trio<ProgramIndicator, String, String> indicator = Trio.create(
+                        ProgramIndicator.builder().displayName(((RuleActionDisplayText) ruleAction).content()).build(),
                         ruleEffect.data(), "");
                 indicatorsFragment.addIndicator(indicator);
             }

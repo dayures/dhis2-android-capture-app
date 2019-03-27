@@ -5,19 +5,19 @@ import com.unnamed.b.atv.model.TreeNode;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.utils.Period;
-import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.Category;
+import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
-import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.DatePeriod;
 import org.hisp.dhis.android.core.program.Program;
 
-import java.util.Date;
 import java.util.List;
 
-import io.reactivex.Flowable;
-import io.reactivex.Observable;
+import androidx.lifecycle.LiveData;
+import androidx.paging.PagedList;
 import io.reactivex.functions.Consumer;
+
 
 /**
  * QUADRAM. Created by Cristian on 13/02/2017.
@@ -26,7 +26,6 @@ import io.reactivex.functions.Consumer;
 public class ProgramEventDetailContract {
 
     public interface ProgramEventDetailView extends AbstractActivityContracts.View {
-        void setData(List<ProgramEventViewModel> events);
 
         void addTree(TreeNode treeNode);
 
@@ -40,7 +39,7 @@ public class ProgramEventDetailContract {
 
         void renderError(String message);
 
-        void setCatComboOptions(CategoryCombo catCombo, List<CategoryOptionCombo> catComboList);
+        void setCatComboOptions(List<Category> categories);
 
         void showHideFilter();
 
@@ -48,11 +47,11 @@ public class ProgramEventDetailContract {
 
         void setWritePermission(Boolean aBoolean);
 
-        Flowable<Integer> currentPage();
-
         void orgUnitProgress(boolean showProgress);
 
         Consumer<Pair<TreeNode, List<TreeNode>>> addNodeToTree();
+
+        void setLiveData(LiveData<PagedList<ProgramEventViewModel>> pagedListLiveData);
     }
 
     public interface ProgramEventDetailPresenter extends AbstractActivityContracts.Presenter {
@@ -61,6 +60,8 @@ public class ProgramEventDetailContract {
         void updateDateFilter(List<DatePeriod> datePeriodList);
 
         void updateOrgUnitFilter(List<String> orgUnitList);
+
+        void updateCatOptCombFilter(List<CategoryOption> categoryOptionComboMap);
 
         void onTimeButtonClick();
 
@@ -80,13 +81,9 @@ public class ProgramEventDetailContract {
 
         void onEventClick(String eventId, String orgUnit);
 
-        Observable<List<String>> getEventDataValueNew(Event event);
-
         void showFilter();
 
         List<OrganisationUnit> getOrgUnits();
-
-        void setFilters(List<Date> selectedDates, Period currentPeriod, String orgUnits);
 
         void onExpandOrgUnitNode(TreeNode node, String uid);
     }
