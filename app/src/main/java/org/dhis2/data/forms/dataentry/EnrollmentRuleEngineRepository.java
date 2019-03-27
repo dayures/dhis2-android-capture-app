@@ -100,14 +100,16 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
         String value = attributeValue.value();
         TrackedEntityAttribute attr = d2.trackedEntityModule().trackedEntityAttributes.uid(attributeValue.trackedEntityAttribute()).withAllChildren().get();
         if (attr.optionSet() != null) {
+            List<Option> options = d2.optionModule().optionSets.uid(attr.optionSet().uid()).withAllChildren().get().options();
             ProgramRuleVariable ruleVariable = attrRuleVariableMap.get(attr.uid());
             if (ruleVariable != null && (ruleVariable.useCodeForOptionSet() == null || !ruleVariable.useCodeForOptionSet())) {
-                for (Option option : attr.optionSet().options()) {
+                for (Option option : options) {
                     if (value.equals(option.code()))
                         value = option.displayName();
                 }
             }
         }
+
         return value;
     }
 
@@ -118,12 +120,10 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
             String value = getAttrValue(attributeValue);
             attrValueMap.put(uid, value);
         }
-
         for (ProgramTrackedEntityAttribute prgAttr : program.programTrackedEntityAttributes()) {
             if (!attrValueMap.containsKey(prgAttr.uid()))
                 attrValueMap.put(prgAttr.uid(), "");
         }
-
         return attrValueMap;
     }
 
