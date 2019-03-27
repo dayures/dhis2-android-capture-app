@@ -81,7 +81,7 @@ public class TeiDashboardModule {
                 .byTrackedEntityInstance().eq(teiUid)
                 .byProgram().eq(programUid)
                 .one().get().uid();
-        return new EnrollmentRuleEngineRepository(briteDatabase, formRepository, uid);
+        return new EnrollmentRuleEngineRepository(briteDatabase, formRepository, uid, d2);
 
     }
 

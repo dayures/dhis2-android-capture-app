@@ -72,6 +72,11 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
         this.eventUid = eventUid;
     }
 
+    @Override
+    public void updateRuleAttributeMap(String uid, String value) {
+        // unused
+    }
+
     @NonNull
     @Override
     public Flowable<Result<RuleEffect>> calculate() {
