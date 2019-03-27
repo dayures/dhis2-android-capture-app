@@ -24,6 +24,7 @@ import org.hisp.dhis.rules.models.RuleEnrollment;
 import org.hisp.dhis.rules.models.RuleEvent;
 import org.hisp.dhis.rules.models.TriggerEnvironment;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -147,10 +148,48 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
                         .cacheWithInitialCapacity(1);
     }
 
+    private String getEventStatus(Cursor cursor) {
+        String eventStatus;
+        if (cursor.getString(2).equals(EventStatus.VISITED.name()))
+            eventStatus = EventStatus.ACTIVE.name();
+        else
+            eventStatus = cursor.getString(2);
+        return eventStatus;
+    }
+
+    private List<RuleDataValue> getDataValues(Cursor cursor, String eventUid) throws ParseException {
+        List<RuleDataValue> dataValues = new ArrayList<>();
+        try (Cursor dataValueCursor = briteDatabase.query(QUERY_VALUES, eventUid == null ? "" : eventUid)) {
+            if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
+                dataValues.addAll(createDataValues(cursor, dataValueCursor));
+            }
+        }
+        return dataValues;
+    }
+
+    private List<RuleDataValue> createDataValues(Cursor cursor, Cursor dataValueCursor) throws ParseException {
+        List<RuleDataValue> dataValues = new ArrayList<>();
+        for (int i = 0; i < dataValueCursor.getCount(); i++) {
+            Date eventDateV = DateUtils.databaseDateFormat().parse(cursor.getString(0));
+            String programStage = cursor.getString(1);
+            String dataElement = cursor.getString(2);
+            String value = cursor.getString(3) != null ? cursor.getString(3) : "";
+            boolean useCode = cursor.getInt(4) == 1;
+            String optionCode = cursor.getString(5);
+            String optionName = cursor.getString(6);
+            if (!isEmpty(optionCode) && !isEmpty(optionName))
+                value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
+            dataValues.add(RuleDataValue.create(eventDateV, programStage,
+                    dataElement, value));
+            dataValueCursor.moveToNext();
+        }
+        return dataValues;
+    }
+
     private Flowable<List<RuleEvent>> ruleEvents(String enrollmentUid) {
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, QUERY_EVENT, enrollmentUid == null ? "" : enrollmentUid)
                 .mapToList(cursor -> {
-                    List<RuleDataValue> dataValues = new ArrayList<>();
+
                     String eventUid = cursor.getString(0);
                     String programStageUid = cursor.getString(1);
                     Date eventDate = DateUtils.databaseDateFormat().parse(cursor.getString(3));
@@ -158,32 +197,11 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
                     String orgUnit = cursor.getString(5);
                     String orgUnitCode = getOrgUnitCode(orgUnit);
                     String programStageName = cursor.getString(6);
-                    String eventStatus;
-                    if (cursor.getString(2).equals(EventStatus.VISITED.name()))
-                        eventStatus = EventStatus.ACTIVE.name();
-                    else
-                        eventStatus = cursor.getString(2);
+                    String eventStatus = getEventStatus(cursor);
 
                     RuleEvent.Status status = RuleEvent.Status.valueOf(eventStatus);
 
-                    try (Cursor dataValueCursor = briteDatabase.query(QUERY_VALUES, eventUid == null ? "" : eventUid)) {
-                        if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
-                            for (int i = 0; i < dataValueCursor.getCount(); i++) {
-                                Date eventDateV = DateUtils.databaseDateFormat().parse(cursor.getString(0));
-                                String programStage = cursor.getString(1);
-                                String dataElement = cursor.getString(2);
-                                String value = cursor.getString(3) != null ? cursor.getString(3) : "";
-                                boolean useCode = cursor.getInt(4) == 1;
-                                String optionCode = cursor.getString(5);
-                                String optionName = cursor.getString(6);
-                                if (!isEmpty(optionCode) && !isEmpty(optionName))
-                                    value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
-                                dataValues.add(RuleDataValue.create(eventDateV, programStage,
-                                        dataElement, value));
-                                dataValueCursor.moveToNext();
-                            }
-                        }
-                    }
+                    List<RuleDataValue> dataValues = getDataValues(cursor, eventUid);
 
                     return RuleEvent.builder()
                             .event(eventUid)
@@ -274,20 +292,22 @@ public class ProgramStageSelectionRepositoryImpl implements ProgramStageSelectio
                             .mapToList(ProgramStage::create);
                 })
                 .map(data -> {
-                    boolean isSelectable;
                     for (ProgramStage programStage : data) {
-                        isSelectable = true;
-                        for (ProgramStage enrollmentStage : enrollmentStages) {
-                            if (enrollmentStage.uid().equals(programStage.uid())) {
-                                isSelectable = programStage.repeatable();
-                            }
-                        }
-
-                        if (isSelectable)
+                        if (isSelectable(enrollmentStages, programStage))
                             selectableStages.add(programStage);
                     }
                     return selectableStages;
                 }).toFlowable(BackpressureStrategy.LATEST);
+    }
+
+    private boolean isSelectable(List<ProgramStage> enrollmentStages, ProgramStage programStage) {
+        boolean isSelectable = true;
+        for (ProgramStage enrollmentStage : enrollmentStages) {
+            if (enrollmentStage.uid().equals(programStage.uid())) {
+                isSelectable = programStage.repeatable();
+            }
+        }
+        return isSelectable;
     }
 
     @Override

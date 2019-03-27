@@ -54,11 +54,7 @@ class OrgUnitCascadeHolder extends RecyclerView.ViewHolder {
         ArrayList<String> data = new ArrayList<>();
         data.add(String.format(context.getString(R.string.org_unit_select_level), getAdapterPosition() + 1));
 
-        String selectedOrgUnitName = null;
-        if (!isEmpty(currentUid))
-            for (Quartet<String, String, String, Boolean> orgUnit : levelOrgUnit)
-                if (orgUnit.val0().equals(currentUid))
-                    selectedOrgUnitName = orgUnit.val1();
+        String selectedOrgUnitName = getSelectedOrgUnitName(currentUid);
 
         if (binding.levelText.getText() == null || binding.levelText.getText().toString().isEmpty() || isEmpty(currentUid))
             binding.levelText.setText(isEmpty(selectedOrgUnitName) ? String.format(context.getString(R.string.org_unit_select_level), getAdapterPosition() + 1) : selectedOrgUnitName);
@@ -73,6 +69,18 @@ class OrgUnitCascadeHolder extends RecyclerView.ViewHolder {
             binding.levelText.setOnClickListener(view -> menu.show());
         } else
             itemView.setVisibility(View.GONE);
+    }
+
+    private String getSelectedOrgUnitName(String currentUid) {
+        String selectedOrgUnitName = null;
+        if (!isEmpty(currentUid)) {
+            for (Quartet<String, String, String, Boolean> orgUnit : levelOrgUnit) {
+                if (orgUnit.val0().equals(currentUid)) {
+                    selectedOrgUnitName = orgUnit.val1();
+                }
+            }
+        }
+        return selectedOrgUnitName;
     }
 
     private void setMenu(ArrayList<String> data, OrgUnitCascadeAdapter adapter) {

@@ -37,49 +37,55 @@ public class RulesUtilsProviderImpl implements RulesUtilsProvider {
     private HashMap<String, FieldViewModel> currentFieldViewModels;
 
 
+    private void applyRuleEffect(Map<String, FieldViewModel> fieldViewModels,
+                                 @NonNull RulesActionCallbacks rulesActionCallbacks,
+                                 RuleEffect ruleEffect) {
+        RuleAction ruleAction = ruleEffect.ruleAction();
+
+        if (ruleAction instanceof RuleActionShowWarning)
+            showWarning((RuleActionShowWarning) ruleAction, fieldViewModels, ruleEffect.data());
+        else if (ruleAction instanceof RuleActionShowError)
+            showError((RuleActionShowError) ruleAction, fieldViewModels, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionHideField)
+            hideField((RuleActionHideField) ruleAction, fieldViewModels, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionDisplayText)
+            displayText((RuleActionDisplayText) ruleAction, ruleEffect, fieldViewModels);
+        else if (ruleAction instanceof RuleActionDisplayKeyValuePair)
+            displayKeyValuePair((RuleActionDisplayKeyValuePair) ruleAction, ruleEffect, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionHideSection)
+            hideSection((RuleActionHideSection) ruleAction, fieldViewModels, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionAssign)
+            assign((RuleActionAssign) ruleAction, ruleEffect, fieldViewModels, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionCreateEvent)
+            createEvent((RuleActionCreateEvent) ruleAction, fieldViewModels, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionSetMandatoryField)
+            setMandatory((RuleActionSetMandatoryField) ruleAction, fieldViewModels);
+        else if (ruleAction instanceof RuleActionWarningOnCompletion)
+            warningOnCompletion((RuleActionWarningOnCompletion) ruleAction, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionErrorOnCompletion)
+            errorOnCompletion((RuleActionErrorOnCompletion) ruleAction, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionHideProgramStage)
+            hideProgramStage((RuleActionHideProgramStage) ruleAction, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionHideOption)
+            hideOption((RuleActionHideOption) ruleAction, rulesActionCallbacks);
+        else if (ruleAction instanceof RuleActionHideOptionGroup)
+            hideOptionGroup((RuleActionHideOptionGroup) ruleAction, rulesActionCallbacks);
+        else
+            rulesActionCallbacks.unsupportedRuleAction();
+    }
+
     @Override
     public void applyRuleEffects(Map<String, FieldViewModel> fieldViewModels,
                                  Result<RuleEffect> calcResult,
                                  @NonNull RulesActionCallbacks rulesActionCallbacks) {
 
         for (RuleEffect ruleEffect : calcResult.items()) {
-            RuleAction ruleAction = ruleEffect.ruleAction();
-
-            if (ruleAction instanceof RuleActionShowWarning)
-                showWarning((RuleActionShowWarning) ruleAction, fieldViewModels, ruleEffect.data());
-            else if (ruleAction instanceof RuleActionShowError)
-                showError((RuleActionShowError) ruleAction, fieldViewModels, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionHideField)
-                hideField((RuleActionHideField) ruleAction, fieldViewModels, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionDisplayText)
-                displayText((RuleActionDisplayText) ruleAction, ruleEffect, fieldViewModels);
-            else if (ruleAction instanceof RuleActionDisplayKeyValuePair)
-                displayKeyValuePair((RuleActionDisplayKeyValuePair) ruleAction, ruleEffect, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionHideSection)
-                hideSection((RuleActionHideSection) ruleAction, fieldViewModels, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionAssign)
-                assign((RuleActionAssign) ruleAction, ruleEffect, fieldViewModels, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionCreateEvent)
-                createEvent((RuleActionCreateEvent) ruleAction, fieldViewModels, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionSetMandatoryField)
-                setMandatory((RuleActionSetMandatoryField) ruleAction, fieldViewModels);
-            else if (ruleAction instanceof RuleActionWarningOnCompletion)
-                warningOnCompletion((RuleActionWarningOnCompletion) ruleAction, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionErrorOnCompletion)
-                errorOnCompletion((RuleActionErrorOnCompletion) ruleAction, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionHideProgramStage)
-                hideProgramStage((RuleActionHideProgramStage) ruleAction, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionHideOption)
-                hideOption((RuleActionHideOption) ruleAction, rulesActionCallbacks);
-            else if (ruleAction instanceof RuleActionHideOptionGroup)
-                hideOptionGroup((RuleActionHideOptionGroup) ruleAction, rulesActionCallbacks);
-            else
-                rulesActionCallbacks.unsupportedRuleAction();
-
+            applyRuleEffect(fieldViewModels, rulesActionCallbacks, ruleEffect);
         }
 
         if (currentFieldViewModels == null)
             currentFieldViewModels = new HashMap<>();
+
         currentFieldViewModels.clear();
         currentFieldViewModels.putAll(fieldViewModels);
     }

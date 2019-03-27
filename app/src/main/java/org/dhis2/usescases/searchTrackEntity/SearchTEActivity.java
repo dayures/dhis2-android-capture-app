@@ -104,25 +104,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     //---------------------------------------------------------------------------------------------
     //region LIFECYCLE
 
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        tEType = getIntent().getStringExtra("TRACKED_ENTITY_UID");
-
-        ((App) getApplicationContext()).userComponent().plus(new SearchTEModule(tEType)).inject(this);
-
-        super.onCreate(savedInstanceState);
-
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_search);
-        binding.setPresenter(presenter);
-        initialProgram = getIntent().getStringExtra("PROGRAM_UID");
-
-        try {
-            fromRelationship = getIntent().getBooleanExtra("FROM_RELATIONSHIP", false);
-            fromRelationshipTeiUid = getIntent().getStringExtra("FROM_RELATIONSHIP_TEI");
-        } catch (Exception e) {
-            Timber.e(e);
-        }
-
+    private void setAdapter() {
         if (fromRelationship) {
             searchRelationshipAdapter = new SearchRelationshipAdapter(presenter);
             binding.scrollView.setAdapter(searchRelationshipAdapter);
@@ -130,7 +112,9 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             searchTEAdapter = new SearchTEAdapter(presenter);
             binding.scrollView.setAdapter(searchTEAdapter);
         }
+    }
 
+    private void setUpScroll() {
         binding.scrollView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
 
         binding.formRecycler.setAdapter(new FormAdapter(getSupportFragmentManager(),
@@ -154,7 +138,29 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             }
         };
         binding.scrollView.addOnScrollListener(endlessRecyclerViewScrollListener);
+    }
 
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        tEType = getIntent().getStringExtra("TRACKED_ENTITY_UID");
+
+        ((App) getApplicationContext()).userComponent().plus(new SearchTEModule(tEType)).inject(this);
+
+        super.onCreate(savedInstanceState);
+
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_search);
+        binding.setPresenter(presenter);
+        initialProgram = getIntent().getStringExtra("PROGRAM_UID");
+
+        try {
+            fromRelationship = getIntent().getBooleanExtra("FROM_RELATIONSHIP", false);
+            fromRelationshipTeiUid = getIntent().getStringExtra("FROM_RELATIONSHIP_TEI");
+        } catch (Exception e) {
+            Timber.e(e);
+        }
+
+        setAdapter();
+        setUpScroll();
     }
 
     @Override

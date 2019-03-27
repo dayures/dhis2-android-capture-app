@@ -237,7 +237,7 @@ final class EnrollmentRepository implements DataEntryRepository {
                     sqLiteBind(updateStatement, 1, BaseIdentifiableObject.DATE_FORMAT
                             .format(Calendar.getInstance().getTime()));
                     sqLiteBind(updateStatement, 2, dataValue == null ? "" : dataValue);
-                    sqLiteBind(updateStatement, 3, uid == null ? "" : uid);
+                    sqLiteBind(updateStatement, 3, uid);
                     sqLiteBind(updateStatement, 4, teiUid);
 
                     briteDatabase.executeInsert(

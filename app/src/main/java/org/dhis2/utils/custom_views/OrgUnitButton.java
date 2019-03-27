@@ -72,12 +72,8 @@ public class OrgUnitButton extends RelativeLayout {
         button = findViewById(R.id.button_org_unit);
     }
 
-    public Observable<AndroidTreeView> renderTree(@NonNull List<OrganisationUnit> myOrgs) {
-
-        HashMap<Integer, ArrayList<TreeNode>> subLists = new HashMap<>();
-
+    private List<OrganisationUnit> getAllOrgUnits(@NonNull List<OrganisationUnit> myOrgs){
         List<OrganisationUnit> allOrgs = new ArrayList<>();
-        allOrgs.addAll(myOrgs);
         for (OrganisationUnit myorg : myOrgs) {
             String[] pathName = myorg.displayNamePath().split("/");
             String[] pathUid = myorg.path().split("/");
@@ -94,6 +90,16 @@ public class OrgUnitButton extends RelativeLayout {
                     allOrgs.add(orgToAdd);
             }
         }
+        return allOrgs;
+    }
+
+    public Observable<AndroidTreeView> renderTree(@NonNull List<OrganisationUnit> myOrgs) {
+
+        HashMap<Integer, ArrayList<TreeNode>> subLists = new HashMap<>();
+
+        List<OrganisationUnit> allOrgs = new ArrayList<>();
+        allOrgs.addAll(myOrgs);
+        allOrgs.addAll(getAllOrgUnits(myOrgs));
 
         Collections.sort(myOrgs, (org1, org2) -> org2.level().compareTo(org1.level()));
 

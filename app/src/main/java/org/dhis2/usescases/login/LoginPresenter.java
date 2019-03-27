@@ -66,6 +66,7 @@ public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
             view.setUrl(view.getContext().getString(R.string.login_https));
     }
 
+    @SuppressWarnings({"squid:S2583", "squid:S1125"})
     private void showBiometricButton() {
         if (false && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) //TODO: REMOVE FALSE WHEN GREEN LIGHT
             disposable.add(RxPreconditions
@@ -81,7 +82,6 @@ public class LoginPresenter implements LoginContracts.EventSummaryPresenter {
                             Timber::e));
     }
 
-    @SuppressWarnings({"squid:S2583", "squid:S1125"})
     @Override
     public void init(LoginContracts.EventSummaryView view) {
         this.view = view;

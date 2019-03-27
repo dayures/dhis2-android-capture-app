@@ -322,6 +322,7 @@ public class QrReaderFragment extends FragmentGlobalAbstract implements ZXingSca
         promtForTEIMoreQr();
     }
 
+    @SuppressWarnings("squid:S3776")
     @Override
     public void promtForTEIMoreQr() {
 

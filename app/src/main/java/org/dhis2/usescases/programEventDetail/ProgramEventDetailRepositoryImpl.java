@@ -127,21 +127,29 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
 
     private List<Pair<String, String>> getData(List<TrackedEntityDataValue> dataValueList, List<String> showInReportsDataElements) {
         List<Pair<String, String>> data = new ArrayList<>();
-        if (dataValueList != null)
+        if (dataValueList != null) {
             for (TrackedEntityDataValue dataValue : dataValueList) {
-                DataElement de = d2.dataElementModule().dataElements.uid(dataValue.dataElement()).get();
-                if (de != null && showInReportsDataElements.contains(de.uid())) {
-                    String displayName = !isEmpty(de.displayFormName()) ? de.displayFormName() : de.displayName();
-                    String value = dataValue.value();
-                    if (de.optionSet() != null)
-                        value = ValueUtils.optionSetCodeToDisplayName(briteDatabase, de.optionSet().uid(), value);
-                    else if (de.valueType().equals(ValueType.ORGANISATION_UNIT))
-                        value = ValueUtils.orgUnitUidToDisplayName(briteDatabase, value);
-
-                    //TODO: Would be good to check other value types to render value (coordinates)
-                    data.add(Pair.create(displayName, value));
-                }
+                data.addAll(getDataValues(dataValue, showInReportsDataElements));
             }
+        }
+
+        return data;
+    }
+
+    private List<Pair<String, String>> getDataValues(TrackedEntityDataValue dataValue, List<String> showInReportsDataElements) {
+        List<Pair<String, String>> data = new ArrayList<>();
+        DataElement de = d2.dataElementModule().dataElements.uid(dataValue.dataElement()).get();
+        if (de != null && showInReportsDataElements.contains(de.uid())) {
+            String displayName = !isEmpty(de.displayFormName()) ? de.displayFormName() : de.displayName();
+            String value = dataValue.value();
+            if (de.optionSet() != null)
+                value = ValueUtils.optionSetCodeToDisplayName(briteDatabase, de.optionSet().uid(), value);
+            else if (de.valueType().equals(ValueType.ORGANISATION_UNIT))
+                value = ValueUtils.orgUnitUidToDisplayName(briteDatabase, value);
+
+            //TODO: Would be good to check other value types to render value (coordinates)
+            data.add(Pair.create(displayName, value));
+        }
 
         return data;
     }
