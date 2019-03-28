@@ -243,6 +243,7 @@ final class ProgramStageRepository implements DataEntryRepository {
         try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSetUid)) {
             if (countCursor != null && countCursor.moveToFirst())
                 optionCount = countCursor.getInt(0);
+
         } catch (Exception e) {
             Timber.e(e);
         }

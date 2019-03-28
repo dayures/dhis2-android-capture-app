@@ -252,13 +252,7 @@ public class EventRepository implements FormRepository {
     @Override
     public Consumer<String> storeReportDate() {
         return reportDate -> {
-            Calendar cal = Calendar.getInstance();
-            Date date = DateUtils.databaseDateFormat().parse(reportDate);
-            cal.setTime(date);
-            cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.set(Calendar.MINUTE, 0);
-            cal.set(Calendar.SECOND, 0);
-            cal.set(Calendar.MILLISECOND, 0);
+            Calendar cal = DateUtils.getCalendarFromDate(reportDate);
 
             ContentValues event = new ContentValues();
             event.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));

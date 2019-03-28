@@ -19,6 +19,7 @@ import android.widget.TextView;
 import org.dhis2.R;
 import org.dhis2.usescases.programEventDetail.ProgramEventViewModel;
 import org.dhis2.utils.CatComboAdapter;
+import org.dhis2.utils.ColorUtils;
 import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.ObjectStyle;
@@ -32,7 +33,6 @@ import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -462,35 +462,7 @@ public class Bindings {
 
     @BindingAdapter("fromResBgColor")
     public static void setFromResBgColor(View view, int color) {
-        ArrayList<Double> rgb = new ArrayList<>();
-        rgb.add(Color.red(color) / 255.0d);
-        rgb.add(Color.green(color) / 255.0d);
-        rgb.add(Color.blue(color) / 255.0d);
-
-        Double r = null;
-        Double g = null;
-        Double b = null;
-        for (Double c : rgb) {
-            if (c <= 0.03928d)
-                c = c / 12.92d;
-            else
-                c = Math.pow(((c + 0.055d) / 1.055d), 2.4d);
-
-            if (r == null)
-                r = c;
-            else if (g == null)
-                g = c;
-            else
-                b = c;
-        }
-
-        r = r == null ? 0 : r;
-        g = g == null ? 0 : g;
-        b = b == null ? 0 : b;
-
-        double l = 0.2126d * r + 0.7152d * g + 0.0722d * b;
-
-        setColorFilter(view, l);
+        setColorFilter(view, ColorUtils.getColorInt(color));
     }
 
     private static void setColorFilter(View view, double l) {

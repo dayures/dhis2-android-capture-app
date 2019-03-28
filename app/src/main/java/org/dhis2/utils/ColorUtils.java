@@ -67,7 +67,10 @@ public class ColorUtils {
     }
 
     public static int getContrastColor(int color) {
+        return (getColorInt(color) > 0.179d) ? Color.BLACK : Color.WHITE;
+    }
 
+    public static double getColorInt(int color){
         ArrayList<Double> rgb = new ArrayList<>();
         rgb.add(Color.red(color) / 255.0d);
         rgb.add(Color.green(color) / 255.0d);
@@ -76,6 +79,7 @@ public class ColorUtils {
         Double r = null;
         Double g = null;
         Double b = null;
+
         for (Double c : rgb) {
             if (c <= 0.03928d)
                 c = c / 12.92d;
@@ -90,10 +94,12 @@ public class ColorUtils {
                 b = c;
         }
 
+        r = r == null ? 0 : r;
+        g = g == null ? 0 : g;
+        b = b == null ? 0 : b;
+
         double l = 0.2126d * r + 0.7152d * g + 0.0722d * b;
-
-
-        return (l > 0.179d) ? Color.BLACK : Color.WHITE;
+        return l;
     }
 
     @SuppressWarnings("squid:S1479")
