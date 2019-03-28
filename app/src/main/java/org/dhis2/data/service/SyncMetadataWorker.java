@@ -13,6 +13,7 @@ import org.dhis2.App;
 import org.dhis2.R;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.DateUtils;
+import org.dhis2.utils.NetworkUtils;
 
 import java.util.Calendar;
 
@@ -64,12 +65,15 @@ public class SyncMetadataWorker extends Worker {
             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent("action_sync").putExtra("metaSyncInProgress", true));
 
             boolean isMetaOk = true;
+            boolean noNetwork = false;
 
             try {
                 presenter.syncMetadata(getApplicationContext());
             } catch (Exception e) {
                 Timber.e(e);
                 isMetaOk = false;
+                if (!NetworkUtils.isOnline(getApplicationContext()))
+                    noNetwork = true;
             }
 
             String lastDataSyncDate = DateUtils.dateTimeFormat().format(Calendar.getInstance().getTime());
@@ -77,10 +81,14 @@ public class SyncMetadataWorker extends Worker {
             SharedPreferences prefs = getApplicationContext().getSharedPreferences(Constants.SHARE_PREFS, Context.MODE_PRIVATE);
             prefs.edit().putString(Constants.LAST_META_SYNC, lastDataSyncDate).apply();
             prefs.edit().putBoolean(Constants.LAST_META_SYNC_STATUS, isMetaOk).apply();
+            prefs.edit().putBoolean(Constants.LAST_META_SYNC_NO_NETWORK, noNetwork).apply();
 
             LocalBroadcastManager.getInstance(getApplicationContext()).sendBroadcast(new Intent("action_sync").putExtra("metaSyncInProgress", false));
 
             cancelNotification();
+
+            if (!isMetaOk)
+                return Result.RETRY;
 
             return Result.SUCCESS;
         } else {
