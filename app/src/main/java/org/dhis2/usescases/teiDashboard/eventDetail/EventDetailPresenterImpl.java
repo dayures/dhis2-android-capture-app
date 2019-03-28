@@ -129,6 +129,57 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
         }
     }
 
+    private boolean checkMandatory(List<Fragment> sectionFragments) {
+        boolean mandatoryOk = true;
+        for (Fragment dataEntryFragment : sectionFragments) {
+            mandatoryOk = mandatoryOk && ((DataEntryFragment) dataEntryFragment).checkMandatory();
+        }
+        return mandatoryOk;
+    }
+
+    private boolean checkError(List<Fragment> sectionFragments) {
+        boolean hasError = false;
+        for (Fragment dataEntryFragment : sectionFragments) {
+            hasError = ((DataEntryFragment) dataEntryFragment).checkErrors();
+        }
+        return hasError;
+    }
+
+    private void goUpdateEventStatus(FormFragment formFragment, Event event) {
+        if (!isEmpty(formFragment.getMessageOnComplete())) {
+            final AlertDialog dialog = view.showInfoDialog(view.getContext().getString(R.string.warning_error_on_complete_title), formFragment.getMessageOnComplete(), new OnDialogClickListener() {
+                @Override
+                public void onPossitiveClick(AlertDialog alertDialog) {
+                    updateEventStatus(event);
+                }
+
+                @Override
+                public void onNegativeClick(AlertDialog alertDialog) {
+                    // do nothing
+                }
+            });
+            dialog.show();
+        } else {
+            updateEventStatus(event);
+        }
+    }
+
+    private void checkForm(FormFragment formFragment, Event event) {
+        if (formFragment.isAdded() && formFragment.getContext() != null) {
+            List<Fragment> sectionFragments = formFragment.getChildFragmentManager().getFragments();
+            boolean mandatoryOk = checkMandatory(sectionFragments);
+            boolean hasError = checkError(sectionFragments);
+
+            if (mandatoryOk && !hasError) {
+                goUpdateEventStatus(formFragment, event);
+            } else if (!mandatoryOk) {
+                view.showInfoDialog(view.getContext().getString(R.string.unable_to_complete), view.getAbstractActivity().getString(R.string.missing_mandatory_fields));
+            } else {
+                view.showInfoDialog(view.getContext().getString(R.string.unable_to_complete), view.getAbstracContext().getString(R.string.field_errors));
+            }
+        }
+    }
+
     @Override
     public void eventStatus(View buttonView, Event eventModel, ProgramStage stageModel) {
 
@@ -141,37 +192,7 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
                 } else if (formFragment.hasError() != null) {
                     view.showInfoDialog(view.getContext().getString(R.string.error), formFragment.hasError().content());
                 } else {
-                    if (formFragment.isAdded() && formFragment.getContext() != null) {
-                        List<Fragment> sectionFragments = formFragment.getChildFragmentManager().getFragments();
-                        boolean mandatoryOk = true;
-                        boolean hasError = false;
-                        for (Fragment dataEntryFragment : sectionFragments) {
-                            mandatoryOk = mandatoryOk && ((DataEntryFragment) dataEntryFragment).checkMandatory();
-                            hasError = ((DataEntryFragment) dataEntryFragment).checkErrors();
-                        }
-                        if (mandatoryOk && !hasError) {
-
-                            if (!isEmpty(formFragment.getMessageOnComplete())) {
-                                final AlertDialog dialog = view.showInfoDialog(view.getContext().getString(R.string.warning_error_on_complete_title), formFragment.getMessageOnComplete(), new OnDialogClickListener() {
-                                    @Override
-                                    public void onPossitiveClick(AlertDialog alertDialog) {
-                                        updateEventStatus(eventModel);
-                                    }
-
-                                    @Override
-                                    public void onNegativeClick(AlertDialog alertDialog) {
-                                        // do nothing
-                                    }
-                                });
-                                dialog.show();
-                            } else {
-                                updateEventStatus(eventModel);
-                            }
-                        } else if (!mandatoryOk)
-                            view.showInfoDialog(view.getContext().getString(R.string.unable_to_complete), view.getAbstractActivity().getString(R.string.missing_mandatory_fields));
-                        else
-                            view.showInfoDialog(view.getContext().getString(R.string.unable_to_complete), view.getAbstracContext().getString(R.string.field_errors));
-                    }
+                    checkForm(formFragment, eventModel);
                 }
             }, 1500);
         } else

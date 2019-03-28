@@ -10,6 +10,7 @@ import android.view.View;
 import org.dhis2.R;
 import org.dhis2.data.forms.FormActivity;
 import org.dhis2.data.forms.FormViewArguments;
+import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.usescases.searchTrackEntity.adapters.SearchTeiModel;
@@ -28,6 +29,7 @@ import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityType;
 import org.hisp.dhis.android.core.trackedentity.search.TrackedEntityInstanceQuery;
 
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -83,6 +85,33 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
     //-----------------------------------
     //region LIFECYCLE
 
+    private void getSelectedProgram(List<Program> programs, String initialProgram) {
+        for (Program program : programs)
+            if (program.uid().equals(initialProgram))
+                this.selectedProgram = program;
+    }
+
+    private void parseQueryData(RowAction data) {
+        Map<String, String> queryDataBU = new HashMap<>(queryData);
+        if (!isEmpty(data.value())) {
+            queryData.put(data.id(), data.value());
+            if (data.requiresExactMatch())
+                queryDataEQ.put(data.id(), data.value());
+        } else {
+            queryData.remove(data.id());
+            queryDataEQ.remove(data.id());
+        }
+
+        if (!queryData.equals(queryDataBU)) { //Only when queryData has changed
+            view.clearData();
+            if (!isEmpty(data.value()))
+                queryData.put(data.id(), data.value());
+            else
+                queryData.remove(data.id());
+            getTrakedEntities();
+        }
+    }
+
     @Override
     public void init(SearchTEContractsModule.SearchTEView view, String trackedEntityType, String initialProgram) {
         this.view = view;
@@ -98,12 +127,9 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
                         })
                         .subscribeOn(AndroidSchedulers.mainThread())
                         .observeOn(AndroidSchedulers.mainThread())
-                        .flatMap(programModels -> {
-                            for (Program programModel : programModels)
-                                if (programModel.uid().equals(initialProgram))
-                                    this.selectedProgram = programModel;
-                            view.setPrograms(programModels);
-
+                        .flatMap(programs -> {
+                            getSelectedProgram(programs, initialProgram);
+                            view.setPrograms(programs);
                             if (selectedProgram != null)
                                 return searchRepository.programAttributes(selectedProgram.uid());
                             else
@@ -131,26 +157,8 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
         compositeDisposable.add(view.rowActionss()
                 .subscribeOn(AndroidSchedulers.mainThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(data -> {
-                            Map<String, String> queryDataBU = new HashMap<>(queryData);
-                            if (!isEmpty(data.value())) {
-                                queryData.put(data.id(), data.value());
-                                if (data.requiresExactMatch())
-                                    queryDataEQ.put(data.id(), data.value());
-                            } else {
-                                queryData.remove(data.id());
-                                queryDataEQ.remove(data.id());
-                            }
-
-                            if (!queryData.equals(queryDataBU)) { //Only when queryData has changed
-                                view.clearData();
-                                if (!isEmpty(data.value()))
-                                    queryData.put(data.id(), data.value());
-                                else
-                                    queryData.remove(data.id());
-                                getTrakedEntities();
-                            }
-                        },
+                .subscribe(
+                        this::parseQueryData,
                         Timber::d)
         );
 
@@ -177,6 +185,100 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
 
     //------------------------------------------
     //region DATA
+
+    private List<SearchTeiModel> getTeiList(List<TrackedEntityInstance> trackedEntityInstances) {
+        List<SearchTeiModel> teis = new ArrayList<>();
+        for (TrackedEntityInstance tei : trackedEntityInstances) {
+            if (view.fromRelationshipTEI() == null || !tei.uid().equals(view.fromRelationshipTEI())) {//If fetching for relationship, discard selected TEI
+                teis.add(new SearchTeiModel(tei, new ArrayList<>()));
+            }
+        }
+        return teis;
+    }
+
+    private TrackedEntityInstanceQuery getTeiQuery(Integer page) throws ParseException {
+        List<String> filterList = new ArrayList<>();
+        Date enrollementDate = null;
+        if (queryData != null) {
+            for (Map.Entry<String, String> entry : queryData.entrySet()) {
+                if (entry.getKey().equals(Constants.ENROLLMENT_DATE_UID))
+                    enrollementDate = DateUtils.uiDateFormat().parse(entry.getValue());
+                else if (!entry.getKey().equals(Constants.INCIDENT_DATE_UID)) { //TODO: HOW TO INCLUDE INCIDENT DATE IN ONLINE SEARCH
+                    String value = entry.getValue();
+                    if (value.contains("_os_"))
+                        value = value.split("_os_")[0];
+                    String queryItem = String.format("%s:%s:%s",
+                            entry.getKey(),
+                            queryDataEQ.containsKey(entry.getKey()) ? "EQ" : "LIKE", value);
+                    filterList.add(queryItem);
+                }
+            }
+        }
+
+        List<String> orgUnitsUids = getOrgUnitsUids();
+
+        return TrackedEntityInstanceQuery.builder()
+                .program(selectedProgram.uid())
+                .page(page)
+                .pageSize(20)
+                .paging(true)
+                .filter(filterList)
+                .programStartDate(enrollementDate)
+                .orgUnits(orgUnitsUids)
+                .orgUnitMode(OuMode.ACCESSIBLE)
+                .build();
+    }
+
+    private List<String> getOrgUnitsUids() {
+        List<String> orgUnitsUids = new ArrayList<>();
+        if (orgUnits != null) {
+            orgUnitsUids.add(orgUnits.get(0).uid());
+        }
+        return orgUnitsUids;
+    }
+
+    private List<SearchTeiModel> transformTeis(List<TrackedEntityInstance> trackedEntityInstances) {
+        List<SearchTeiModel> teiList = new ArrayList<>();
+        for (TrackedEntityInstance tei : trackedEntityInstances) {
+            if (view.fromRelationshipTEI() == null || !tei.uid().equals(view.fromRelationshipTEI())) { //If fetching for relationship, discard selected TEI
+                List<TrackedEntityAttributeValue> attributeModels = new ArrayList<>();
+                TrackedEntityAttributeValue.Builder attrValueBuilder = TrackedEntityAttributeValue.builder();
+                for (TrackedEntityAttributeValue attrValue : tei.trackedEntityAttributeValues()) {
+                    attrValueBuilder.value(attrValue.value())
+                            .created(attrValue.created())
+                            .lastUpdated(attrValue.lastUpdated())
+                            .trackedEntityAttribute(attrValue.trackedEntityAttribute())
+                            .trackedEntityInstance(tei.uid());
+                    attributeModels.add(attrValueBuilder.build());
+                }
+                TrackedEntityInstance model = TrackedEntityInstance.builder()
+                        .created(tei.created())
+                        .id(tei.id())
+                        .lastUpdated(tei.lastUpdated())
+                        .state(tei.state())
+                        .coordinates(tei.coordinates())
+                        .createdAtClient(tei.createdAtClient())
+                        .featureType(tei.featureType())
+                        .lastUpdatedAtClient(tei.lastUpdatedAtClient())
+                        .organisationUnit(tei.organisationUnit())
+                        .uid(tei.uid())
+                        .trackedEntityType(tei.trackedEntityType())
+                        .build();
+                SearchTeiModel teiModel = new SearchTeiModel(model, attributeModels);
+                teiList.add(teiModel);
+            }
+        }
+        return teiList;
+    }
+
+    private List<SearchTeiModel> parseSearchTeiModels(List<SearchTeiModel> list) {
+        List<SearchTeiModel> searchTeiModels = new ArrayList<>();
+        for (SearchTeiModel searchTeiModel : list)
+            if (searchTeiModel.isOnline() || !searchTeiModel.getEnrollments().isEmpty())
+                searchTeiModels.add(searchTeiModel);
+        return searchTeiModels;
+    }
+
     @Override
     public void getTrakedEntities() {
         if (!NetworkUtils.isOnline(view.getContext()) || selectedProgram == null || Build.VERSION.SDK_INT <= 19)
@@ -188,13 +290,7 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
                                 return searchRepository.trackedEntityInstances(trackedEntity.uid(), selectedProgram, queryData, page).toFlowable(BackpressureStrategy.BUFFER);
                             })
                             .debounce(500, TimeUnit.MILLISECONDS, Schedulers.io())
-                            .map(trackedEntityInstanceModels -> {
-                                List<SearchTeiModel> teiModels = new ArrayList<>();
-                                for (TrackedEntityInstance tei : trackedEntityInstanceModels)
-                                    if (view.fromRelationshipTEI() == null || !tei.uid().equals(view.fromRelationshipTEI())) //If fetching for relationship, discard selected TEI
-                                        teiModels.add(new SearchTeiModel(tei, new ArrayList<>()));
-                                return teiModels;
-                            })
+                            .map(this::getTeiList)
                             .flatMap(list -> searchRepository.transformIntoModel(list, selectedProgram))
                             .map(this::getMessage)
                             .subscribeOn(Schedulers.io())
@@ -209,110 +305,22 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
                             .startWith(1)
                             .flatMap(page -> {
                                 this.currentPage = page;
-                                List<String> filterList = new ArrayList<>();
-                                Date enrollementDate = null;
-                                if (queryData != null) {
-                                    for (Map.Entry<String, String> entry : queryData.entrySet()) {
-                                        if (entry.getKey().equals(Constants.ENROLLMENT_DATE_UID))
-                                            enrollementDate = DateUtils.uiDateFormat().parse(entry.getValue());
-                                        else if (!entry.getKey().equals(Constants.INCIDENT_DATE_UID)) { //TODO: HOW TO INCLUDE INCIDENT DATE IN ONLINE SEARCH
-                                            String value = entry.getValue();
-                                            if (value.contains("_os_"))
-                                                value = value.split("_os_")[0];
-                                            String queryItem = String.format("%s:%s:%s",
-                                                    entry.getKey(),
-                                                    queryDataEQ.containsKey(entry.getKey()) ? "EQ" : "LIKE", value);
-                                            filterList.add(queryItem);
-                                        }
-                                    }
-                                }
-                                List<String> orgUnitsUids = new ArrayList<>();
-                                if (orgUnits != null) {
-                                    orgUnitsUids.add(orgUnits.get(0).uid());
-                                }
-                                TrackedEntityInstanceQuery query = TrackedEntityInstanceQuery.builder()
-                                        .program(selectedProgram.uid())
-                                        .page(page)
-                                        .pageSize(20)
-                                        .paging(true)
-                                        .filter(filterList)
-                                        .programStartDate(enrollementDate)
-                                        .orgUnits(orgUnitsUids)
-                                        .orgUnitMode(OuMode.ACCESSIBLE)
-                                        .build();
 
-                                return Flowable.defer(() -> Flowable.fromCallable(d2.trackedEntityModule().queryTrackedEntityInstances(query)))
+                                return Flowable.defer(() -> Flowable.fromCallable(d2.trackedEntityModule()
+                                        .queryTrackedEntityInstances(getTeiQuery(page))))
                                         .observeOn(Schedulers.io())
                                         .subscribeOn(Schedulers.io())
                                         .doOnError(this::handleError)
                                         .onErrorReturn(data -> new ArrayList<>()); //If there is an error returns an empty list
 
                             })
-                            .map(trackedEntityInstances -> {
-                                List<SearchTeiModel> teiList = new ArrayList<>();
-                                for (TrackedEntityInstance tei : trackedEntityInstances) {
-                                    if (view.fromRelationshipTEI() == null || !tei.uid().equals(view.fromRelationshipTEI())) { //If fetching for relationship, discard selected TEI
-                                        List<TrackedEntityAttributeValue> attributeModels = new ArrayList<>();
-                                        TrackedEntityAttributeValue.Builder attrValueBuilder = TrackedEntityAttributeValue.builder();
-                                        for (TrackedEntityAttributeValue attrValue : tei.trackedEntityAttributeValues()) {
-                                            attrValueBuilder.value(attrValue.value())
-                                                    .created(attrValue.created())
-                                                    .lastUpdated(attrValue.lastUpdated())
-                                                    .trackedEntityAttribute(attrValue.trackedEntityAttribute())
-                                                    .trackedEntityInstance(tei.uid());
-                                            attributeModels.add(attrValueBuilder.build());
-                                        }
-                                        TrackedEntityInstance model = TrackedEntityInstance.builder()
-                                                .created(tei.created())
-                                                .id(tei.id())
-                                                .lastUpdated(tei.lastUpdated())
-                                                .state(tei.state())
-                                                .coordinates(tei.coordinates())
-                                                .createdAtClient(tei.createdAtClient())
-                                                .featureType(tei.featureType())
-                                                .lastUpdatedAtClient(tei.lastUpdatedAtClient())
-                                                .organisationUnit(tei.organisationUnit())
-                                                .uid(tei.uid())
-                                                .trackedEntityType(tei.trackedEntityType())
-                                                .build();
-                                        SearchTeiModel teiModel = new SearchTeiModel(model, attributeModels);
-                                        teiList.add(teiModel);
-                                    }
-                                }
-                                return teiList;
-                            })
+                            .map(this::transformTeis)
                             .flatMap(list -> searchRepository.transformIntoModel(list, selectedProgram))
-                            .map(list -> {
-                                List<SearchTeiModel> searchTeiModels = new ArrayList<>();
-                                for (SearchTeiModel searchTeiModel : list)
-                                    if (searchTeiModel.isOnline() || !searchTeiModel.getEnrollments().isEmpty())
-                                        searchTeiModels.add(searchTeiModel);
-                                return searchTeiModels;
-                            })
+                            .map(this::parseSearchTeiModels)
                             .flatMap(list -> {
                                 if (currentPage == 1)
                                     return searchRepository.trackedEntityInstancesToUpdate(trackedEntity.uid(), selectedProgram, queryData, list.size())
-                                            .map(trackedEntityInstanceModels -> {
-                                                List<SearchTeiModel> helperList = new ArrayList<>();
-
-                                                for (SearchTeiModel searchTeiModel : list) {
-                                                    boolean toUpdate = false;
-                                                    for (TrackedEntityInstance tei : trackedEntityInstanceModels) {
-                                                        if (searchTeiModel.getTei().uid().equals(tei.uid())) {
-                                                            toUpdate = true;
-                                                        }
-                                                    }
-                                                    if (!toUpdate)
-                                                        helperList.add(searchTeiModel);
-                                                }
-
-                                                for (TrackedEntityInstance tei : trackedEntityInstanceModels) {
-                                                    if (view.fromRelationshipTEI() == null || !tei.uid().equals(view.fromRelationshipTEI()))
-                                                        helperList.add(new SearchTeiModel(tei, new ArrayList<>()));
-                                                }
-
-                                                return helperList;
-                                            }).toFlowable(BackpressureStrategy.LATEST);
+                                            .map(trackedEntityInstanceModels -> getHelperList(list, trackedEntityInstanceModels)).toFlowable(BackpressureStrategy.LATEST);
                                 else
                                     return Flowable.just(list);
                             })
@@ -324,31 +332,71 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
             );
     }
 
+    private List<SearchTeiModel> getHelperList(List<SearchTeiModel> list, List<TrackedEntityInstance> trackedEntityInstanceModels) {
+        List<SearchTeiModel> helperList = new ArrayList<>();
+
+        for (SearchTeiModel searchTeiModel : list) {
+            boolean toUpdate = false;
+            for (TrackedEntityInstance tei : trackedEntityInstanceModels) {
+                if (searchTeiModel.getTei().uid().equals(tei.uid())) {
+                    toUpdate = true;
+                }
+            }
+            if (!toUpdate)
+                helperList.add(searchTeiModel);
+        }
+
+        for (TrackedEntityInstance tei : trackedEntityInstanceModels) {
+            if (view.fromRelationshipTEI() == null || !tei.uid().equals(view.fromRelationshipTEI()))
+                helperList.add(new SearchTeiModel(tei, new ArrayList<>()));
+        }
+
+        return helperList;
+    }
+
+    private String getSelectedProgramMessage(List<SearchTeiModel> teiList) {
+        String messageId = "";
+        if (selectedProgram.minAttributesRequiredToSearch() > queryData.size())
+            messageId = String.format(view.getContext().getString(R.string.search_min_num_attr), selectedProgram.minAttributesRequiredToSearch());
+        else if (selectedProgram.maxTeiCountToReturn() != 0 && teiList.size() > selectedProgram.maxTeiCountToReturn())
+            messageId = String.format(view.getContext().getString(R.string.search_max_tei_reached), selectedProgram.maxTeiCountToReturn());
+        else if (teiList.isEmpty() && !queryData.isEmpty())
+            messageId = String.format(view.getContext().getString(R.string.search_criteria_not_met), getTrackedEntityName().displayName());
+        else if (teiList.isEmpty())
+            messageId = view.getContext().getString(R.string.search_init);
+        return messageId;
+    }
+
+    private String getNoSelectedProgramMessage(List<SearchTeiModel> teiList) {
+        String messageId = "";
+        if (queryData.isEmpty() && view.fromRelationshipTEI() == null)
+            messageId = view.getContext().getString(R.string.search_init);
+        else if (teiList.isEmpty())
+            messageId = String.format(view.getContext().getString(R.string.search_criteria_not_met), getTrackedEntityName().displayName());
+        else if (teiList.size() > MAX_NO_SELECTED_PROGRAM_RESULTS && view.fromRelationshipTEI() == null) {
+            messageId = String.format(view.getContext().getString(R.string.search_max_tei_reached), MAX_NO_SELECTED_PROGRAM_RESULTS);
+        }
+        return messageId;
+    }
+
+    private String getOtherMessage(List<SearchTeiModel> teiList) {
+        String messageId = "";
+        if (teiList.isEmpty() && !queryData.isEmpty())
+            messageId = String.format(view.getContext().getString(R.string.search_criteria_not_met), getTrackedEntityName().displayName());
+        else if (teiList.isEmpty())
+            messageId = view.getContext().getString(R.string.search_init);
+        return messageId;
+    }
+
     private Pair<List<SearchTeiModel>, String> getMessage(List<SearchTeiModel> teiList) {
 
         String messageId = "";
         if (selectedProgram != null && !selectedProgram.displayFrontPageList()) {
-            if (selectedProgram.minAttributesRequiredToSearch() > queryData.size())
-                messageId = String.format(view.getContext().getString(R.string.search_min_num_attr), selectedProgram.minAttributesRequiredToSearch());
-            else if (selectedProgram.maxTeiCountToReturn() != 0 && teiList.size() > selectedProgram.maxTeiCountToReturn())
-                messageId = String.format(view.getContext().getString(R.string.search_max_tei_reached), selectedProgram.maxTeiCountToReturn());
-            else if (teiList.isEmpty() && !queryData.isEmpty())
-                messageId = String.format(view.getContext().getString(R.string.search_criteria_not_met), getTrackedEntityName().displayName());
-            else if (teiList.isEmpty())
-                messageId = view.getContext().getString(R.string.search_init);
+            messageId = getSelectedProgramMessage(teiList);
         } else if (selectedProgram == null) {
-            if (queryData.isEmpty() && view.fromRelationshipTEI() == null)
-                messageId = view.getContext().getString(R.string.search_init);
-            else if (teiList.isEmpty())
-                messageId = String.format(view.getContext().getString(R.string.search_criteria_not_met), getTrackedEntityName().displayName());
-            else if (teiList.size() > MAX_NO_SELECTED_PROGRAM_RESULTS && view.fromRelationshipTEI() == null) {
-                messageId = String.format(view.getContext().getString(R.string.search_max_tei_reached), MAX_NO_SELECTED_PROGRAM_RESULTS);
-            }
+            messageId = getNoSelectedProgramMessage(teiList);
         } else {
-            if (teiList.isEmpty() && !queryData.isEmpty())
-                messageId = String.format(view.getContext().getString(R.string.search_criteria_not_met), getTrackedEntityName().displayName());
-            else if (teiList.isEmpty())
-                messageId = view.getContext().getString(R.string.search_init);
+            messageId = getOtherMessage(teiList);
         }
 
         return Pair.create(teiList, messageId);

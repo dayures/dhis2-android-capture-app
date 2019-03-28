@@ -30,6 +30,33 @@ public class TeiProgramListEnrollmentViewHolder extends RecyclerView.ViewHolder 
         this.binding = binding;
     }
 
+    private int getEnrollmentIcon(EnrollmentViewModel enrollment){
+        int icon;
+        if (enrollment.icon() != null) {
+            Resources resources = itemView.getContext().getResources();
+            String iconName = enrollment.icon().startsWith("ic_") ?
+                    enrollment.icon() :
+                    "ic_" + enrollment.icon();
+            icon = resources.getIdentifier(iconName, "drawable", itemView.getContext().getPackageName());
+        } else {
+            icon = R.drawable.ic_program_default;
+        }
+        return icon;
+    }
+
+    private int getProgramIcon(ProgramViewModel programModel){
+        int icon;
+        if (programModel.icon() != null) {
+            Resources resources = itemView.getContext().getResources();
+            String iconName = programModel.icon().startsWith("ic_") ? programModel.icon() : "ic_" + programModel.icon();
+            icon = resources.getIdentifier(iconName, "drawable", itemView.getContext().getPackageName());
+        } else {
+            icon = R.drawable.ic_program_default;
+        }
+
+        return icon;
+    }
+
     public void bind(TeiProgramListContract.TeiProgramListPresenter presenter, EnrollmentViewModel enrollment, ProgramViewModel programModel) {
         binding.setVariable(BR.enrollment, enrollment);
         binding.setVariable(BR.program, programModel);
@@ -49,27 +76,13 @@ public class TeiProgramListEnrollmentViewHolder extends RecyclerView.ViewHolder 
 
             int color = ColorUtils.getColorFrom(enrollment.color(),
                     ColorUtils.getPrimaryColor(itemView.getContext(), ColorUtils.ColorType.PRIMARY));
-            int icon;
-            if (enrollment.icon() != null) {
-                Resources resources = itemView.getContext().getResources();
-                String iconName = enrollment.icon().startsWith("ic_") ?
-                        enrollment.icon() :
-                        "ic_" + enrollment.icon();
-                icon = resources.getIdentifier(iconName, "drawable", itemView.getContext().getPackageName());
-            } else {
-                icon = R.drawable.ic_program_default;
-            }
 
-            Drawable iconImage = ContextCompat.getDrawable(itemView.getContext(), icon);
 
-            if (iconImage != null) {
-                programImage.setImageDrawable(ColorUtils.tintDrawableReosurce(iconImage, color));
-            }
+            Drawable iconImage = ContextCompat.getDrawable(itemView.getContext(), getEnrollmentIcon(enrollment));
+            setIconImage(programImage, iconImage, color);
 
-            Drawable bgImage = ContextCompat.getDrawable(itemView.getContext(), R.drawable.photo_temp_gray);
-            if (bgImage != null) {
-                iconBg.setBackground(ColorUtils.tintDrawableWithColor(bgImage, color));
-            }
+            setBgImage(iconBg, color);
+
         } else if (programModel != null) {
             ImageView programImage;
             RelativeLayout iconBg;
@@ -85,26 +98,27 @@ public class TeiProgramListEnrollmentViewHolder extends RecyclerView.ViewHolder 
 
             int color = ColorUtils.getColorFrom(programModel.color(),
                     ColorUtils.getPrimaryColor(itemView.getContext(), ColorUtils.ColorType.PRIMARY));
-            int icon;
-            if (programModel.icon() != null) {
-                Resources resources = itemView.getContext().getResources();
-                String iconName = programModel.icon().startsWith("ic_") ? programModel.icon() : "ic_" + programModel.icon();
-                icon = resources.getIdentifier(iconName, "drawable", itemView.getContext().getPackageName());
-            } else {
-                icon = R.drawable.ic_program_default;
-            }
 
-            Drawable iconImage = ContextCompat.getDrawable(itemView.getContext(), icon);
-            if (iconImage != null) {
-                programImage.setImageDrawable(ColorUtils.tintDrawableReosurce(iconImage, color));
-            }
 
-            Drawable bgImage = ContextCompat.getDrawable(itemView.getContext(), R.drawable.photo_temp_gray);
-            if (bgImage != null) {
-                iconBg.setBackground(ColorUtils.tintDrawableWithColor(bgImage, color));
-            }
+            Drawable iconImage = ContextCompat.getDrawable(itemView.getContext(), getProgramIcon(programModel));
+            setIconImage(programImage, iconImage, color);
+
+            setBgImage(iconBg, color);
         }
 
         binding.executePendingBindings();
+    }
+
+    private void setIconImage(ImageView programImage, Drawable iconImage, int color){
+        if (iconImage != null) {
+            programImage.setImageDrawable(ColorUtils.tintDrawableReosurce(iconImage, color));
+        }
+    }
+
+    private void setBgImage(RelativeLayout iconBg, int color){
+        Drawable bgImage = ContextCompat.getDrawable(itemView.getContext(), R.drawable.photo_temp_gray);
+        if (bgImage != null) {
+            iconBg.setBackground(ColorUtils.tintDrawableWithColor(bgImage, color));
+        }
     }
 }

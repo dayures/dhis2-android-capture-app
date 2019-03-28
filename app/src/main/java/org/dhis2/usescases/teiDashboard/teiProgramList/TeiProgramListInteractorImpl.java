@@ -50,6 +50,26 @@ public class TeiProgramListInteractorImpl implements TeiProgramListContract.TeiP
         getPrograms();
     }
 
+    private void filterOrgUnits(List<OrganisationUnit> allOrgUnits, OrgUnitDialog orgUnitDialog, String programUid, String uid){
+        ArrayList<OrganisationUnit> orgUnits = new ArrayList<>();
+        for (OrganisationUnit orgUnit : allOrgUnits) {
+            boolean afterOpening = false;
+            boolean beforeClosing = false;
+            if (orgUnit.openingDate() == null || !selectedEnrollmentDate.before(orgUnit.openingDate()))
+                afterOpening = true;
+            if (orgUnit.closedDate() == null || !selectedEnrollmentDate.after(orgUnit.closedDate()))
+                beforeClosing = true;
+            if (afterOpening && beforeClosing)
+                orgUnits.add(orgUnit);
+        }
+        if (orgUnits.size() > 1) {
+            orgUnitDialog.setOrgUnits(orgUnits);
+            if (!orgUnitDialog.isAdded())
+                orgUnitDialog.show(view.getAbstracContext().getSupportFragmentManager(), "OrgUnitEnrollment");
+        } else
+            enrollInOrgUnit(orgUnits.get(0).uid(), programUid, uid, selectedEnrollmentDate);
+    }
+
     @Override
     public void enroll(String programUid, String uid) {
         selectedEnrollmentDate = Calendar.getInstance().getTime();
@@ -84,25 +104,7 @@ public class TeiProgramListInteractorImpl implements TeiProgramListContract.TeiP
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(
-                                    allOrgUnits -> {
-                                        ArrayList<OrganisationUnit> orgUnits = new ArrayList<>();
-                                        for (OrganisationUnit orgUnit : allOrgUnits) {
-                                            boolean afterOpening = false;
-                                            boolean beforeClosing = false;
-                                            if (orgUnit.openingDate() == null || !selectedEnrollmentDate.before(orgUnit.openingDate()))
-                                                afterOpening = true;
-                                            if (orgUnit.closedDate() == null || !selectedEnrollmentDate.after(orgUnit.closedDate()))
-                                                beforeClosing = true;
-                                            if (afterOpening && beforeClosing)
-                                                orgUnits.add(orgUnit);
-                                        }
-                                        if (orgUnits.size() > 1) {
-                                            orgUnitDialog.setOrgUnits(orgUnits);
-                                            if (!orgUnitDialog.isAdded())
-                                                orgUnitDialog.show(view.getAbstracContext().getSupportFragmentManager(), "OrgUnitEnrollment");
-                                        } else
-                                            enrollInOrgUnit(orgUnits.get(0).uid(), programUid, uid, selectedEnrollmentDate);
-                                    },
+                                    allOrgUnits -> filterOrgUnits(allOrgUnits, orgUnitDialog, programUid, uid),
                                     Timber::d
                             )
                     );
