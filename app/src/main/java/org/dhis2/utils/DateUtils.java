@@ -346,6 +346,7 @@ public class DateUtils {
         return new int[]{interval.getYears(), interval.getMonths(), interval.getDays()};
     }
 
+    @SuppressWarnings("squid:S3776")
     public Date getNewDate(List<Event> events, PeriodType periodType) {
         Calendar now = Calendar.getInstance();
         now.set(Calendar.HOUR_OF_DAY, 0);
@@ -628,6 +629,7 @@ public class DateUtils {
      * @param expiryPeriodType Expiry Period
      * @return Min date to select
      */
+    @SuppressWarnings("squid:S3776")
     public Date expDate(@Nullable Date currentDate, int expiryDays, @Nullable PeriodType expiryPeriodType) {
 
         Calendar calendar = getCalendar();
@@ -800,6 +802,7 @@ public class DateUtils {
      * @param page        1 for next, 0 for now, -1 for previous
      * @return Next/Previous date calculated from the currentDate and Period
      */
+    @SuppressWarnings("squid:S3776")
     public Date getNextPeriod(PeriodType period, Date currentDate, int page) {
 
         Calendar calendar = Calendar.getInstance();

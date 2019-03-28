@@ -78,20 +78,26 @@ public class OrgUnitCascadeDialog extends DialogFragment {
 
             for (OrganisationUnit orgUnit : orgUnits) { //Path OrgUnits
                 paths.put(orgUnit.uid(), orgUnit.path());
-                String[] uidPath = orgUnit.path().split("/");
-                String[] namePath = orgUnit.displayNamePath().split("/");
-                for (int i = 1; i < uidPath.length; i++) {
-                    if (!uidPath[i].isEmpty() && !uidPath[i].equals(orgUnit.uid())) {
-                        Quintet<String, String, String, Integer, Boolean> quartet = Quintet.create(uidPath[i], namePath[i], i != 1 ? uidPath[i - 1] : "", i, false); //OrgUnit Uid, OrgUnit Name, Parent Uid, Level, CanBeSelected
-                        if (!orgUnitsUid.contains(quartet.val0())) {
-                            this.orgUnits.add(quartet);
-                            orgUnitsUid.add(quartet.val0());
-                        }
-                    }
-                }
+                orgUnitsUid.addAll(getOrgUnits(orgUnit));
             }
         }
         return this;
+    }
+
+    private List<String> getOrgUnits(OrganisationUnit orgUnit) {
+        List<String> orgUnitsUid = new ArrayList<>();
+        String[] uidPath = orgUnit.path().split("/");
+        String[] namePath = orgUnit.displayNamePath().split("/");
+        for (int i = 1; i < uidPath.length; i++) {
+            if (!uidPath[i].isEmpty() && !uidPath[i].equals(orgUnit.uid())) {
+                Quintet<String, String, String, Integer, Boolean> quartet = Quintet.create(uidPath[i], namePath[i], i != 1 ? uidPath[i - 1] : "", i, false); //OrgUnit Uid, OrgUnit Name, Parent Uid, Level, CanBeSelected
+                if (!orgUnitsUid.contains(quartet.val0())) {
+                    this.orgUnits.add(quartet);
+                    orgUnitsUid.add(quartet.val0());
+                }
+            }
+        }
+        return orgUnitsUid;
     }
 
     @Override
@@ -111,12 +117,7 @@ public class OrgUnitCascadeDialog extends DialogFragment {
         return dialog;
     }
 
-    @Nullable
-    @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        binding = DataBindingUtil.inflate(inflater, R.layout.dialog_cascade_orgunit, container, false);
-        binding.orgUnitEditText.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
-        binding.orgUnitEditText.setHint(title);
+    private void setUpAcceptButton() {
         binding.acceptButton.setOnClickListener(view -> {
             if (binding.recycler.getAdapter() != null) {
                 String selectedOrgUnitUid = ((OrgUnitCascadeAdapter) binding.recycler.getAdapter()).getSelectedOrgUnit();
@@ -127,10 +128,9 @@ public class OrgUnitCascadeDialog extends DialogFragment {
                 }
             }
         });
-        binding.cancelButton.setOnClickListener(view -> {
-            callbacks.onDialogCancelled();
-            dismiss();
-        });
+    }
+
+    private void setUpClearButton() {
         binding.clearButton.setOnClickListener(view -> {
             binding.orgUnitEditText.getText().clear();
             showChips(new ArrayList<>());
@@ -144,6 +144,20 @@ public class OrgUnitCascadeDialog extends DialogFragment {
             binding.recycler.setAdapter(adapter);
             binding.acceptButton.setVisibility(View.INVISIBLE);
         });
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+        binding = DataBindingUtil.inflate(inflater, R.layout.dialog_cascade_orgunit, container, false);
+        binding.orgUnitEditText.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
+        binding.orgUnitEditText.setHint(title);
+        setUpAcceptButton();
+        binding.cancelButton.setOnClickListener(view -> {
+            callbacks.onDialogCancelled();
+            dismiss();
+        });
+        setUpClearButton();
 
         disposable = new CompositeDisposable();
 
@@ -151,13 +165,7 @@ public class OrgUnitCascadeDialog extends DialogFragment {
                 .skipInitialValue()
                 .debounce(500, TimeUnit.MILLISECONDS)
                 .filter(data -> data != null && !data.toString().isEmpty() && orgUnits != null && !orgUnits.isEmpty())
-                .map(textTofind -> {
-                    ArrayList<Quintet<String, String, String, Integer, Boolean>> matches = new ArrayList<>();
-                    for (Quintet<String, String, String, Integer, Boolean> quartet : orgUnits)
-                        if (quartet.val1().toLowerCase().contains(textTofind.toString()))
-                            matches.add(quartet);
-                    return matches;
-                })
+                .map(this::getMatches)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -165,6 +173,20 @@ public class OrgUnitCascadeDialog extends DialogFragment {
                         Timber::e
                 ));
 
+        setUpAdapter();
+
+        return binding.getRoot();
+    }
+
+    private ArrayList<Quintet<String, String, String, Integer, Boolean>> getMatches(CharSequence textTofind) {
+        ArrayList<Quintet<String, String, String, Integer, Boolean>> matches = new ArrayList<>();
+        for (Quintet<String, String, String, Integer, Boolean> quartet : orgUnits)
+            if (quartet.val1().toLowerCase().contains(textTofind.toString()))
+                matches.add(quartet);
+        return matches;
+    }
+
+    private void setUpAdapter() {
         adapter = new OrgUnitCascadeAdapter(orgUnits, canBeSelected -> {
             if (canBeSelected) {
                 binding.acceptButton.setVisibility(View.VISIBLE);
@@ -183,8 +205,6 @@ public class OrgUnitCascadeDialog extends DialogFragment {
             }
         }
         binding.recycler.setAdapter(adapter);
-
-        return binding.getRoot();
     }
 
     private void showChips(ArrayList<Quintet<String, String, String, Integer, Boolean>> data) {

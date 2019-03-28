@@ -28,15 +28,14 @@ public class OrgUnitUtils {
         // hide public constructor
     }
 
+    @SuppressWarnings("squid:S3776")
     public static TreeNode renderTree(Context context, @NonNull List<OrganisationUnit> myOrgs, Boolean isMultiSelection) {
 
         HashMap<Integer, ArrayList<TreeNode>> subLists = new HashMap<>();
 
         List<OrganisationUnit> allOrgs = new ArrayList<>();
         ArrayList<String> myOrgUnitUids = new ArrayList<>();
-        if (myOrgs == null) {
-            myOrgs = new ArrayList<>();
-        }
+
         for (OrganisationUnit myorg : myOrgs) {
             myOrgUnitUids.add(myorg.uid());
             String[] pathName = myorg.displayNamePath().split("/");
