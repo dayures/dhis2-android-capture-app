@@ -453,7 +453,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                 "LEFT JOIN OptionGroupOptionLink ON OptionGroupOptionLink.option = Option.uid  " +
                 "WHERE Option.optionSet = ? " +
                 "AND (OptionGroupOptionLink.optionGroup IS NULL OR OptionGroupOptionLink.optionGroup NOT IN (" + formattedOptionGroupsToHide + ")) " +
-                "ORDER BY  Option.sortOrder ASC";
+                "GROUP BY Option.uid ORDER BY  Option.sortOrder ASC";
 
         return briteDatabase.createQuery(OptionGroupOptionLinkTableInfo.TABLE_INFO.name(), optionGroupQuery, idOptionSet)
                 .mapToList(Option::create)
