@@ -4,6 +4,7 @@ import android.content.Context;
 
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
+import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.enrollment.note.Note;
@@ -69,4 +70,6 @@ public interface DashboardRepository {
     Integer getObjectStyle(Context context, String uid);
 
     Observable<List<Pair<RelationshipType, String>>> relationshipsForTeiType(String teType);
+
+    Observable<CategoryCombo> catComboForProgram(String program);
 }

@@ -8,16 +8,17 @@ import org.dhis2.data.forms.FormSectionViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.period.PeriodType;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -31,9 +32,11 @@ import io.reactivex.functions.Consumer;
 public class EventInitialContract {
 
     public interface EventInitialView extends AbstractActivityContracts.View {
+        void checkActionButtonVisibility();
+
         void setProgram(@NonNull Program program);
 
-        void setCatComboOptions(CategoryCombo catCombo, List<CategoryOptionCombo> catComboList);
+        void setCatComboOptions(CategoryCombo catCombo, Map<String, CategoryOption> stringCategoryOptionMap);
 
         void showDateDialog(DatePickerDialog.OnDateSetListener listener);
 
@@ -44,8 +47,6 @@ public class EventInitialContract {
         void addTree(TreeNode treeNode);
 
         void setEvent(Event event);
-
-        void setCatOption(CategoryOptionCombo categoryOptionComboModel);
 
         void setLocation(double latitude, double longitude);
 
@@ -61,8 +62,6 @@ public class EventInitialContract {
         Consumer<List<FieldViewModel>> showFields(String sectionUid);
 
         void showProgramStageSelection();
-
-        void setReportDate(Date date);
 
         void setOrgUnit(String orgUnitId, String orgUnitName);
 
@@ -113,15 +112,13 @@ public class EventInitialContract {
 
         void onLocation2Click();
 
-        void getCatOption(String categoryOptionComboId);
+        void onFieldChanged(CharSequence s, int start, int before, int count);
 
         void filterOrgUnits(String date);
 
         void getSectionCompletion(@Nullable String sectionUid);
 
         void goToSummary();
-
-        void getEvents(String programUid, String enrollmentUid, String programStageUid, PeriodType periodType);
 
         void getOrgUnits(String programId);
 
@@ -136,6 +133,8 @@ public class EventInitialContract {
         boolean isEnrollmentOpen();
 
         void getStageObjectStyle(String uid);
+
+        String getCatOptionCombo(List<CategoryOptionCombo> categoryOptionCombos, List<CategoryOption> values);
     }
 
 }

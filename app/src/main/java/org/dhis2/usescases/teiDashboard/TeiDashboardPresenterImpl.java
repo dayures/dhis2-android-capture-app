@@ -26,7 +26,6 @@ import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.EventCreationType;
 import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.D2;
-import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
@@ -604,6 +603,18 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
 
     public void getCatComboOptions(Event event) {
         compositeDisposable.add(
+                dashboardRepository.catComboForProgram(event.program())
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(catCombo -> {
+                                    for (ProgramStage programStage : dashboardProgramModel.getProgramStages()) {
+                                        if (event.programStage().equals(programStage.uid()))
+                                            view.showCatComboDialog(event.uid(), catCombo);
+                                    }
+                                },
+                                Timber::e));
+
+       /* compositeDisposable.add(
                 Observable.zip(
                         metadataRepository.getCategoryComboOptions(dashboardProgramModel.getCurrentProgram().categoryCombo().uid()),
                         metadataRepository.getCategoryFromCategoryCombo(dashboardProgramModel.getCurrentProgram().categoryCombo().uid()),
@@ -617,12 +628,11 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
                                             view.showCatComboDialog(event.uid(), pair.val1().displayName(), pair.val0(), programStage.displayName());
                                     }
                                 },
-                                Timber::e));
+                                Timber::e));*/
     }
 
     @Override
-    public void changeCatOption(String eventUid, CategoryOptionCombo selectedOption) {
-        metadataRepository.saveCatOption(eventUid, selectedOption);
+    public void changeCatOption(String eventUid, String catOptionComboUid) {
+        metadataRepository.saveCatOption(eventUid, catOptionComboUid);
     }
-
 }

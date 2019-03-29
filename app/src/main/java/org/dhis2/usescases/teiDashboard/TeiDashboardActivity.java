@@ -4,10 +4,8 @@ import android.os.Bundle;
 
 import org.dhis2.App;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
-import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.List;
 
 import javax.inject.Inject;
 
@@ -91,7 +89,8 @@ public class TeiDashboardActivity extends ActivityGlobalAbstract implements TeiD
     }
 
     @Override
-    public void showCatComboDialog(String eventId, String programStage, List<CategoryOptionCombo> catComboOptions, String title) {
+    public void showCatComboDialog(String eventId, CategoryCombo catCombo) {
         // nothing
     }
+
 }

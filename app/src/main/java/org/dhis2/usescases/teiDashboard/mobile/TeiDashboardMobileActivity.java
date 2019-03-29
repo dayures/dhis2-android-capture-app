@@ -30,6 +30,8 @@ import org.dhis2.utils.Constants;
 import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.custom_views.CategoryComboDialog;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionComboModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.jetbrains.annotations.NotNull;
 
@@ -183,9 +185,9 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
     }
 
     @Override
-    public void showCatComboDialog(String eventId, String catCombo, List<CategoryOptionCombo> catComboOptions, String title) {
-        CategoryComboDialog dialog = new CategoryComboDialog(getAbstracContext(), catCombo, catComboOptions, 123,
-                selectedOption -> presenter.changeCatOption(eventId, selectedOption), title);
+    public void showCatComboDialog(String eventId, CategoryCombo categoryCombo) {
+        CategoryComboDialog dialog = new CategoryComboDialog(getAbstracContext(), categoryCombo, 123,
+                selectedOption -> presenter.changeCatOption(eventId, selectedOption), categoryCombo.displayName());
         dialog.setCancelable(false);
         dialog.setCanceledOnTouchOutside(false);
         dialog.show();

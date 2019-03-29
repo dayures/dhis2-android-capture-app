@@ -464,7 +464,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         return String.format(Locale.US, QUERY, getWhereStatement(sectionUids));
     }
 
-    private StringBuilder getSectionUids(){
+    private StringBuilder getSectionUids() {
         StringBuilder sectionUids = new StringBuilder();
         try (Cursor sectionsCursor = briteDatabase.query(SELECT_SECTIONS, eventUid)) {
             if (sectionsCursor != null && sectionsCursor.moveToFirst()) {
@@ -583,24 +583,22 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
 
     @Override
     public Observable<Boolean> deleteEvent() {
-        Cursor eventCursor = briteDatabase.query("SELECT Event.* FROM Event WHERE Event.uid = ?", eventUid);
-        long status = -1;
-        if (eventCursor != null && eventCursor.moveToNext()) {
-            Event eventModel = Event.create(eventCursor);
-            if (eventModel.state() == State.TO_POST) {
-                String deleteWhere = String.format(
-                        "%s.%s = ?",
-                        SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID
-                );
-                status = briteDatabase.delete(SqlConstants.EVENT_TABLE, deleteWhere, eventUid);
-            } else {
-                ContentValues contentValues = eventModel.toContentValues();
-                contentValues.put(SqlConstants.EVENT_STATE, State.TO_DELETE.name());
-                status = briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + " = ?", eventUid);
-            }
-            if (status == 1 && eventModel.enrollment() != null)
-                updateEnrollment(eventModel.enrollment());
+        Event event = d2.eventModule().events.uid(eventUid).withAllChildren().get();
+        long status;
+        if (event.state() == State.TO_POST) {
+            String deleteWhere = String.format(
+                    "%s.%s = ?",
+                    SqlConstants.EVENT_TABLE, SqlConstants.EVENT_UID
+            );
+            status = briteDatabase.delete(SqlConstants.EVENT_TABLE, deleteWhere, eventUid);
+        } else {
+            ContentValues contentValues = event.toContentValues();
+            contentValues.put(SqlConstants.EVENT_STATE, State.TO_DELETE.name());
+            status = briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + " = ?", eventUid);
         }
+        if (status == 1 && event.enrollment() != null)
+            updateEnrollment(event.enrollment());
+
         return Observable.just(status == 1);
     }
 

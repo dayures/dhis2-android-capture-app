@@ -15,6 +15,10 @@ import org.dhis2.utils.CodeGenerator;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.SqlConstants;
 import org.dhis2.utils.ValueUtils;
+import org.hisp.dhis.android.core.D2;
+import org.hisp.dhis.android.core.category.Category;
+import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.data.database.DbDateColumnAdapter;
@@ -29,6 +33,7 @@ import org.hisp.dhis.android.core.relationship.RelationshipType;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -157,6 +162,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
     private final BriteDatabase briteDatabase;
     private final CodeGenerator codeGenerator;
+    private final D2 d2;
 
     private String teiUid;
     private String programUid;
@@ -188,9 +194,10 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             SqlConstants.LEGEND_TABLE, SqlConstants.LEGEND_START_VALUE,
             SqlConstants.LEGEND_TABLE, SqlConstants.LEGEND_END_VALUE);
 
-    public DashboardRepositoryImpl(CodeGenerator codeGenerator, BriteDatabase briteDatabase) {
+    public DashboardRepositoryImpl(CodeGenerator codeGenerator, BriteDatabase briteDatabase, D2 d2) {
         this.briteDatabase = briteDatabase;
         this.codeGenerator = codeGenerator;
+        this.d2 = d2;
     }
 
 
@@ -420,6 +427,21 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                                 .mapToList(cursor -> Pair.create(RelationshipType.create(cursor), cursor.getString(cursor.getColumnIndex("toTeiType"))));
                 });
 
+    }
+
+    @Override
+    public Observable<CategoryCombo> catComboForProgram(String programUid) {
+        return Observable.defer(() -> Observable.just(d2.categoryModule().categoryCombos.uid(d2.programModule().programs.uid(programUid).get().categoryCombo().uid()).withAllChildren().get()))
+                .map(categoryCombo -> {
+                    List<Category> fullCategories = new ArrayList<>();
+                    List<CategoryOptionCombo> fullOptionCombos = new ArrayList<>();
+                    for (Category category : categoryCombo.categories()) {
+                        fullCategories.add(d2.categoryModule().categories.uid(category.uid()).withAllChildren().get());
+                    }
+                    for (CategoryOptionCombo categoryOptionCombo : categoryCombo.categoryOptionCombos())
+                        fullOptionCombos.add(d2.categoryModule().categoryOptionCombos.uid(categoryOptionCombo.uid()).withAllChildren().get());
+                    return categoryCombo.toBuilder().categories(fullCategories).categoryOptionCombos(fullOptionCombos).build();
+                });
     }
 
     @Override

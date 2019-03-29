@@ -16,18 +16,18 @@ import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.edittext.EditTextViewModel;
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.schedulers.SchedulerProvider;
+import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Quintet;
-import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryActivity;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryRepository;
 import org.dhis2.usescases.map.MapSelectorActivity;
 import org.dhis2.utils.Constants;
-import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.OrgUnitUtils;
 import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.category.CategoryCombo;
+import org.hisp.dhis.android.core.category.CategoryOption;
+import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.period.PeriodType;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionHideField;
@@ -102,9 +102,9 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
                     Flowable.zip(
                             eventInitialRepository.event(eventId).toFlowable(BackpressureStrategy.LATEST),
                             metadataRepository.getProgramWithId(programId).toFlowable(BackpressureStrategy.LATEST),
-                            eventInitialRepository.catComboModel(programId).toFlowable(BackpressureStrategy.LATEST),
                             eventInitialRepository.catCombo(programId).toFlowable(BackpressureStrategy.LATEST),
                             metadataRepository.programStageForEvent(eventId),
+                            eventInitialRepository.getOptionsFromCatOptionCombo(eventId),
                             Quintet::create
                     )
                             .subscribeOn(Schedulers.io())
@@ -114,8 +114,8 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
                                 this.catCombo = quartetFlowable.val2();
                                 view.setEvent(quartetFlowable.val0());
                                 view.setProgram(quartetFlowable.val1());
-                                view.setCatComboOptions(catCombo, quartetFlowable.val3());
-                                view.setProgramStage(quartetFlowable.val4());
+                                view.setCatComboOptions(catCombo, quartetFlowable.val4());
+                                view.setProgramStage(quartetFlowable.val3());
                             }, Timber::d)
             );
 
@@ -123,9 +123,8 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
             compositeDisposable.add(
                     Flowable.zip(
                             metadataRepository.getProgramWithId(programId).toFlowable(BackpressureStrategy.LATEST),
-                            eventInitialRepository.catComboModel(programId).toFlowable(BackpressureStrategy.LATEST),
                             eventInitialRepository.catCombo(programId).toFlowable(BackpressureStrategy.LATEST),
-                            Trio::create
+                            Pair::create
                     )
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -133,7 +132,7 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
                                 this.programModel = trioFlowable.val0();
                                 this.catCombo = trioFlowable.val1();
                                 view.setProgram(trioFlowable.val0());
-                                view.setCatComboOptions(catCombo, trioFlowable.val2());
+                                view.setCatComboOptions(catCombo, null);
                             }, Timber::d)
             );
             getProgramStages(programId, programStageId);
@@ -363,14 +362,8 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
     }
 
     @Override
-    public void getCatOption(String categoryOptionComboId) {
-        compositeDisposable.add(metadataRepository.getCategoryOptionComboWithId(categoryOptionComboId)
-                .subscribeOn(Schedulers.io())
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(
-                        catOption -> view.setCatOption(catOption),
-                        Timber::d)
-        );
+    public void onFieldChanged(CharSequence s, int start, int before, int count) {
+        view.checkActionButtonVisibility();
     }
 
     @Override
@@ -480,16 +473,11 @@ public class EventInitialPresenterImpl implements EventInitialContract.EventInit
     }
 
     @Override
-    public void getEvents(String programUid, String enrollmentUid, String programStageUid, PeriodType periodType) {
-        compositeDisposable.add(
-                eventInitialRepository.getEventsFromProgramStage(programUid, enrollmentUid, programStageUid)
-                        .map(events -> DateUtils.getInstance().getNewDate(events, periodType))
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(date ->
-                                        view.setReportDate(date),
-                                Timber::d
-                        )
-        );
+    public String getCatOptionCombo(List<CategoryOptionCombo> categoryOptionCombos, List<CategoryOption> values) {
+        String attrOptionComb = "";
+        for (CategoryOptionCombo catOptComb : categoryOptionCombos)
+            if (catOptComb.categoryOptions().containsAll(values))
+                attrOptionComb = catOptComb.uid();
+        return attrOptionComb;
     }
 }

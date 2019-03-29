@@ -210,15 +210,20 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     }
 
     @Override
+    public Observable<CategoryCombo> catComboForProgram(String programUid) {
+        return null;
+    }
+
+    @Override
     public Observable<Category> getCategoryFromCategoryCombo(String categoryComboId) {
         return briteDatabase.createQuery(SqlConstants.CATEGORY_TABLE, SELECT_CATEGORY, categoryComboId)
                 .mapToOne(Category::create);
     }
 
     @Override
-    public void saveCatOption(String eventUid, CategoryOptionCombo selectedOption) {
+    public void saveCatOption(String eventUid, String catOptComboUid) {
         ContentValues event = new ContentValues();
-        event.put(SqlConstants.EVENT_ATTR_OPTION_COMBO, selectedOption.uid());
+        event.put(SqlConstants.EVENT_ATTR_OPTION_COMBO, catOptComboUid);
         briteDatabase.update(SqlConstants.EVENT_TABLE, event, SqlConstants.EVENT_UID + " = ?", eventUid == null ? "" : eventUid);
     }
 
@@ -238,7 +243,8 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     }
 
     @Override
-    public Observable<OrganisationUnit> getTeiOrgUnit(@NonNull String teiUid, @Nullable String programUid) {
+    public Observable<OrganisationUnit> getTeiOrgUnit(@NonNull String teiUid, @Nullable String
+            programUid) {
         if (programUid == null)
             return getTeiOrgUnit(teiUid);
         else
@@ -248,7 +254,8 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     }
 
     @Override
-    public Observable<List<ProgramTrackedEntityAttribute>> getProgramTrackedEntityAttributes(String programUid) {
+    public Observable<List<ProgramTrackedEntityAttribute>> getProgramTrackedEntityAttributes
+            (String programUid) {
         if (programUid != null)
             return briteDatabase
                     .createQuery(SqlConstants.PROGRAM_TE_ATTR_TABLE, PROGRAM_TRACKED_ENTITY_ATTRIBUTES_QUERY + QUOTE + programUid + QUOTE)
@@ -295,7 +302,8 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     }
 
     @Override
-    public Observable<Map<String, ObjectStyle>> getObjectStylesForPrograms(List<Program> enrollmentProgramModels) {
+    public Observable<Map<String, ObjectStyle>> getObjectStylesForPrograms
+            (List<Program> enrollmentProgramModels) {
         Map<String, ObjectStyle> objectStyleMap = new HashMap<>();
         for (Program programModel : enrollmentProgramModels) {
             ObjectStyle objectStyle = ObjectStyle.builder().build();
@@ -444,7 +452,8 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     }
 
     @Override
-    public Observable<List<Option>> searchOptions(String text, String idOptionSet, int page, List<String> optionsToHide, List<String> optionsGroupsToHide) {
+    public Observable<List<Option>> searchOptions(String text, String idOptionSet,
+                                                  int page, List<String> optionsToHide, List<String> optionsGroupsToHide) {
         String pageQuery = String.format(Locale.US, " LIMIT %d,%d", page * 15, 15);
         String formattedOptionsToHide = QUOTE + join("','", optionsToHide) + QUOTE;
         String formattedOptionGroupsToHide = QUOTE + join("','", optionsGroupsToHide) + QUOTE;

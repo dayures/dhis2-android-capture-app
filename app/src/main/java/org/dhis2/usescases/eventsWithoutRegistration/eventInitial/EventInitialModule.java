@@ -13,6 +13,7 @@ import org.dhis2.data.schedulers.SchedulerProvider;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryRepository;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryRepositoryImpl;
 import org.dhis2.utils.CodeGenerator;
+import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.rules.RuleExpressionEvaluator;
 
 import androidx.annotation.NonNull;
@@ -72,7 +73,7 @@ public class EventInitialModule {
 
     @Provides
     @PerActivity
-    EventInitialRepository eventDetailRepository(@NonNull CodeGenerator codeGenerator, BriteDatabase briteDatabase) {
-        return new EventInitialRepositoryImpl(codeGenerator, briteDatabase, eventUid);
+    EventInitialRepository eventDetailRepository(@NonNull CodeGenerator codeGenerator, BriteDatabase briteDatabase, D2 d2) {
+        return new EventInitialRepositoryImpl(codeGenerator, briteDatabase, eventUid, d2);
     }
 }

@@ -53,9 +53,11 @@ public interface MetadataRepository {
 
     Observable<List<CategoryOptionCombo>> getCategoryComboOptions(String categoryComboId);
 
+    Observable<CategoryCombo> catComboForProgram(String programUid);
+
     Observable<Category> getCategoryFromCategoryCombo(String categoryComboId);
 
-    void saveCatOption(String eventUid, CategoryOptionCombo selectedOption);
+    void saveCatOption(String eventUid, String catOptionComboUid);
 
     /*CATEGORY COMBO*/
 

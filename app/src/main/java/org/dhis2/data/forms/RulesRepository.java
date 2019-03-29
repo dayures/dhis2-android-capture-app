@@ -511,8 +511,7 @@ public final class RulesRepository {
             case HIDEOPTIONGROUP:
                 return RuleActionHideOptionGroup.create(content, optionGroup);
             default:
-                throw new IllegalArgumentException(
-                        "Unsupported RuleActionType: " + actionType.name());
+                return RuleActionUnsupported.create("UNSUPPORTED RULE ACTION TYPE", actionType.name());
         }
     }
 
@@ -588,12 +587,12 @@ public final class RulesRepository {
             if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
                 for (int i = 0; i < dataValueCursor.getCount(); i++) {
                     Date eventDateV = DateUtils.databaseDateFormat().parse(dataValueCursor.getString(0));
-                    String programStage = cursor.getString(1);
-                    String dataElement = cursor.getString(2);
-                    String value = cursor.getString(3) != null ? dataValueCursor.getString(3) : "";
-                    boolean useCode = cursor.getInt(4) == 1;
-                    String optionCode = cursor.getString(5);
-                    String optionName = cursor.getString(6);
+                    String programStage = dataValueCursor.getString(1);
+                    String dataElement = dataValueCursor.getString(2);
+                    String value = dataValueCursor.getString(3) != null ? dataValueCursor.getString(3) : "";
+                    boolean useCode = dataValueCursor.getInt(4) == 1;
+                    String optionCode = dataValueCursor.getString(5);
+                    String optionName = dataValueCursor.getString(6);
                     if (!isEmpty(optionCode) && !isEmpty(optionName))
                         value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
                     dataValues.add(RuleDataValue.create(eventDateV, programStage,
