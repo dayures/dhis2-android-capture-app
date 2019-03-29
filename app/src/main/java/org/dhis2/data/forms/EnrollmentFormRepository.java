@@ -531,20 +531,8 @@ public class EnrollmentFormRepository implements FormRepository {
     private FieldViewModel transform(@NonNull Cursor cursor) {
         FieldViewModelHelper fieldViewModelHelper = FieldViewModelHelper.createFromCursor(cursor);
         EnrollmentStatus status = EnrollmentStatus.valueOf(cursor.getString(10));
-        String description = cursor.getString(11);
-        if (!isEmpty(fieldViewModelHelper.getOptionCodeName())) {
-            fieldViewModelHelper.setDataValue(fieldViewModelHelper.getOptionCodeName());
-        }
 
-        int optionCount = 0;
-        if (fieldViewModelHelper.getOptionSetUid() != null)
-            try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?",
-                    fieldViewModelHelper.getOptionSetUid())) {
-                if (countCursor != null && countCursor.moveToFirst())
-                    optionCount = countCursor.getInt(0);
-            } catch (Exception e) {
-                Timber.e(e);
-            }
+        int optionCount = FieldViewModelHelper.getOptionCount(briteDatabase, fieldViewModelHelper.getOptionSetUid());
 
         ValueTypeDeviceRendering fieldRendering = null;
         try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering " +
@@ -575,7 +563,7 @@ public class EnrollmentFormRepository implements FormRepository {
         return fieldFactory.create(fieldViewModelHelper.getUid(), fieldViewModelHelper.getLabel(), fieldViewModelHelper.getValueType(),
                 fieldViewModelHelper.isMandatory(), fieldViewModelHelper.getOptionSetUid(), fieldViewModelHelper.getDataValue(),
                 fieldViewModelHelper.getSection(), fieldViewModelHelper.getAllowFutureDates(),
-                status == EnrollmentStatus.ACTIVE, null, description, fieldRendering, optionCount, objectStyle);
+                status == EnrollmentStatus.ACTIVE, null, fieldViewModelHelper.getDescription(), fieldRendering, optionCount, objectStyle);
     }
 
     @NonNull

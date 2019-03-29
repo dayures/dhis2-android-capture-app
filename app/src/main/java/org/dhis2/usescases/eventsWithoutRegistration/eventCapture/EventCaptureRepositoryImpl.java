@@ -9,7 +9,7 @@ import com.squareup.sqlbrite2.BriteDatabase;
 import org.dhis2.R;
 import org.dhis2.data.forms.FormRepository;
 import org.dhis2.data.forms.FormSectionViewModel;
-import org.dhis2.data.forms.RulesRepository;
+import org.dhis2.data.forms.RuleHelper;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactory;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactoryImpl;
@@ -36,7 +36,6 @@ import org.hisp.dhis.android.core.program.ProgramStageSectionDeviceRendering;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.rules.models.Rule;
-import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleDataValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEvent;
@@ -226,59 +225,15 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     private void setDataElementRules(List<ProgramRuleVariable> variables, List<ProgramRule> rules, List<ProgramRule> mandatoryRules) {
         for (ProgramRuleVariable variable : variables) {
             if (variable.dataElement() != null && !dataElementRules.containsKey(variable.dataElement().uid()))
-                dataElementRules.put(variable.dataElement().uid(), trasformToRule(mandatoryRules));
+                dataElementRules.put(variable.dataElement().uid(), RuleHelper.trasformToRule(mandatoryRules));
             for (ProgramRule rule : rules) {
                 if (rule.condition().contains(variable.displayName()) || actionsContainsDE(rule.programRuleActions(), variable.displayName())) {
                     if (dataElementRules.get(variable.dataElement().uid()) == null)
-                        dataElementRules.put(variable.dataElement().uid(), trasformToRule(mandatoryRules));
-                    dataElementRules.get(variable.dataElement().uid()).add(trasformToRule(rule));
+                        dataElementRules.put(variable.dataElement().uid(), RuleHelper.trasformToRule(mandatoryRules));
+                    dataElementRules.get(variable.dataElement().uid()).add(RuleHelper.trasformToRule(rule));
                 }
             }
         }
-    }
-
-    private Rule trasformToRule(ProgramRule rule) {
-        return Rule.create(
-                rule.programStage() != null ? rule.programStage().uid() : null,
-                rule.priority(),
-                rule.condition(),
-                transformToRuleAction(rule.programRuleActions()),
-                rule.displayName());
-    }
-
-    private List<Rule> trasformToRule(List<ProgramRule> rules) {
-        List<Rule> finalRules = new ArrayList<>();
-        for (ProgramRule rule : rules) {
-            finalRules.add(Rule.create(
-                    rule.programStage() != null ? rule.programStage().uid() : null,
-                    rule.priority(),
-                    rule.condition(),
-                    transformToRuleAction(rule.programRuleActions()),
-                    rule.displayName()));
-        }
-        return finalRules;
-    }
-
-    private List<RuleAction> transformToRuleAction(List<ProgramRuleAction> programRuleActions) {
-        List<RuleAction> ruleActions = new ArrayList<>();
-        if (programRuleActions != null)
-            for (ProgramRuleAction programRuleAction : programRuleActions)
-                ruleActions.add(createRuleAction(programRuleAction));
-        return ruleActions;
-    }
-
-    private RuleAction createRuleAction(ProgramRuleAction programRuleAction) {
-        return RulesRepository.create(
-                programRuleAction.programRuleActionType(),
-                programRuleAction.programStage() != null ? programRuleAction.programStage().uid() : null,
-                programRuleAction.programStageSection() != null ? programRuleAction.programStageSection().uid() : null,
-                programRuleAction.trackedEntityAttribute() != null ? programRuleAction.trackedEntityAttribute().uid() : null,
-                programRuleAction.dataElement() != null ? programRuleAction.dataElement().uid() : null,
-                programRuleAction.location(),
-                programRuleAction.content(),
-                programRuleAction.data(),
-                programRuleAction.option() != null ? programRuleAction.option().uid() : null,
-                programRuleAction.optionGroup() != null ? programRuleAction.optionGroup().uid() : null);
     }
 
     private boolean actionsContainsDE(List<ProgramRuleAction> programRuleActions, String variableName) {

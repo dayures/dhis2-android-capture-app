@@ -394,7 +394,7 @@ public class EventRepository implements FormRepository {
     public Observable<OrganisationUnit> getOrgUnitDates() {
         return briteDatabase.createQuery("SELECT * FROM OrganisationUnit " +
                 "JOIN Event ON Event.organisationUnit = OrganisationUnit.uid " +
-                "WHERE Event.uid = ?", eventUid)
+                "WHERE Event.uid = ?", eventUid == null ? "" : eventUid)
                 .mapToOne(OrganisationUnit::create);
     }
 
@@ -402,21 +402,9 @@ public class EventRepository implements FormRepository {
     private FieldViewModel transform(@NonNull Cursor cursor) {
         FieldViewModelHelper fieldViewModelHelper = FieldViewModelHelper.createFromCursor(cursor);
         EventStatus status = EventStatus.valueOf(cursor.getString(9));
-        String formLabel = cursor.getString(10);
-        String description = cursor.getString(11);
-        if (!isEmpty(fieldViewModelHelper.getOptionCodeName())) {
-            fieldViewModelHelper.setDataValue(fieldViewModelHelper.getOptionCodeName());
-        }
 
-        int optionCount = 0;
-        try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?",
-                fieldViewModelHelper.getOptionSetUid())) {
-            if (countCursor != null && countCursor.moveToFirst()) {
-                optionCount = countCursor.getInt(0);
-            }
-        } catch (Exception e) {
-            Timber.e(e);
-        }
+        int optionCount = FieldViewModelHelper.getOptionCount(briteDatabase, fieldViewModelHelper.getOptionSetUid());
+
         ValueTypeDeviceRendering fieldRendering = null;
         try (Cursor rendering = briteDatabase.query("SELECT * FROM ValueTypeDeviceRendering WHERE uid = ?",
                 fieldViewModelHelper.getUid())) {
@@ -442,11 +430,12 @@ public class EventRepository implements FormRepository {
                 objectStyle = ObjectStyle.create(objStyleCursor);
         }
         return fieldFactory.create(
-                fieldViewModelHelper.getUid(), isEmpty(formLabel) ? fieldViewModelHelper.getLabel() : formLabel,
+                fieldViewModelHelper.getUid(), isEmpty(fieldViewModelHelper.getFormLabel()) ?
+                        fieldViewModelHelper.getLabel() : fieldViewModelHelper.getFormLabel(),
                 fieldViewModelHelper.getValueType(),
                 fieldViewModelHelper.isMandatory(), fieldViewModelHelper.getOptionSetUid(), fieldViewModelHelper.getDataValue(),
                 fieldViewModelHelper.getSection(), fieldViewModelHelper.getAllowFutureDates(),
-                status == EventStatus.ACTIVE, null, description, fieldRendering, optionCount, objectStyle);
+                status == EventStatus.ACTIVE, null, fieldViewModelHelper.getDescription(), fieldRendering, optionCount, objectStyle);
     }
 
     @NonNull

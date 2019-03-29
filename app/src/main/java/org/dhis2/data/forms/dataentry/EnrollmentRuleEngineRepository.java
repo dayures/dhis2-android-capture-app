@@ -5,7 +5,7 @@ import android.database.Cursor;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.FormRepository;
-import org.dhis2.data.forms.RulesRepository;
+import org.dhis2.data.forms.RuleHelper;
 import org.dhis2.utils.Result;
 import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.D2;
@@ -22,7 +22,6 @@ import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.rules.models.Rule;
-import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleAttributeValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEnrollment;
@@ -194,12 +193,12 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     private void getAttributeRules(List<ProgramRule> rules, List<ProgramRuleVariable> variables, List<ProgramRule> mandatoryRules) {
         for (ProgramRuleVariable variable : variables) {
             if (variable.trackedEntityAttribute() != null && !attributeRules.containsKey(variable.trackedEntityAttribute().uid()))
-                attributeRules.put(variable.trackedEntityAttribute().uid(), trasformToRule(mandatoryRules));
+                attributeRules.put(variable.trackedEntityAttribute().uid(), RuleHelper.trasformToRule(mandatoryRules));
             for (ProgramRule rule : rules) {
                 if (rule.condition().contains(variable.displayName()) || actionsContainsAttr(rule.programRuleActions(), variable.displayName())) {
                     if (attributeRules.get(variable.trackedEntityAttribute().uid()) == null)
-                        attributeRules.put(variable.trackedEntityAttribute().uid(), trasformToRule(mandatoryRules));
-                    attributeRules.get(variable.trackedEntityAttribute().uid()).add(trasformToRule(rule));
+                        attributeRules.put(variable.trackedEntityAttribute().uid(), RuleHelper.trasformToRule(mandatoryRules));
+                    attributeRules.get(variable.trackedEntityAttribute().uid()).add(RuleHelper.trasformToRule(rule));
                 }
             }
         }
@@ -219,50 +218,6 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                 variableIterator.remove();
         }
         getAttributeRules(rules, variables, mandatoryRules);
-    }
-
-    private Rule trasformToRule(ProgramRule rule) {
-        return Rule.create(
-                rule.programStage() != null ? rule.programStage().uid() : null,
-                rule.priority(),
-                rule.condition(),
-                transformToRuleAction(rule.programRuleActions()),
-                rule.displayName());
-    }
-
-    private List<Rule> trasformToRule(List<ProgramRule> rules) {
-        List<Rule> finalRules = new ArrayList<>();
-        for (ProgramRule rule : rules) {
-            finalRules.add(Rule.create(
-                    rule.programStage() != null ? rule.programStage().uid() : null,
-                    rule.priority(),
-                    rule.condition(),
-                    transformToRuleAction(rule.programRuleActions()),
-                    rule.displayName()));
-        }
-        return finalRules;
-    }
-
-    private List<RuleAction> transformToRuleAction(List<ProgramRuleAction> programRuleActions) {
-        List<RuleAction> ruleActions = new ArrayList<>();
-        if (programRuleActions != null)
-            for (ProgramRuleAction programRuleAction : programRuleActions)
-                ruleActions.add(createRuleAction(programRuleAction));
-        return ruleActions;
-    }
-
-    private RuleAction createRuleAction(ProgramRuleAction programRuleAction) {
-        return RulesRepository.create(
-                programRuleAction.programRuleActionType(),
-                programRuleAction.programStage() != null ? programRuleAction.programStage().uid() : null,
-                programRuleAction.programStageSection() != null ? programRuleAction.programStageSection().uid() : null,
-                programRuleAction.trackedEntityAttribute() != null ? programRuleAction.trackedEntityAttribute().uid() : null,
-                programRuleAction.dataElement() != null ? programRuleAction.dataElement().uid() : null,
-                programRuleAction.location(),
-                programRuleAction.content(),
-                programRuleAction.data(),
-                programRuleAction.option() != null ? programRuleAction.option().uid() : null,
-                programRuleAction.optionGroup() != null ? programRuleAction.optionGroup().uid() : null);
     }
 
     private boolean actionsContainsAttr(List<ProgramRuleAction> programRuleActions, String variableName) {

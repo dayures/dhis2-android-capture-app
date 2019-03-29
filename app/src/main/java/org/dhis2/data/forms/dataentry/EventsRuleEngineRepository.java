@@ -1,25 +1,20 @@
 package org.dhis2.data.forms.dataentry;
 
-import android.database.Cursor;
-
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.FormRepository;
+import org.dhis2.data.forms.RuleHelper;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.Result;
 import org.dhis2.utils.SqlConstants;
-import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.rules.models.RuleDataValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEvent;
 
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-
-import javax.annotation.Nonnull;
 
 import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
@@ -93,40 +88,8 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
     @NonNull
     private Flowable<RuleEvent> queryEvent(@NonNull List<RuleDataValue> dataValues) {
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, QUERY_EVENT, eventUid)
-                .mapToOne(cursor -> {
-                    String eventUidAux = cursor.getString(0);
-                    String programStageUid = cursor.getString(1);
-                    RuleEvent.Status status = RuleEvent.Status.valueOf(cursor.getString(2));
-                    Date eventDate = parseDate(cursor.getString(3));
-                    Date dueDate = cursor.isNull(4) ? eventDate : parseDate(cursor.getString(4));
-                    String orgUnit = cursor.getString(5);
-                    String orgUnitCode = getOrgUnitCode(orgUnit);
-                    String programStageName = cursor.getString(6);
-
-                    return RuleEvent.builder()
-                            .event(eventUidAux)
-                            .programStage(programStageUid)
-                            .programStageName(programStageName)
-                            .status(status)
-                            .eventDate(eventDate)
-                            .dueDate(dueDate)
-                            .organisationUnit(orgUnit)
-                            .organisationUnitCode(orgUnitCode)
-                            .dataValues(dataValues)
-                            .build();
-
-                }).toFlowable(BackpressureStrategy.LATEST);
-    }
-
-    @Nonnull
-    private String getOrgUnitCode(String orgUnitUid) {
-        String ouCode = "";
-        try (Cursor cursor = briteDatabase.query("SELECT code FROM OrganisationUnit WHERE uid = ? LIMIT 1", orgUnitUid)) {
-            if (cursor != null && cursor.moveToFirst() && cursor.getString(0) != null) {
-                ouCode = cursor.getString(0);
-            }
-        }
-        return ouCode;
+                .mapToOne(cursor -> RuleHelper.createRuleEventFromCursor(briteDatabase, cursor, dataValues))
+                .toFlowable(BackpressureStrategy.LATEST);
     }
 
     @NonNull
@@ -145,10 +108,5 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
                         value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
                     return RuleDataValue.create(eventDate, programStage, dataElement, value);
                 }).toFlowable(BackpressureStrategy.LATEST);
-    }
-
-    @NonNull
-    private static Date parseDate(@NonNull String date) throws ParseException {
-        return BaseIdentifiableObject.DATE_FORMAT.parse(date);
     }
 }

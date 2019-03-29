@@ -52,7 +52,6 @@ public class ProgramModelHolder extends RecyclerView.ViewHolder {
         }
         binding.programImage.setImageResource(icon);
         binding.programImage.setColorFilter(ColorUtils.getContrastColor(color));
-
         binding.programImage.setBackgroundColor(color);
 
     }

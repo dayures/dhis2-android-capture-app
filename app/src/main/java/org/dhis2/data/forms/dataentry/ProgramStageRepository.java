@@ -226,21 +226,9 @@ final class ProgramStageRepository implements DataEntryRepository {
     private FieldViewModel transform(@NonNull Cursor cursor) {
         FieldViewModelHelper fieldViewModelHelper = FieldViewModelHelper.createFromCursor(cursor);
         EventStatus eventStatus = EventStatus.valueOf(cursor.getString(9));
-        String formLabel = cursor.getString(10);
-        String description = cursor.getString(11);
-        if (!isEmpty(fieldViewModelHelper.getOptionCodeName())) {
-            fieldViewModelHelper.setDataValue(fieldViewModelHelper.getOptionCodeName());
-        }
 
-        int optionCount = 0;
-        try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?",
-                fieldViewModelHelper.getOptionSetUid())) {
-            if (countCursor != null && countCursor.moveToFirst())
-                optionCount = countCursor.getInt(0);
+        int optionCount = FieldViewModelHelper.getOptionCount(briteDatabase, fieldViewModelHelper.getOptionSetUid());
 
-        } catch (Exception e) {
-            Timber.e(e);
-        }
         ValueTypeDeviceRendering fieldRendering = null;
         try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering" +
                 " JOIN ProgramStageDataElement ON ProgramStageDataElement.uid = ValueTypeDeviceRendering.uid" +
@@ -276,11 +264,12 @@ final class ProgramStageRepository implements DataEntryRepository {
                 objectStyle = ObjectStyle.create(objStyleCursor);
         }
 
-        return fieldFactory.create(fieldViewModelHelper.getUid(), isEmpty(formLabel) ? fieldViewModelHelper.getLabel() : formLabel,
+        return fieldFactory.create(fieldViewModelHelper.getUid(), isEmpty(fieldViewModelHelper.getFormLabel()) ?
+                        fieldViewModelHelper.getLabel() : fieldViewModelHelper.getFormLabel(),
                 fieldViewModelHelper.getValueType(),
                 fieldViewModelHelper.isMandatory(), fieldViewModelHelper.getOptionSetUid(), fieldViewModelHelper.getDataValue(),
                 fieldViewModelHelper.getSection(), fieldViewModelHelper.getAllowFutureDates(),
-                accessDataWrite && eventStatus == EventStatus.ACTIVE && !hasExpired, renderingType, description,
+                accessDataWrite && eventStatus == EventStatus.ACTIVE && !hasExpired, renderingType, fieldViewModelHelper.getDescription(),
                 fieldRendering, optionCount, objectStyle);
     }
 
