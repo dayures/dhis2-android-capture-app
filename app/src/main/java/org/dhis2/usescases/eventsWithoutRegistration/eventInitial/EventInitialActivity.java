@@ -92,6 +92,7 @@ import static org.dhis2.utils.Constants.TRACKED_ENTITY_INSTANCE;
  * QUADRAM. Created by Cristian on 01/03/2018.
  */
 
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class EventInitialActivity extends ActivityGlobalAbstract implements EventInitialContract.EventInitialView, DatePickerDialog.OnDateSetListener, ProgressBarAnimation.OnUpdate {
 
     private static final int PROGRESS_TIME = 2000;
@@ -134,6 +135,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     private ArrayList<String> sectionsToHide;
     private Boolean accessData;
 
+    @SuppressWarnings("squid:S00107")
     public static Bundle getBundle(String programUid, String eventUid, String eventCreationType,
                                    String teiUid, PeriodType eventPeriodType, String orgUnit, String stageUid,
                                    String enrollmentUid, int eventScheduleInterval, EnrollmentStatus enrollmentStatus) {
@@ -149,6 +151,90 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         bundle.putInt(Constants.EVENT_SCHEDULE_INTERVAL, eventScheduleInterval);
         bundle.putSerializable(Constants.ENROLLMENT_STATUS, enrollmentStatus);
         return bundle;
+    }
+
+    private void setActionButtonText() {
+        if (eventUid == null) {
+            if (binding.actionButton != null)
+                binding.actionButton.setText(R.string.create);
+        } else {
+            if (binding.actionButton != null)
+                binding.actionButton.setText(R.string.update);
+        }
+    }
+
+
+    private void createEventPermanent(String programStageModelUid) {
+        presenter.createEventPermanent(
+                enrollmentUid,
+                getTrackedEntityInstance,
+                programStageModelUid,
+                selectedDate,
+                selectedOrgUnit,
+                null,
+                catComboIsDefaultOrNull() ? null : catOptionComboUid,
+                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
+                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString()
+        );
+    }
+
+    private void scheduleEvent(String programStageModelUid) {
+        presenter.scheduleEvent(
+                enrollmentUid,
+                programStageModelUid,
+                selectedDate,
+                selectedOrgUnit,
+                null,
+                catComboIsDefaultOrNull() ? null : catOptionComboUid,
+                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
+                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString()
+        );
+    }
+
+    private void createEvent(String programStageModelUid) {
+        presenter.createEvent(
+                enrollmentUid,
+                programStageModelUid,
+                selectedDate,
+                selectedOrgUnit,
+                null,
+                catComboIsDefaultOrNull() ? null : catOptionComboUid,
+                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
+                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString(),
+                getTrackedEntityInstance);
+    }
+
+    private void newEventClick(String programStageModelUid) {
+        if (eventCreationType == EventCreationType.REFERAL && tempCreate.equals(PERMANENT)) {
+            createEventPermanent(programStageModelUid);
+        } else if (eventCreationType == EventCreationType.SCHEDULE) {
+            scheduleEvent(programStageModelUid);
+        } else {
+            createEvent(programStageModelUid);
+        }
+    }
+
+    private void editEventClick(String programStageModelUid) {
+        presenter.editEvent(getTrackedEntityInstance, programStageModelUid, eventUid,
+                DateUtils.databaseDateFormat().format(selectedDate), selectedOrgUnit, null,
+                catComboIsDefaultOrNull() ? null : catOptionComboUid,
+                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
+                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString()
+        );
+        startFormActivity(eventUid);
+    }
+
+    private void setActionButtonOnClick() {
+        if (binding.actionButton != null) {
+            binding.actionButton.setOnClickListener(v -> {
+                String programStageModelUid = programStageModel == null ? "" : programStageModel.uid();
+                if (eventUid == null) { // This is a new Event
+                    newEventClick(programStageModelUid);
+                } else {
+                    editEventClick(programStageModelUid);
+                }
+            });
+        }
     }
 
     @Override
@@ -178,64 +264,8 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         setUpScrenByCreatinType(eventCreationType);
 
         initProgressBar();
-
-        if (eventUid == null) {
-            if (binding.actionButton != null)
-                binding.actionButton.setText(R.string.create);
-        } else {
-            if (binding.actionButton != null)
-                binding.actionButton.setText(R.string.update);
-        }
-
-        if (binding.actionButton != null) {
-            binding.actionButton.setOnClickListener(v -> {
-                String programStageModelUid = programStageModel == null ? "" : programStageModel.uid();
-                if (eventUid == null) { // This is a new Event
-                    if (eventCreationType == EventCreationType.REFERAL && tempCreate.equals(PERMANENT)) {
-                        presenter.createEventPermanent(
-                                enrollmentUid,
-                                getTrackedEntityInstance,
-                                programStageModelUid,
-                                selectedDate,
-                                selectedOrgUnit,
-                                null,
-                                catComboIsDefaultOrNull() ? null : catOptionComboUid,
-                                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
-                                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString()
-                        );
-                    } else if (eventCreationType == EventCreationType.SCHEDULE) {
-                        presenter.scheduleEvent(
-                                enrollmentUid,
-                                programStageModelUid,
-                                selectedDate,
-                                selectedOrgUnit,
-                                null,
-                                catComboIsDefaultOrNull() ? null : catOptionComboUid,
-                                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
-                                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString()
-                        );
-                    } else {
-                        presenter.createEvent(
-                                enrollmentUid,
-                                programStageModelUid,
-                                selectedDate,
-                                selectedOrgUnit,
-                                null,
-                                catComboIsDefaultOrNull() ? null : catOptionComboUid,
-                                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
-                                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString(),
-                                getTrackedEntityInstance);
-                    }
-                } else {
-                    presenter.editEvent(getTrackedEntityInstance, programStageModelUid, eventUid, DateUtils.databaseDateFormat().format(selectedDate), selectedOrgUnit, null,
-                            catComboIsDefaultOrNull() ? null : catOptionComboUid,
-                            isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
-                            isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString()
-                    );
-                    startFormActivity(eventUid);
-                }
-            });
-        }
+        setActionButtonText();
+        setActionButtonOnClick();
     }
 
     private void setUpScrenByCreatinType(EventCreationType eventCreationType) {
@@ -340,10 +370,8 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         return field != null && !field.isEmpty();
     }
 
-    @Override
-    public void setProgram(@NonNull Program program) {
-        this.program = program;
 
+    private void setActivityTitle() {
         String activityTitle;
         if (eventCreationType == EventCreationType.REFERAL) {
             activityTitle = program.displayName() + " - " + getString(R.string.referral);
@@ -354,6 +382,31 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             activityTitle = eventUid == null ? program.displayName() + " - " + getString(R.string.new_event) : program.displayName();
         }
         binding.setName(activityTitle);
+    }
+
+    private void setDateOnClick() {
+        binding.date.setOnClickListener(view -> {
+            if (periodType == null)
+                presenter.onDateClick(EventInitialActivity.this);
+            else
+                new PeriodDialog()
+                        .setPeriod(periodType)
+                        .setPossitiveListener(selectedDateResult -> {
+                            this.selectedDate = selectedDateResult;
+                            binding.date.setText(DateUtils.getInstance().getPeriodUIString(periodType, selectedDate, Locale.getDefault()));
+                            binding.date.clearFocus();
+                            if (!fixedOrgUnit)
+                                binding.orgUnit.setText("");
+                            presenter.filterOrgUnits(DateUtils.uiDateFormat().format(selectedDate));
+                        })
+                        .show(getSupportFragmentManager(), PeriodDialog.class.getSimpleName());
+        });
+    }
+
+    @Override
+    public void setProgram(@NonNull Program program) {
+        this.program = program;
+        setActivityTitle();
 
         if (eventModel == null) {
             Calendar now = DateUtils.getInstance().getCalendar();
@@ -380,22 +433,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
                 binding.orgUnit.setEnabled(false);
         }
 
-        binding.date.setOnClickListener(view -> {
-            if (periodType == null)
-                presenter.onDateClick(EventInitialActivity.this);
-            else
-                new PeriodDialog()
-                        .setPeriod(periodType)
-                        .setPossitiveListener(selectedDateResult -> {
-                            this.selectedDate = selectedDateResult;
-                            binding.date.setText(DateUtils.getInstance().getPeriodUIString(periodType, selectedDate, Locale.getDefault()));
-                            binding.date.clearFocus();
-                            if (!fixedOrgUnit)
-                                binding.orgUnit.setText("");
-                            presenter.filterOrgUnits(DateUtils.uiDateFormat().format(selectedDate));
-                        })
-                        .show(getSupportFragmentManager(), PeriodDialog.class.getSimpleName());
-        });
+        setDateOnClick();
 
         presenter.filterOrgUnits(DateUtils.uiDateFormat().format(selectedDate));
 
@@ -406,6 +444,10 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             binding.location2.setOnClickListener(v -> presenter.onLocation2Click());
         }
 
+        setDisabledFields();
+    }
+
+    private void setDisabledFields() {
         if (eventModel != null &&
                 (DateUtils.getInstance().isEventExpired(null, eventModel.completedDate(), program.completeEventsExpiryDays()) ||
                         eventModel.status() == EventStatus.COMPLETED ||
@@ -431,6 +473,19 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             binding.drawerLayout.closeDrawer(GravityCompat.END);
     }
 
+    private void setDefaultNodeClick(AndroidTreeView treeView) {
+        treeView.setDefaultNodeClickListener((node, value) -> {
+            if (node.isSelectable()) {
+                treeView.selectNode(node, node.isSelected());
+                if (!fixedOrgUnit) {
+                    selectedOrgUnit = ((OrganisationUnit) value).uid();
+                    binding.orgUnit.setText(((OrganisationUnit) value).displayName());
+                }
+                binding.drawerLayout.closeDrawers();
+            }
+        });
+    }
+
     @Override
     public void addTree(TreeNode treeNode) {
         binding.treeViewContainer.removeAllViews();
@@ -444,27 +499,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         if (presenter.getOrgUnits().size() < 25)
             treeView.expandAll();
 
-        treeView.setDefaultNodeClickListener((node, value) -> {
-            if (node.isSelectable()) {
-                treeView.selectNode(node, node.isSelected());
-                ArrayList<String> childIds = new ArrayList<>();
-                childIds.add(((OrganisationUnit) value).uid());
-                for (TreeNode childNode : node.getChildren()) {
-                    childIds.add(((OrganisationUnit) childNode.getValue()).uid());
-                    for (TreeNode childNode2 : childNode.getChildren()) {
-                        childIds.add(((OrganisationUnit) childNode2.getValue()).uid());
-                        for (TreeNode childNode3 : childNode2.getChildren()) {
-                            childIds.add(((OrganisationUnit) childNode3.getValue()).uid());
-                        }
-                    }
-                }
-                if (!fixedOrgUnit) {
-                    selectedOrgUnit = ((OrganisationUnit) value).uid();
-                    binding.orgUnit.setText(((OrganisationUnit) value).displayName());
-                }
-                binding.drawerLayout.closeDrawers();
-            }
-        });
+        setDefaultNodeClick(treeView);
 
         if (treeView.getSelected() != null && !treeView.getSelected().isEmpty() && !fixedOrgUnit) {
             binding.orgUnit.setText(((OrganisationUnit) treeView.getSelected().get(0).getValue()).displayName());
@@ -586,21 +621,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
                     CategorySelectorBinding catSelectorBinding = CategorySelectorBinding.inflate(LayoutInflater.from(this));
                     catSelectorBinding.catCombLayout.setHint(category.displayName());
                     catSelectorBinding.catCombo.setOnClickListener(
-                            view ->
-                                    CategoryOptionPopUp.getInstance()
-                                            .setCategory(category)
-                                            .setOnClick(item -> {
-                                                if (item != null)
-                                                    selectedCatOption.put(category.uid(), item);
-                                                else
-                                                    selectedCatOption.remove(category.uid());
-                                                catSelectorBinding.catCombo.setText(item != null ? item.displayName() : null);
-                                                if (selectedCatOption.size() == catCombo.categories().size()) {
-                                                    catOptionComboUid = presenter.getCatOptionCombo(catCombo.categoryOptionCombos(), new ArrayList<>(selectedCatOption.values()));
-                                                    checkActionButtonVisibility();
-                                                }
-                                            })
-                                            .show(this, catSelectorBinding.getRoot())
+                            view -> showCatOptionPopUp(category, catSelectorBinding)
                     );
 
                     if (stringCategoryOptionMap != null && stringCategoryOptionMap.get(category.uid()) != null)
@@ -609,6 +630,23 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
                     binding.catComboLayout.addView(catSelectorBinding.getRoot());
                 }
         });
+    }
+
+    private void showCatOptionPopUp(Category category, CategorySelectorBinding catSelectorBinding) {
+        CategoryOptionPopUp.getInstance()
+                .setCategory(category)
+                .setOnClick(item -> {
+                    if (item != null)
+                        selectedCatOption.put(category.uid(), item);
+                    else
+                        selectedCatOption.remove(category.uid());
+                    catSelectorBinding.catCombo.setText(item != null ? item.displayName() : null);
+                    if (selectedCatOption.size() == catCombo.categories().size()) {
+                        catOptionComboUid = presenter.getCatOptionCombo(catCombo.categoryOptionCombos(), new ArrayList<>(selectedCatOption.values()));
+                        checkActionButtonVisibility();
+                    }
+                })
+                .show(this, catSelectorBinding.getRoot());
     }
 
     @Override
@@ -648,10 +686,9 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         // If request is cancelled, the result arrays are empty.
-        if (requestCode == EventInitialPresenterImpl.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                presenter.onLocationClick();
-            }
+        if (requestCode == EventInitialPresenterImpl.ACCESS_COARSE_LOCATION_PERMISSION_REQUEST &&
+                grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            presenter.onLocationClick();
         }
     }
 

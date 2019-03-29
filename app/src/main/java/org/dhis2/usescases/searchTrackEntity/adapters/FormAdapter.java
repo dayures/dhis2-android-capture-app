@@ -58,17 +58,20 @@ public class FormAdapter extends RecyclerView.Adapter {
     private static final long ENROLLMENT_DATE_ID = 1;
     private static final long INCIDENT_DATE_ID = 2;
 
-    private static final int EDITTEXT = 0;
-    private static final int BUTTON = 1;
-    private static final int CHECKBOX = 2;
-    private static final int SPINNER = 3;
-    private static final int COORDINATES = 4;
-    private static final int TIME = 5;
-    private static final int DATE = 6;
-    private static final int DATETIME = 7;
-    private static final int AGEVIEW = 8;
-    private static final int YES_NO = 9;
-    private static final int ORG_UNIT = 10;
+    public static final int EDITTEXT = 0;
+    public static final int BUTTON = 1;
+    public static final int CHECKBOX = 2;
+    public static final int SPINNER = 3;
+    public static final int COORDINATES = 4;
+    public static final int TIME = 5;
+    public static final int DATE = 6;
+    public static final int DATETIME = 7;
+    public static final int AGEVIEW = 8;
+    public static final int YES_NO = 9;
+    public static final int ORG_UNIT = 10;
+    public static final int IMAGE = 11;
+    public static final int UNSUPPORTED = 12;
+
     private int programData = 0;
     private List<TrackedEntityAttribute> attributeList;
     private Program programModel;

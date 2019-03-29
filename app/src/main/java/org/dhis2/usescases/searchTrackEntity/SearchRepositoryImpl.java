@@ -182,6 +182,9 @@ public class SearchRepositoryImpl implements SearchRepository {
                                                                           @Nullable Program selectedProgram,
                                                                           @Nullable HashMap<String, String> queryData, Integer page) {
 
+        if (queryData == null){
+            queryData = new HashMap<>();
+        }
 
         String attrQuery = "(SELECT TrackedEntityAttributeValue.trackedEntityInstance FROM TrackedEntityAttributeValue WHERE " +
                 "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.value LIKE 'ATTR_VALUE%') t";
@@ -220,16 +223,20 @@ public class SearchRepositoryImpl implements SearchRepository {
                                    StringBuilder attr,
                                    @NonNull String teType,
                                    @Nullable Program selectedProgram) {
+        if (queryData == null){
+            queryData = new HashMap<>();
+        }
+
         String teiTypeWHERE = "TrackedEntityInstance.trackedEntityType = '" + teType + "'";
         String teiRelationship = "TrackedEntityInstance.state <> '" + State.RELATIONSHIP.name() + "'";
 
         String enrollmentDateWHERE = null;
         String incidentDateWHERE = null;
-        if (queryData != null && !isEmpty(queryData.get(Constants.ENROLLMENT_DATE_UID))) {
+        if (!isEmpty(queryData.get(Constants.ENROLLMENT_DATE_UID))) {
             enrollmentDateWHERE = " Enrollment.enrollmentDate LIKE '" + queryData.get(Constants.ENROLLMENT_DATE_UID) + "%'";
             queryData.remove(Constants.ENROLLMENT_DATE_UID);
         }
-        if (queryData != null && !isEmpty(queryData.get(Constants.INCIDENT_DATE_UID))) {
+        if (!isEmpty(queryData.get(Constants.INCIDENT_DATE_UID))) {
             incidentDateWHERE = " Enrollment.incidentDate LIKE '" + queryData.get(Constants.INCIDENT_DATE_UID) + "%'";
             queryData.remove(Constants.INCIDENT_DATE_UID);
         }
@@ -254,16 +261,20 @@ public class SearchRepositoryImpl implements SearchRepository {
                                         @Nullable Map<String, String> queryData,
                                         int listSize,
                                         StringBuilder attr) {
+        if (queryData == null){
+            queryData = new HashMap<>();
+        }
+
         String teiTypeWHERE = "TrackedEntityInstance.trackedEntityType = '" + teType + "'";
         String teiRelationship = "TrackedEntityInstance.state <> '" + State.RELATIONSHIP.name() + "'";
 
         String enrollmentDateWHERE = null;
         String incidentDateWHERE = null;
-        if (queryData != null && !isEmpty(queryData.get(Constants.ENROLLMENT_DATE_UID))) {
+        if (!isEmpty(queryData.get(Constants.ENROLLMENT_DATE_UID))) {
             enrollmentDateWHERE = " Enrollment.enrollmentDate LIKE '" + queryData.get(Constants.ENROLLMENT_DATE_UID) + "%'";
             queryData.remove(Constants.ENROLLMENT_DATE_UID);
         }
-        if (queryData != null && !isEmpty(queryData.get(Constants.INCIDENT_DATE_UID))) {
+        if (!isEmpty(queryData.get(Constants.INCIDENT_DATE_UID))) {
             incidentDateWHERE = " Enrollment.incidentDate LIKE '" + queryData.get(Constants.INCIDENT_DATE_UID) + "%'";
             queryData.remove(Constants.INCIDENT_DATE_UID);
         }
@@ -296,6 +307,9 @@ public class SearchRepositoryImpl implements SearchRepository {
                                                                                   @Nullable Program selectedProgram,
                                                                                   @Nullable HashMap<String, String> queryData, int listSize) {
 
+        if (queryData == null){
+            queryData = new HashMap<>();
+        }
 
         String attrQuery = "(SELECT TrackedEntityAttributeValue.trackedEntityInstance FROM TrackedEntityAttributeValue WHERE " +
                 "TrackedEntityAttributeValue.trackedEntityAttribute = 'ATTR_ID' AND TrackedEntityAttributeValue.value LIKE 'ATTR_VALUE%') t";

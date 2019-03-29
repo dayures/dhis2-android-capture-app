@@ -263,7 +263,8 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
             fieldViewModels.put(mandatoryField.field(), model.setMandatory());
     }
 
-    private void applyRuleEffect(Map<String, FieldViewModel> fieldViewModels, Result<RuleEffect> calcResult, RuleEffect ruleEffect) {
+    @SuppressWarnings("squid:CommentedOutCodeLine")
+    private void applyRuleEffect(Map<String, FieldViewModel> fieldViewModels, RuleEffect ruleEffect) {
         RuleAction ruleAction = ruleEffect.ruleAction();
         if (ruleAction instanceof RuleActionShowWarning) {
             showWarning(fieldViewModels, ruleEffect, ruleAction);
@@ -310,7 +311,7 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
     @SuppressWarnings("squid:CommentedOutCodeLine")
     private void applyRuleEffects(Map<String, FieldViewModel> fieldViewModels, Result<RuleEffect> calcResult) {
         for (RuleEffect ruleEffect : calcResult.items()) {
-            applyRuleEffect(fieldViewModels, calcResult, ruleEffect);
+            applyRuleEffect(fieldViewModels, ruleEffect);
         }
     }
 }

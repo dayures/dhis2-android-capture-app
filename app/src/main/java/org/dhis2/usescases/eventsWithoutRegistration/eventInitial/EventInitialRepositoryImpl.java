@@ -147,7 +147,7 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                                           @NonNull Context context, @NonNull String programUid,
                                           @NonNull String programStage, @NonNull Date date,
                                           @NonNull String orgUnitUid, @Nullable String categoryOptionsUid,
-                                          @Nullable String categoryOptionComboUid, @NonNull String latitude, @NonNull String longitude) {
+                                          @Nullable String categoryOptionComboUid, @Nullable String latitude, @Nullable String longitude) {
 
 
         Date createDate = Calendar.getInstance().getTime();
@@ -166,7 +166,6 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 .created(createDate)
                 .lastUpdated(createDate)
                 .status(EventStatus.ACTIVE)
-                .coordinate(Coordinates.create(Double.valueOf(latitude), Double.valueOf(longitude)))
                 .program(programUid)
                 .programStage(programStage)
                 .organisationUnit(orgUnitUid)
@@ -176,6 +175,10 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 .state(State.TO_POST)
                 .attributeOptionCombo(categoryOptionComboUid)
                 .build();
+
+        if (latitude != null && longitude != null) {
+            eventModel.toBuilder().coordinate(Coordinates.create(Double.valueOf(latitude), Double.valueOf(longitude))).build();
+        }
 
         long row = -1;
 

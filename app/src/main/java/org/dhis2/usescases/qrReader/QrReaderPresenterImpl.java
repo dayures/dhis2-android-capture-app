@@ -525,8 +525,8 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 JSONArray enrollmentArray = enrollmentJson.get(i);
                 for (int j = 0; j < enrollmentArray.length(); j++) {
                     try {
-                        JSONObject enrollmentJson = enrollmentArray.getJSONObject(j);
-                        Enrollment enrollmentModel = createEnrollment(enrollmentJson);
+                        JSONObject enrollmentJsonResult = enrollmentArray.getJSONObject(j);
+                        Enrollment enrollmentModel = createEnrollment(enrollmentJsonResult);
 
                         if (enrollmentModel != null)
                             briteDatabase.insert(SqlConstants.ENROLLMENT_TABLE, enrollmentModel.toContentValues());

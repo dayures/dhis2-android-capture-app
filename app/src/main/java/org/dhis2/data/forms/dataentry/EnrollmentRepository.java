@@ -199,6 +199,7 @@ final class EnrollmentRepository implements DataEntryRepository {
         return uid;
     }
 
+    @SuppressWarnings("squid:S00107")
     @NonNull
     private FieldViewModel transform(@NonNull Cursor cursor) {
         String uid = getUid(cursor);
@@ -260,6 +261,7 @@ final class EnrollmentRepository implements DataEntryRepository {
                 fieldRendering, optionCount, objectStyle);
     }
 
+    @SuppressWarnings("squid:S00107")
     private FieldViewModel createFieldViewModel(String warning, String uid, String label, ValueType valueType, boolean mandatory, String optionSet,
                                                 String dataValue, boolean allowFutureDates, boolean generated,
                                                 EnrollmentStatus enrollmentStatus, String description,

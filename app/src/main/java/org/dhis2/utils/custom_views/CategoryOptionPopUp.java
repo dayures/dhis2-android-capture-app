@@ -55,7 +55,7 @@ public class CategoryOptionPopUp {
         return this;
     }
 
-    public void dismiss() {
+    public static void dismiss() {
         instance = null;
     }
 

@@ -345,16 +345,7 @@ public final class RulesRepository {
         String elementType = cursor.getString(6);
 
         // String representation of value type.
-        RuleValueType mimeType = null;
-        if (!isEmpty(attributeType)) {
-            mimeType = convertType(attributeType);
-        } else if (!isEmpty(elementType)) {
-            mimeType = convertType(elementType);
-        }
-
-        if (mimeType == null) {
-            mimeType = RuleValueType.TEXT;
-        }
+        RuleValueType mimeType = getMimeType(attributeType, elementType);
 
         switch (ProgramRuleVariableSourceType.valueOf(sourceType)) {
             case TEI_ATTRIBUTE:
@@ -378,19 +369,7 @@ public final class RulesRepository {
         }
     }
 
-    @NonNull
-    private static RuleVariable mapToRuleVariableProgramStages(@NonNull Cursor cursor) {
-        String name = cursor.getString(0);
-        String stage = cursor.getString(1);
-        String sourceType = cursor.getString(2);
-        String dataElement = cursor.getString(3);
-        String attribute = cursor.getString(4);
-
-        // Mime types of the attribute and data element.
-        String attributeType = cursor.getString(5);
-        String elementType = cursor.getString(6);
-
-        // String representation of value type.
+    private static RuleValueType getMimeType(String attributeType, String elementType) {
         RuleValueType mimeType = null;
         if (!isEmpty(attributeType)) {
             mimeType = convertType(attributeType);
@@ -401,27 +380,12 @@ public final class RulesRepository {
         if (mimeType == null) {
             mimeType = RuleValueType.TEXT;
         }
+        return mimeType;
+    }
 
-        switch (ProgramRuleVariableSourceType.valueOf(sourceType)) {
-            case TEI_ATTRIBUTE:
-                return RuleVariableAttribute.create(name, attribute, mimeType);
-            case DATAELEMENT_CURRENT_EVENT:
-                return RuleVariableCurrentEvent.create(name, dataElement, mimeType);
-            case DATAELEMENT_NEWEST_EVENT_PROGRAM:
-                return RuleVariableNewestEvent.create(name, dataElement, mimeType);
-            case DATAELEMENT_NEWEST_EVENT_PROGRAM_STAGE:
-                if (stage == null)
-                    stage = "";
-                return RuleVariableNewestStageEvent.create(name, dataElement, stage, mimeType);
-            case DATAELEMENT_PREVIOUS_EVENT:
-                return RuleVariablePreviousEvent.create(name, dataElement, mimeType);
-            case CALCULATED_VALUE:
-                String variable = dataElement != null ? dataElement : attribute;
-                return RuleVariableCalculatedValue.create(name, variable != null ? variable : "", mimeType);
-            default:
-                throw new IllegalArgumentException("Unsupported variable " +
-                        "source type: " + sourceType);
-        }
+    @NonNull
+    private static RuleVariable mapToRuleVariableProgramStages(@NonNull Cursor cursor) {
+        return mapToRuleVariable(cursor);
     }
 
     @NonNull
@@ -575,13 +539,13 @@ public final class RulesRepository {
                                                     .dueDate(dueDate)
                                                     .organisationUnit(orgUnit)
                                                     .organisationUnitCode(orgUnitCode)
-                                                    .dataValues(getDataValues(cursor, eventUid))
+                                                    .dataValues(getDataValues(eventUid))
                                                     .build();
 
                                         }))).toFlowable(BackpressureStrategy.LATEST);
     }
 
-    private List<RuleDataValue> getDataValues(Cursor cursor, String eventUid) throws ParseException {
+    private List<RuleDataValue> getDataValues(String eventUid) throws ParseException {
         List<RuleDataValue> dataValues = new ArrayList<>();
         try (Cursor dataValueCursor = briteDatabase.query(QUERY_VALUES, eventUid)) {
             if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
@@ -627,7 +591,7 @@ public final class RulesRepository {
                             .dueDate(dueDate)
                             .organisationUnit(orgUnit)
                             .organisationUnitCode(orgUnitCode)
-                            .dataValues(getDataValues(cursor, eventUid))
+                            .dataValues(getDataValues(eventUid))
                             .build();
 
                 }).toFlowable(BackpressureStrategy.LATEST);

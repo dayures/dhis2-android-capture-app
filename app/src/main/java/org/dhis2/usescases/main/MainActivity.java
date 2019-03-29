@@ -23,6 +23,7 @@ import org.dhis2.usescases.syncManager.SyncManagerFragment;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.SharedPreferenceBooleanLiveData;
 import org.hisp.dhis.android.core.maintenance.D2Error;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Objects;
@@ -105,15 +106,15 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
             this.metaSyncStatus = metaStatus;
             checkSyncStatus();
         });
-        lastMetaNoNetWork.observe(this, metaNoNetwork -> {
-            this.metaNoNetwork = metaNoNetwork;
+        lastMetaNoNetWork.observe(this, metaNoNetworkResult -> {
+            this.metaNoNetwork = metaNoNetworkResult;
             checkSyncStatus();
         });
 
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    protected void onSaveInstanceState(@NotNull Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putInt("Fragment", fragId);
     }

@@ -27,6 +27,7 @@ import org.dhis2.data.forms.dataentry.fields.spinner.SpinnerViewModel;
 import org.dhis2.data.forms.dataentry.fields.unsupported.UnsupportedRow;
 import org.dhis2.data.forms.dataentry.fields.unsupported.UnsupportedViewModel;
 import org.dhis2.data.tuples.Trio;
+import org.dhis2.usescases.searchTrackEntity.adapters.FormAdapter;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 
@@ -46,20 +47,6 @@ import io.reactivex.processors.PublishProcessor;
 import timber.log.Timber;
 
 public final class DataEntryAdapter extends Adapter {
-    private static final int EDITTEXT = 0;
-    private static final int BUTTON = 1;
-    private static final int CHECKBOX = 2;
-    private static final int SPINNER = 3;
-    private static final int COORDINATES = 4;
-    private static final int TIME = 5;
-    private static final int DATE = 6;
-    private static final int DATETIME = 7;
-    private static final int AGEVIEW = 8;
-    private static final int YES_NO = 9;
-    private static final int ORG_UNIT = 10;
-    private static final int IMAGE = 11;
-    private static final int UNSUPPORTED = 12;
-
 
     @NonNull
     private final List<FieldViewModel> viewModels;
@@ -91,20 +78,28 @@ public final class DataEntryAdapter extends Adapter {
         currentPosition = PublishProcessor.create();
         this.processorOptionSet = PublishProcessor.create();
 
-        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, true, dataEntryArguments.renderType(), isEditable));
-        rows.add(BUTTON, new FileRow(layoutInflater, processor, true));
-        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, true));
-        rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, processorOptionSet, true, dataEntryArguments.renderType()));
-        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, true));
-        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true));
-        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true));
-        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true));
-        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, true));
-        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, true));
-        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, true, orgUnits, dataEntryArguments.renderType()));
-        rows.add(IMAGE, new ImageRow(layoutInflater, processor, dataEntryArguments.renderType()));
-        rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater));
+        addRows(layoutInflater, fragmentManager, dataEntryArguments, orgUnits, isEditable);
+    }
 
+    private void addRows(@NonNull LayoutInflater layoutInflater,
+                         @NonNull FragmentManager fragmentManager,
+                         @NonNull DataEntryArguments dataEntryArguments,
+                         @NonNull Observable<List<OrganisationUnit>> orgUnits,
+                         ObservableBoolean isEditable) {
+
+        rows.add(FormAdapter.EDITTEXT, new EditTextRow(layoutInflater, processor, true, dataEntryArguments.renderType(), isEditable));
+        rows.add(FormAdapter.BUTTON, new FileRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.CHECKBOX, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.SPINNER, new SpinnerRow(layoutInflater, processor, processorOptionSet, true, dataEntryArguments.renderType()));
+        rows.add(FormAdapter.COORDINATES, new CoordinateRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.TIME, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.TIME, true));
+        rows.add(FormAdapter.DATE, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.DATE, true));
+        rows.add(FormAdapter.DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.DATETIME, true));
+        rows.add(FormAdapter.AGEVIEW, new AgeRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.YES_NO, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, true, orgUnits, dataEntryArguments.renderType()));
+        rows.add(FormAdapter.IMAGE, new ImageRow(layoutInflater, processor, dataEntryArguments.renderType()));
+        rows.add(FormAdapter.UNSUPPORTED, new UnsupportedRow(layoutInflater));
     }
 
     public DataEntryAdapter(@NonNull LayoutInflater layoutInflater,
@@ -122,27 +117,14 @@ public final class DataEntryAdapter extends Adapter {
         currentPosition = PublishProcessor.create();
         this.processorOptionSet = processorOptSet;
 
-        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, true, dataEntryArguments.renderType(), isEditable));
-        rows.add(BUTTON, new FileRow(layoutInflater, processor, true));
-        rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, true));
-        rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, processorOptionSet, true, dataEntryArguments.renderType()));
-        rows.add(COORDINATES, new CoordinateRow(layoutInflater, processor, true));
-        rows.add(TIME, new DateTimeRow(layoutInflater, processor, currentPosition, TIME, true));
-        rows.add(DATE, new DateTimeRow(layoutInflater, processor, currentPosition, DATE, true));
-        rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true));
-        rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, true));
-        rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, true));
-        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, true, orgUnits, dataEntryArguments.renderType()));
-        rows.add(IMAGE, new ImageRow(layoutInflater, processor, dataEntryArguments.renderType()));
-        rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater));
-
+        addRows(layoutInflater, fragmentManager, dataEntryArguments, orgUnits, isEditable);
     }
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        if (viewType == IMAGE)
-            return ((ImageRow) rows.get(IMAGE)).onCreate(parent, getItemCount(), imageSelector);
+        if (viewType == FormAdapter.IMAGE)
+            return ((ImageRow) rows.get(FormAdapter.IMAGE)).onCreate(parent, getItemCount(), imageSelector);
         else
             return rows.get(viewType).onCreate(parent);
     }
@@ -160,11 +142,11 @@ public final class DataEntryAdapter extends Adapter {
 
     private int getDateTimeItemViewType(DateTimeViewModel viewModel) {
         if (viewModel.valueType() == ValueType.DATE)
-            return DATE;
+            return FormAdapter.DATE;
         if (viewModel.valueType() == ValueType.TIME)
-            return TIME;
+            return FormAdapter.TIME;
         else
-            return DATETIME;
+            return FormAdapter.DATETIME;
     }
 
     @Override
@@ -172,25 +154,25 @@ public final class DataEntryAdapter extends Adapter {
 
         FieldViewModel viewModel = viewModels.get(position);
         if (viewModel instanceof EditTextModel) {
-            return EDITTEXT;
+            return FormAdapter.EDITTEXT;
         } else if (viewModel instanceof RadioButtonViewModel) {
-            return CHECKBOX;
+            return FormAdapter.CHECKBOX;
         } else if (viewModel instanceof SpinnerViewModel) {
-            return SPINNER;
+            return FormAdapter.SPINNER;
         } else if (viewModel instanceof CoordinateViewModel) {
-            return COORDINATES;
+            return FormAdapter.COORDINATES;
         } else if (viewModel instanceof DateTimeViewModel) {
             return getDateTimeItemViewType((DateTimeViewModel) viewModel);
         } else if (viewModel instanceof AgeViewModel) {
-            return AGEVIEW;
+            return FormAdapter.AGEVIEW;
         } else if (viewModel instanceof FileViewModel) {
-            return BUTTON;
+            return FormAdapter.BUTTON;
         } else if (viewModel instanceof OrgUnitViewModel) {
-            return ORG_UNIT;
+            return FormAdapter.ORG_UNIT;
         } else if (viewModel instanceof ImageViewModel) {
-            return IMAGE;
+            return FormAdapter.IMAGE;
         } else if (viewModel instanceof UnsupportedViewModel) {
-            return UNSUPPORTED;
+            return FormAdapter.UNSUPPORTED;
         } else {
             throw new IllegalStateException("Unsupported view model type: "
                     + viewModel.getClass());

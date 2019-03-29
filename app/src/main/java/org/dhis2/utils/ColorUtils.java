@@ -70,7 +70,7 @@ public class ColorUtils {
         return (getColorInt(color) > 0.179d) ? Color.BLACK : Color.WHITE;
     }
 
-    public static double getColorInt(int color){
+    public static double getColorInt(int color) {
         ArrayList<Double> rgb = new ArrayList<>();
         rgb.add(Color.red(color) / 255.0d);
         rgb.add(Color.green(color) / 255.0d);
@@ -98,8 +98,7 @@ public class ColorUtils {
         g = g == null ? 0 : g;
         b = b == null ? 0 : b;
 
-        double l = 0.2126d * r + 0.7152d * g + 0.0722d * b;
-        return l;
+        return 0.2126d * r + 0.7152d * g + 0.0722d * b;
     }
 
     @SuppressWarnings("squid:S1479")
