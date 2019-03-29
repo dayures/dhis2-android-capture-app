@@ -12,6 +12,7 @@ import org.dhis2.utils.CodeGenerator;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.SqlConstants;
 import org.dhis2.utils.ValueUtils;
+import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
@@ -135,12 +136,14 @@ public class SearchRepositoryImpl implements SearchRepository {
     private static final Set<String> TEI_TABLE_SET = new HashSet<>(Arrays.asList(TEI_TABLE_NAMES));
     private final CodeGenerator codeGenerator;
     private final String teiType;
+    private final D2 d2;
 
 
-    SearchRepositoryImpl(CodeGenerator codeGenerator, BriteDatabase briteDatabase, String teiType) {
+    SearchRepositoryImpl(CodeGenerator codeGenerator, BriteDatabase briteDatabase, String teiType, D2 d2) {
         this.codeGenerator = codeGenerator;
         this.briteDatabase = briteDatabase;
         this.teiType = teiType;
+        this.d2 = d2;
     }
 
 
@@ -182,7 +185,7 @@ public class SearchRepositoryImpl implements SearchRepository {
                                                                           @Nullable Program selectedProgram,
                                                                           @Nullable HashMap<String, String> queryData, Integer page) {
 
-        if (queryData == null){
+        if (queryData == null) {
             queryData = new HashMap<>();
         }
 
@@ -223,7 +226,7 @@ public class SearchRepositoryImpl implements SearchRepository {
                                    StringBuilder attr,
                                    @NonNull String teType,
                                    @Nullable Program selectedProgram) {
-        if (queryData == null){
+        if (queryData == null) {
             queryData = new HashMap<>();
         }
 
@@ -261,7 +264,7 @@ public class SearchRepositoryImpl implements SearchRepository {
                                         @Nullable Map<String, String> queryData,
                                         int listSize,
                                         StringBuilder attr) {
-        if (queryData == null){
+        if (queryData == null) {
             queryData = new HashMap<>();
         }
 
@@ -307,7 +310,7 @@ public class SearchRepositoryImpl implements SearchRepository {
                                                                                   @Nullable Program selectedProgram,
                                                                                   @Nullable HashMap<String, String> queryData, int listSize) {
 
-        if (queryData == null){
+        if (queryData == null) {
             queryData = new HashMap<>();
         }
 
@@ -470,8 +473,10 @@ public class SearchRepositoryImpl implements SearchRepository {
     public Flowable<List<SearchTeiModel>> transformIntoModel(List<SearchTeiModel> teiList, @Nullable Program selectedProgram) {
         return Flowable.fromIterable(teiList)
                 .map(tei -> {
-                    try (Cursor teiCursor = briteDatabase.query("SELECT uid FROM TrackedEntityInstance WHERE uid = ?", tei.getTei().uid())) {
+                    try (Cursor teiCursor = briteDatabase.query("SELECT TrackedEntityInstance.* FROM TrackedEntityInstance WHERE uid = ?", tei.getTei().uid())) {
                         if (teiCursor != null && teiCursor.moveToFirst()) {
+                            TrackedEntityInstance localTei = TrackedEntityInstance.create(teiCursor);
+                            tei.toLocalTei(localTei);
                             tei.setOnline(false);
                             setEnrollmentInfo(tei);
                             setAttributesInfo(tei, selectedProgram);

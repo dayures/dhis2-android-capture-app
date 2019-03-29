@@ -77,7 +77,7 @@ public class TeiProgramListInteractorImpl implements TeiProgramListContract.TeiP
         OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setTitle("Enrollment Org Unit")
                 .setPossitiveListener(v -> {
-                    if (orgUnitDialog.getSelectedOrgUnit() != null)
+                    if (orgUnitDialog.getSelectedOrgUnit() != null && !orgUnitDialog.getSelectedOrgUnit().isEmpty())
                         enrollInOrgUnit(orgUnitDialog.getSelectedOrgUnit(), programUid, uid, selectedEnrollmentDate);
                     orgUnitDialog.dismiss();
                 })

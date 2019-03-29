@@ -232,6 +232,8 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
         OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setTitle("Event Org Unit")
                 .setPossitiveListener(v -> {
+                    if(orgUnitDialog.getSelectedOrgUnitModel() == null)
+                        orgUnitDialog.dismiss();
                     view.setSelectedOrgUnit(orgUnitDialog.getSelectedOrgUnitModel());
                     orgUnitDialog.dismiss();
                 })

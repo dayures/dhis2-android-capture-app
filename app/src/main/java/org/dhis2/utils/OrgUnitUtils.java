@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -32,6 +33,9 @@ public class OrgUnitUtils {
     public static TreeNode renderTree(Context context, @NonNull List<OrganisationUnit> myOrgs, Boolean isMultiSelection) {
 
         HashMap<Integer, ArrayList<TreeNode>> subLists = new HashMap<>();
+        Map<String, OrganisationUnit> myOrgUnitMap = new HashMap<>();
+        for (OrganisationUnit organisationUnit : myOrgs)
+            myOrgUnitMap.put(organisationUnit.uid(), organisationUnit);
 
         List<OrganisationUnit> allOrgs = new ArrayList<>();
         ArrayList<String> myOrgUnitUids = new ArrayList<>();
@@ -43,6 +47,8 @@ public class OrgUnitUtils {
             for (int i = myorg.level(); i > 0; i--) {
                 OrganisationUnit orgToAdd = OrganisationUnit.builder()
                         .uid(pathUid[i])
+                        .openingDate(myOrgUnitMap.get(pathUid[i]) != null ? myOrgUnitMap.get(pathUid[i]).openingDate() : null)
+                        .closedDate(myOrgUnitMap.get(pathUid[i]) != null ? myOrgUnitMap.get(pathUid[i]).closedDate() : null)
                         .level(i)
                         .parent(OrganisationUnit.builder().uid(pathUid[i - 1]).build())
                         .name(pathName[i])

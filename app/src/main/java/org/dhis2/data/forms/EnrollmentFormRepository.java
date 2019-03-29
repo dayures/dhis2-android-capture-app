@@ -15,6 +15,7 @@ import org.dhis2.utils.CodeGenerator;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.SqlConstants;
+import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.ObjectStyle;
@@ -48,7 +49,6 @@ import io.reactivex.exceptions.OnErrorNotImplementedException;
 import io.reactivex.functions.Consumer;
 import timber.log.Timber;
 
-import static android.text.TextUtils.isEmpty;
 import static org.dhis2.utils.SqlConstants.EQUAL;
 import static org.dhis2.utils.SqlConstants.FROM;
 import static org.dhis2.utils.SqlConstants.LIMIT_1;
@@ -56,6 +56,7 @@ import static org.dhis2.utils.SqlConstants.QUESTION_MARK;
 import static org.dhis2.utils.SqlConstants.SELECT;
 import static org.dhis2.utils.SqlConstants.TABLE_FIELD_EQUALS;
 import static org.dhis2.utils.SqlConstants.WHERE;
+
 
 @SuppressWarnings({
         "PMD.AvoidDuplicateLiterals"
@@ -166,6 +167,7 @@ public class EnrollmentFormRepository implements FormRepository {
 
     @NonNull
     private final String enrollmentUid;
+    private final D2 d2;
 
     private String programUid;
 
@@ -173,7 +175,9 @@ public class EnrollmentFormRepository implements FormRepository {
                                     @NonNull RuleExpressionEvaluator expressionEvaluator,
                                     @NonNull RulesRepository rulesRepository,
                                     @NonNull CodeGenerator codeGenerator,
-                                    @NonNull String enrollmentUid) {
+                                    @NonNull String enrollmentUid,
+                                    @NonNull D2 d2) {
+        this.d2 = d2;
         this.briteDatabase = briteDatabase;
         this.codeGenerator = codeGenerator;
         this.enrollmentUid = enrollmentUid;
@@ -424,7 +428,8 @@ public class EnrollmentFormRepository implements FormRepository {
         insertEvent(programStage, program, eventDate, orgUnit, now);
     }
 
-    private void insertEvent(String programStage, String program, Date eventDate, String orgUnit, Date now) {
+    private void insertEvent(String programStage, String program, Date eventDate, String
+            orgUnit, Date now) {
         try (Cursor eventCursor = briteDatabase.query(CHECK_STAGE_IS_NOT_CREATED, enrollmentUid, programStage)) {
             if (!eventCursor.moveToFirst()) {
                 Event.Builder eventBuilder = Event.builder()
@@ -503,7 +508,8 @@ public class EnrollmentFormRepository implements FormRepository {
     }
 
     @Override
-    public Observable<Trio<Boolean, CategoryCombo, List<CategoryOptionCombo>>> getProgramCategoryCombo() {
+    public Observable<Trio<Boolean, CategoryCombo, List<CategoryOptionCombo>>> getProgramCategoryCombo
+            () {
         return null;
     }
 
@@ -521,10 +527,8 @@ public class EnrollmentFormRepository implements FormRepository {
 
     @Override
     public Observable<OrganisationUnit> getOrgUnitDates() {
-        return briteDatabase.createQuery("SELECT * FROM OrganisationUnit " +
-                "JOIN Enrollment ON Enrollment.organisationUnit = OrganisationUnit.uid " +
-                WHERE + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_UID + " = ?", enrollmentUid)
-                .mapToOne(OrganisationUnit::create);
+        return Observable.defer(() -> Observable.just(d2.enrollmentModule().enrollments.uid(enrollmentUid).get()))
+                .switchMap(enrollment -> Observable.just(d2.organisationUnitModule().organisationUnits.uid(enrollment.organisationUnit()).get()));
     }
 
     @NonNull
@@ -536,7 +540,7 @@ public class EnrollmentFormRepository implements FormRepository {
 
         ValueTypeDeviceRendering fieldRendering = null;
         try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering " +
-                "JOIN ProgramTrackedEntityAttribute ON ProgramTrackedEntityAttribute.uid = ValueTypeDeviceRendering.uid WHERE ProgramTrackedEntityAttribute.trackedEntityAttribute = ?",
+                        "JOIN ProgramTrackedEntityAttribute ON ProgramTrackedEntityAttribute.uid = ValueTypeDeviceRendering.uid WHERE ProgramTrackedEntityAttribute.trackedEntityAttribute = ?",
                 fieldViewModelHelper.getUid())) {
             if (rendering != null && rendering.moveToFirst()) {
                 fieldRendering = ValueTypeDeviceRendering.create(rendering);
@@ -593,7 +597,8 @@ public class EnrollmentFormRepository implements FormRepository {
                 });
     }
 
-    private ProgramStage getStageToOpen(Trio<Boolean, List<ProgramStage>, TrackedEntityType> data) {
+    private ProgramStage getStageToOpen
+            (Trio<Boolean, List<ProgramStage>, TrackedEntityType> data) {
         ProgramStage stageToOpen = null;
         if (data.val0() && !data.val1().isEmpty()) {
             stageToOpen = data.val1().get(0);

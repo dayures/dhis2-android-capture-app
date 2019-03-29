@@ -13,6 +13,7 @@ import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.SqlConstants;
+import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.ObjectStyle;
@@ -40,11 +41,11 @@ import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
-import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
 import static org.dhis2.utils.SqlConstants.FROM;
 import static org.dhis2.utils.SqlConstants.SELECT;
+
 
 @SuppressWarnings({
         "PMD.AvoidDuplicateLiterals"
@@ -152,12 +153,15 @@ public class EventRepository implements FormRepository {
 
     @Nullable
     private final String eventUid;
+    private final D2 d2;
     private String programUid;
 
     public EventRepository(@NonNull BriteDatabase briteDatabase,
                            @NonNull RuleExpressionEvaluator evaluator,
                            @NonNull RulesRepository rulesRepository,
-                           @Nullable String eventUid) {
+                           @Nullable String eventUid,
+                           @NonNull D2 d2) {
+        this.d2 = d2;
         this.briteDatabase = briteDatabase;
         this.eventUid = eventUid;
 
@@ -392,10 +396,8 @@ public class EventRepository implements FormRepository {
 
     @Override
     public Observable<OrganisationUnit> getOrgUnitDates() {
-        return briteDatabase.createQuery("SELECT * FROM OrganisationUnit " +
-                "JOIN Event ON Event.organisationUnit = OrganisationUnit.uid " +
-                "WHERE Event.uid = ?", eventUid == null ? "" : eventUid)
-                .mapToOne(OrganisationUnit::create);
+        return Observable.defer(() -> Observable.just(d2.eventModule().events.uid(eventUid).get()))
+                .switchMap(event -> Observable.just(d2.organisationUnitModule().organisationUnits.uid(event.organisationUnit()).get()));
     }
 
     @NonNull
