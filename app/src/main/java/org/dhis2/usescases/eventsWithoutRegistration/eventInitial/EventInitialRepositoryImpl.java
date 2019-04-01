@@ -21,7 +21,6 @@ import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.ProgramStage;
@@ -87,7 +86,8 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     @Override
     public Observable<Event> event(String eventId) {
         String id = eventId == null ? "" : eventId;
-        String selectEventWithId = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_UID + " = '" + id + "' AND " + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
+        String selectEventWithId = SELECT_ALL_FROM + SqlConstants.EVENT_TABLE + WHERE + SqlConstants.EVENT_UID + " = '" + id + "' AND " +
+                SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + QUOTE + LIMIT_1;
         return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, selectEventWithId)
                 .mapToOne(Event::create);
     }
@@ -355,18 +355,18 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
             cal.set(Calendar.MILLISECOND, 0);
 
             ContentValues contentValues = new ContentValues();
-            contentValues.put(EventModel.Columns.EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
-            contentValues.put(EventModel.Columns.ORGANISATION_UNIT, orgUnitUid);
-            contentValues.put(EventModel.Columns.LATITUDE, latitude);
-            contentValues.put(EventModel.Columns.LONGITUDE, longitude);
-            contentValues.put(EventModel.Columns.ATTRIBUTE_OPTION_COMBO, catOptionCombo);
-            contentValues.put(EventModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(currentDate));
-            contentValues.put(EventModel.Columns.STATE, event.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+            contentValues.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
+            contentValues.put(SqlConstants.EVENT_ORG_UNIT, orgUnitUid);
+            contentValues.put(SqlConstants.EVENT_LATITUDE, latitude);
+            contentValues.put(SqlConstants.EVENT_LONGITUDE, longitude);
+            contentValues.put(SqlConstants.EVENT_ATTR_OPTION_COMBO, catOptionCombo);
+            contentValues.put(SqlConstants.EVENT_LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(currentDate));
+            contentValues.put(SqlConstants.EVENT_STATE, event.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
 
             long row = -1;
 
             try {
-                row = briteDatabase.update(EventModel.TABLE, contentValues, EventModel.Columns.UID + " = ?", eventUid);
+                row = briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + " = ?", eventUid);
             } catch (Exception e) {
                 Timber.e(e);
             }

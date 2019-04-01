@@ -196,10 +196,25 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         loadDataElementRules(event);
     }
 
-    private void loadDataElementRules(Event event) {
-        List<ProgramRule> rules = d2.programModule().programRules.byProgramUid().eq(event.program()).withAllChildren().get();
+    private List<ProgramRule> getRuleMandatoryRules(ProgramRule rule) {
         List<ProgramRule> mandatoryRules = new ArrayList<>();
-        Iterator<ProgramRule> ruleIterator = rules.iterator();
+        for (ProgramRuleAction action : rule.programRuleActions()) {
+            if ((action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
+                    action.programRuleActionType() == ProgramRuleActionType.HIDESECTION ||
+                    action.programRuleActionType() == ProgramRuleActionType.ASSIGN ||
+                    action.programRuleActionType() == ProgramRuleActionType.SHOWWARNING ||
+                    action.programRuleActionType() == ProgramRuleActionType.SHOWERROR ||
+                    action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
+                    action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION)
+                    && (!mandatoryRules.contains(rule))) {
+                mandatoryRules.add(rule);
+            }
+        }
+        return mandatoryRules;
+    }
+
+    private List<ProgramRule> getAllMandatoryRules(Event event, Iterator<ProgramRule> ruleIterator) {
+        List<ProgramRule> mandatoryRules = new ArrayList<>();
         while (ruleIterator.hasNext()) {
             ProgramRule rule = ruleIterator.next();
             if ((rule.programStage() != null && rule.programStage().uid().equals(event.programStage())) ||
@@ -207,18 +222,15 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 ruleIterator.remove();
             }
 
-            for (ProgramRuleAction action : rule.programRuleActions())
-                if ((action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
-                        action.programRuleActionType() == ProgramRuleActionType.HIDESECTION ||
-                        action.programRuleActionType() == ProgramRuleActionType.ASSIGN ||
-                        action.programRuleActionType() == ProgramRuleActionType.SHOWWARNING ||
-                        action.programRuleActionType() == ProgramRuleActionType.SHOWERROR ||
-                        action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
-                        action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION)
-                        && (!mandatoryRules.contains(rule))) {
-                    mandatoryRules.add(rule);
-                }
+            mandatoryRules.addAll(getRuleMandatoryRules(rule));
         }
+        return mandatoryRules;
+    }
+
+    private void loadDataElementRules(Event event) {
+        List<ProgramRule> rules = d2.programModule().programRules.byProgramUid().eq(event.program()).withAllChildren().get();
+        Iterator<ProgramRule> ruleIterator = rules.iterator();
+        List<ProgramRule> mandatoryRules = getAllMandatoryRules(event, ruleIterator);
 
         List<ProgramRuleVariable> variables = d2.programModule().programRuleVariables
                 .byProgramUid().eq(event.program())
@@ -231,6 +243,10 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 variableIterator.remove();
             }
         }
+        addDataElementRules(variables, mandatoryRules, rules);
+    }
+
+    private void addDataElementRules(List<ProgramRuleVariable> variables, List<ProgramRule> mandatoryRules, List<ProgramRule> rules) {
         for (ProgramRuleVariable variable : variables) {
             if (variable.dataElement() != null && !dataElementRules.containsKey(variable.dataElement().uid()))
                 dataElementRules.put(variable.dataElement().uid(), trasformToRule(mandatoryRules));
@@ -266,23 +282,25 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         return finalRules;
     }
 
+    private RuleAction createRuleAction(ProgramRuleAction programRuleAction) {
+        return RulesRepository.create(
+                programRuleAction.programRuleActionType(),
+                programRuleAction.programStage() != null ? programRuleAction.programStage().uid() : null,
+                programRuleAction.programStageSection() != null ? programRuleAction.programStageSection().uid() : null,
+                programRuleAction.trackedEntityAttribute() != null ? programRuleAction.trackedEntityAttribute().uid() : null,
+                programRuleAction.dataElement() != null ? programRuleAction.dataElement().uid() : null,
+                programRuleAction.location(),
+                programRuleAction.content(),
+                programRuleAction.data(),
+                programRuleAction.option() != null ? programRuleAction.option().uid() : null,
+                programRuleAction.optionGroup() != null ? programRuleAction.optionGroup().uid() : null);
+    }
+
     private List<RuleAction> transformToRuleAction(List<ProgramRuleAction> programRuleActions) {
         List<RuleAction> ruleActions = new ArrayList<>();
         if (programRuleActions != null)
             for (ProgramRuleAction programRuleAction : programRuleActions)
-                ruleActions.add(
-                        RulesRepository.create(
-                                programRuleAction.programRuleActionType(),
-                                programRuleAction.programStage() != null ? programRuleAction.programStage().uid() : null,
-                                programRuleAction.programStageSection() != null ? programRuleAction.programStageSection().uid() : null,
-                                programRuleAction.trackedEntityAttribute() != null ? programRuleAction.trackedEntityAttribute().uid() : null,
-                                programRuleAction.dataElement() != null ? programRuleAction.dataElement().uid() : null,
-                                programRuleAction.location(),
-                                programRuleAction.content(),
-                                programRuleAction.data(),
-                                programRuleAction.option() != null ? programRuleAction.option().uid() : null,
-                                programRuleAction.optionGroup() != null ? programRuleAction.optionGroup().uid() : null)
-                );
+                ruleActions.add(createRuleAction(programRuleAction));
         return ruleActions;
     }
 
@@ -373,46 +391,57 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         return renderingType;
     }
 
+    private ValueTypeDeviceRendering getValueTypeDeviceRendering(String uid) {
+        ValueTypeDeviceRendering fieldRendering = null;
+        try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering" +
+                " JOIN ProgramStageDataElement ON ProgramStageDataElement.uid = ValueTypeDeviceRendering.uid" +
+                " WHERE ProgramStageDataElement.uid = ?", uid)) {
+            if (rendering != null && rendering.moveToFirst())
+                fieldRendering = ValueTypeDeviceRendering.create(rendering);
+        }
+        return fieldRendering;
+    }
+
+    private ObjectStyle getObjectStyle(String uid) {
+        ObjectStyle objectStyle = ObjectStyle.builder().build();
+        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
+            if (objStyleCursor != null && objStyleCursor.moveToFirst())
+                objectStyle = ObjectStyle.create(objStyleCursor);
+        }
+        return objectStyle;
+    }
+
+    private ArrayList<FieldViewModel> addField(Cursor cursor, FieldViewModel fieldViewModel, ProgramStageSectionRenderingType renderingType) {
+        ArrayList<FieldViewModel> renderList = new ArrayList<>();
+        int optionCount = cursor.getCount();
+        for (int i = 0; i < optionCount; i++) {
+            String uid = cursor.getString(0);
+            String displayName = cursor.getString(1);
+            String optionCode = cursor.getString(2);
+
+            renderList.add(fieldFactory.create(
+                    fieldViewModel.uid() + "." + uid, //fist
+                    displayName + "-" + optionCode, ValueType.TEXT, false,
+                    fieldViewModel.optionSet(), fieldViewModel.value(), fieldViewModel.programStageSection(),
+                    fieldViewModel.allowFutureDate(),
+                    fieldViewModel.editable() != null && fieldViewModel.editable(),
+                    renderingType, fieldViewModel.description(), getValueTypeDeviceRendering(uid), optionCount, getObjectStyle(uid)));
+
+            cursor.moveToNext();
+        }
+        return renderList;
+    }
+
     private List<FieldViewModel> checkRenderType(List<FieldViewModel> fieldViewModels) {
 
         ArrayList<FieldViewModel> renderList = new ArrayList<>();
 
         for (FieldViewModel fieldViewModel : fieldViewModels) {
-
             ProgramStageSectionRenderingType renderingType = renderingType(fieldViewModel.programStageSection());
             if (!isEmpty(fieldViewModel.optionSet()) && renderingType != ProgramStageSectionRenderingType.LISTING) {
                 try (Cursor cursor = briteDatabase.query(OPTIONS, fieldViewModel.optionSet() == null ? "" : fieldViewModel.optionSet())) {
                     if (cursor != null && cursor.moveToFirst()) {
-                        int optionCount = cursor.getCount();
-                        for (int i = 0; i < optionCount; i++) {
-                            String uid = cursor.getString(0);
-                            String displayName = cursor.getString(1);
-                            String optionCode = cursor.getString(2);
-
-                            ValueTypeDeviceRendering fieldRendering = null;
-                            try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering" +
-                                    " JOIN ProgramStageDataElement ON ProgramStageDataElement.uid = ValueTypeDeviceRendering.uid" +
-                                    " WHERE ProgramStageDataElement.uid = ?", uid)) {
-                                if (rendering != null && rendering.moveToFirst())
-                                    fieldRendering = ValueTypeDeviceRendering.create(rendering);
-                            }
-
-                            ObjectStyle objectStyle = ObjectStyle.builder().build();
-                            try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
-                                if (objStyleCursor != null && objStyleCursor.moveToFirst())
-                                    objectStyle = ObjectStyle.create(objStyleCursor);
-                            }
-
-                            renderList.add(fieldFactory.create(
-                                    fieldViewModel.uid() + "." + uid, //fist
-                                    displayName + "-" + optionCode, ValueType.TEXT, false,
-                                    fieldViewModel.optionSet(), fieldViewModel.value(), fieldViewModel.programStageSection(),
-                                    fieldViewModel.allowFutureDate(), fieldViewModel.editable() == null ?
-                                            false : fieldViewModel.editable(),
-                                    renderingType, fieldViewModel.description(), fieldRendering, optionCount, objectStyle));
-
-                            cursor.moveToNext();
-                        }
+                        renderList.addAll(addField(cursor, fieldViewModel, renderingType));
                     }
                 }
             } else
@@ -467,6 +496,10 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             }
         }
 
+        return String.format(Locale.US, QUERY, getWhereQuery(sectionUids));
+    }
+
+    private String getWhereQuery(StringBuilder sectionUids) {
         String where;
         if (isEmpty(sectionUids)) {
             where = String.format(Locale.US, "WHERE Event.uid = '%s'", eventUid == null ? "" : eventUid);
@@ -474,8 +507,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             where = String.format(Locale.US, "WHERE Event.uid = '%s' AND " +
                     "Field.section IN (%s)", eventUid == null ? "" : eventUid, sectionUids);
         }
-
-        return String.format(Locale.US, QUERY, where);
+        return where;
     }
 
     @NonNull

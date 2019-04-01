@@ -18,7 +18,6 @@ import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.maintenance.D2Error;
 import org.hisp.dhis.android.core.option.Option;
-import org.hisp.dhis.android.core.option.OptionModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStage;
@@ -451,6 +450,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
         return d2Errors;
     }
 
+    @SuppressWarnings("squid:CommentedOutCodeLine")
     @Override
     public Observable<List<Option>> searchOptions(String text, String idOptionSet,
                                                   int page, List<String> optionsToHide, List<String> optionsGroupsToHide) {

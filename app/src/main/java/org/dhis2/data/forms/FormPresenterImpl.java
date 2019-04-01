@@ -41,7 +41,7 @@ import timber.log.Timber;
 import static android.text.TextUtils.isEmpty;
 import static org.dhis2.utils.Preconditions.isNull;
 
-
+@SuppressWarnings("squid:S1612")
 class FormPresenterImpl implements FormPresenter {
 
     @NonNull
