@@ -71,7 +71,7 @@ public class OrgUnitCascadeAdapter extends RecyclerView.Adapter<OrgUnitCascadeHo
 
         int size;
 
-        if (selectedParent.get(level.get()).isEmpty())
+        if (selectedParent.get(level.get()) != null && selectedParent.get(level.get()).isEmpty())
             size = level.get();
         else
             size = level.get() + 1 <= items.size() ? level.get() + 1 : items.size();
@@ -108,7 +108,7 @@ public class OrgUnitCascadeAdapter extends RecyclerView.Adapter<OrgUnitCascadeHo
     public String getSelectedOrgUnit() {
         String selectedUid = null;
         for (int i = 1; i <= selectedParent.size(); i++) {
-            if (!selectedParent.get(i).isEmpty())
+            if (selectedParent.get(i) != null && !selectedParent.get(i).isEmpty())
                 selectedUid = selectedParent.get(i);
         }
         return selectedUid;

@@ -666,7 +666,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                         .subscribe(
                                 data -> {
                                     view.finishDownload();
-                                    if (!data.isEmpty()) {
+                                    if (data != null && !data.isEmpty()) {
                                         this.teiUid = data.get(0).uid();
                                         view.goToDashBoard(data.get(0).uid());
                                     } else {

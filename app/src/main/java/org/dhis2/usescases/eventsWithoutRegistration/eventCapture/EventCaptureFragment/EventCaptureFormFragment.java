@@ -153,7 +153,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
         binding.progress.setVisibility(View.GONE);
 
         if (currentSection.equals("NO_SECTION") ||
-                (!updates.isEmpty() && updates.get(0).programStageSection().equals(currentSection))) {
+                (updates != null && !updates.isEmpty() && updates.get(0).programStageSection().equals(currentSection))) {
             dataEntryAdapter.swap(updates);
             int completedValues = 0;
             HashMap<String, Boolean> fields = new HashMap<>();

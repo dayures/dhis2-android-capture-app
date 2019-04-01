@@ -215,7 +215,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
         if (currentPeriod != DAILY && currentPeriod != NONE) {
             new RxDateDialog(getAbstractActivity(), currentPeriod).create().show().subscribe(selectedDates -> {
-                        if (!selectedDates.isEmpty()) {
+                        if (selectedDates != null && !selectedDates.isEmpty()) {
                             binding.buttonPeriodText.setText(getSelectedDatesTextToShow(selectedDates, weeklyFormat));
                             presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(selectedDates, currentPeriod));
                         } else {
@@ -287,12 +287,12 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
     private String getWeeklyText() {
         String textToShow = "";
-        if (!chosenDateWeek.isEmpty()) {
+        if (chosenDateWeek != null && !chosenDateWeek.isEmpty()) {
             String week = getString(R.string.week);
             SimpleDateFormat weeklyFormat = new SimpleDateFormat("'" + week + "' w", Locale.getDefault());
             textToShow = weeklyFormat.format(chosenDateWeek.get(0)) + ", " + yearFormat.format(chosenDateWeek.get(0));
         }
-        if (!chosenDateWeek.isEmpty() && chosenDateWeek.size() > 1)
+        if (chosenDateWeek != null && !chosenDateWeek.isEmpty() && chosenDateWeek.size() > 1)
             textToShow += "... ";
 
         presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(chosenDateWeek, currentPeriod));
@@ -301,9 +301,9 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
     private String getYearlyText() {
         String textToShow = "";
-        if (!chosenDateYear.isEmpty())
+        if (chosenDateYear != null && !chosenDateYear.isEmpty())
             textToShow = yearFormat.format(chosenDateYear.get(0));
-        if (!chosenDateYear.isEmpty() && chosenDateYear.size() > 1) textToShow += "... ";
+        if (chosenDateYear != null && !chosenDateYear.isEmpty() && chosenDateYear.size() > 1) textToShow += "... ";
 
         presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(chosenDateYear, currentPeriod));
         return textToShow;
@@ -311,11 +311,11 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
     private String getMonthlyText() {
         String textToShow = "";
-        if (!chosenDateMonth.isEmpty()) {
+        if (chosenDateMonth != null && !chosenDateMonth.isEmpty()) {
             String dateFormatted = monthFormat.format(chosenDateMonth.get(0));
             textToShow = dateFormatted.substring(0, 1).toUpperCase() + dateFormatted.substring(1);
         }
-        if (!chosenDateMonth.isEmpty() && chosenDateMonth.size() > 1) textToShow += "... ";
+        if (chosenDateMonth != null && !chosenDateMonth.isEmpty() && chosenDateMonth.size() > 1) textToShow += "... ";
 
         presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(chosenDateMonth, currentPeriod));
         return textToShow;
@@ -396,7 +396,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
             if ((treeView.getSelected().size() == 1 && !node.isSelected()) || (treeView.getSelected().size() > 1)) {
                 binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
             }
-            if (node.getChildren().isEmpty())
+            if (node.getChildren() != null && node.getChildren().isEmpty())
                 presenter.onExpandOrgUnitNode(node, ((OrganisationUnit) node.getValue()).uid());
             else
                 node.setExpanded(node.isExpanded());
@@ -446,7 +446,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                     int position = item.getOrder();
                     if (position == 0) {
                         catCombFilter.remove(category.uid());
-                        isFilteredByCatCombo = !catCombFilter.isEmpty();
+                        isFilteredByCatCombo = catCombFilter != null && !catCombFilter.isEmpty();
                         presenter.updateCatOptCombFilter(new ArrayList<>(catCombFilter.values()));
                         catCombFilterBinding.catCombo.setText(category.displayName());
                     } else {
@@ -506,7 +506,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
     @Override
     public void apply() {
-        if (treeView != null && !treeView.getSelected().isEmpty()) {
+        if (treeView != null && treeView.getSelected() != null && !treeView.getSelected().isEmpty()) {
             binding.drawerLayout.closeDrawers();
             binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
 
@@ -515,7 +515,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
                 orgUnitsUids.add(((CategoryCombo) treeNodeIterator.getValue()).uid());
             }
 
-            if (!treeView.getSelected().isEmpty()) {
+            if (treeView.getSelected() != null && !treeView.getSelected().isEmpty()) {
                 binding.buttonOrgUnit.setText(String.format(getString(R.string.org_unit_filter), treeView.getSelected().size()));
             }
             presenter.updateOrgUnitFilter(orgUnitsUids);

@@ -189,12 +189,14 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
 
     private String getWeeklyTextToShow() {
         String textToShow = "";
-        if (!chosenDateWeek.isEmpty()) {
+        if (chosenDateWeek != null && !chosenDateWeek.isEmpty()) {
             String week = getString(R.string.week);
             SimpleDateFormat weeklyFormat = new SimpleDateFormat("'" + week + "' w", Locale.getDefault());
             textToShow = weeklyFormat.format(chosenDateWeek.get(0)) + ", " + yearFormat.format(chosenDateWeek.get(0));
         }
-        if (!chosenDateWeek.isEmpty() && chosenDateWeek.size() > 1) textToShow += "... ";
+        if (chosenDateWeek != null && !chosenDateWeek.isEmpty() && chosenDateWeek.size() > 1) {
+            textToShow += "... ";
+        }
         // TODO
         presenter.getDataSetWithDates(chosenDateWeek, currentPeriod, orgUnitFilter.toString());
         return textToShow;
@@ -202,11 +204,13 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
 
     private String getMonthlyTextToShow() {
         String textToShow = "";
-        if (!chosenDateMonth.isEmpty()) {
+        if (chosenDateWeek != null && !chosenDateMonth.isEmpty()) {
             String dateFormatted = monthFormat.format(chosenDateMonth.get(0));
             textToShow = dateFormatted.substring(0, 1).toUpperCase() + dateFormatted.substring(1);
         }
-        if (!chosenDateMonth.isEmpty() && chosenDateMonth.size() > 1) textToShow += "... ";
+        if (chosenDateWeek != null && !chosenDateMonth.isEmpty() && chosenDateMonth.size() > 1) {
+            textToShow += "... ";
+        }
         // TODO
         presenter.getDataSetWithDates(chosenDateMonth, currentPeriod, orgUnitFilter.toString());
         return textToShow;
@@ -214,9 +218,11 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
 
     private String getYearlyTextToShow() {
         String textToShow = "";
-        if (!chosenDateYear.isEmpty())
+        if (chosenDateWeek != null &&!chosenDateYear.isEmpty())
             textToShow = yearFormat.format(chosenDateYear.get(0));
-        if (!chosenDateYear.isEmpty() && chosenDateYear.size() > 1) textToShow += "... ";
+        if (chosenDateWeek != null && !chosenDateYear.isEmpty() && chosenDateYear.size() > 1){
+            textToShow += "... ";
+        }
         // TODO
         presenter.getDataSetWithDates(chosenDateYear, currentPeriod, orgUnitFilter.toString());
         return textToShow;
@@ -312,7 +318,7 @@ public class DataSetDetailActivity extends ActivityGlobalAbstract implements Dat
 
         if (currentPeriod != DAILY && currentPeriod != NONE) {
             new RxDateDialog(getAbstractActivity(), currentPeriod).create().show().subscribe(selectedDates -> {
-                        if (!selectedDates.isEmpty()) {
+                        if (selectedDates != null && !selectedDates.isEmpty()) {
                             binding.buttonPeriodText.setText(getSelectedDatesTextToShow(selectedDates, weeklyFormat));
                             // TODO
                             presenter.getDataSetWithDates(selectedDates, currentPeriod, orgUnitFilter.toString());

@@ -467,7 +467,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
         return briteDatabase.createQuery(OptionGroupOptionLinkTableInfo.TABLE_INFO.name(), optionGroupQuery, idOptionSet)
                 .mapToList(Option::create)
                 .flatMap(list -> {
-                    if (list.isEmpty()) {
+                    if (list == null || list.isEmpty()) {
                         String optionQuery = !isEmpty(text) ?
                                 "select Option.* from OptionSet " +
                                         "JOIN Option ON Option.optionSet = OptionSet.uid " +

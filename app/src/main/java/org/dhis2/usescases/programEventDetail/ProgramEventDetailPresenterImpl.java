@@ -150,7 +150,7 @@ public class ProgramEventDetailPresenterImpl implements ProgramEventDetailContra
     @Override
     public void onOrgUnitButtonClick() {
         view.openDrawer();
-        if (orgUnits.isEmpty()) {
+        if (orgUnits == null || orgUnits.isEmpty()) {
             view.orgUnitProgress(true);
             compositeDisposable.add(
                     eventRepository.orgUnits()

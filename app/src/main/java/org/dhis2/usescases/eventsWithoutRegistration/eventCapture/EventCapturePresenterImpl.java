@@ -466,9 +466,9 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
         } else {
             if (eventStatus != EventStatus.ACTIVE) {
                 setUpActionByStatus(eventStatus);
-            } else if (!emptyMandatoryFields.isEmpty()) {
+            } else if (emptyMandatoryFields != null && !emptyMandatoryFields.isEmpty()) {
                 view.setMandatoryWarning(emptyMandatoryFields);
-            } else if (!this.errors.isEmpty()) {
+            } else if (errors != null && !errors.isEmpty()) {
                 view.setShowError(errors);
             } else {
                 compositeDisposable.add(

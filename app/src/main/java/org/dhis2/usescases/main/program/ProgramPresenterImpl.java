@@ -106,7 +106,7 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
 
     @Override
     public void dispose() {
-        if (!myOrgs.isEmpty())
+        if (myOrgs != null && !myOrgs.isEmpty())
             myOrgs.clear();
         compositeDisposable.clear();
     }
@@ -125,7 +125,8 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
 
     @Override
     public boolean areFiltersApplied() {
-        return !currentDateFilter.isEmpty() || !currentOrgUnitFilter.isEmpty();
+        return (currentDateFilter != null && !currentDateFilter.isEmpty()) ||
+                (currentOrgUnitFilter != null && !currentOrgUnitFilter.isEmpty());
     }
 
     @Override
@@ -184,7 +185,7 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
     @Override
     public void onOrgUnitButtonClick() {
         view.openDrawer();
-        if (myOrgs.isEmpty()) {
+        if (myOrgs == null || myOrgs.isEmpty()) {
             view.orgUnitProgress(true);
             compositeDisposable.add(
                     homeRepository.orgUnits()

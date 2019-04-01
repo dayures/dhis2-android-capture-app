@@ -141,7 +141,7 @@ public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEn
             listItems.add(teiProgramListItem);
         }
 
-        if (!inactiveEnrollments.isEmpty()) {
+        if (inactiveEnrollments != null && !inactiveEnrollments.isEmpty()) {
             TeiProgramListItem secondTeiProgramListItem = new TeiProgramListItem(null, null, TeiProgramListItem.TeiProgramListItemViewType.SECOND_TITLE);
             listItems.add(secondTeiProgramListItem);
 
@@ -190,7 +190,7 @@ public class TeiProgramListAdapter extends RecyclerView.Adapter<TeiProgramListEn
 
         getPossibleEnrollmentPrograms();
 
-        if (!possibleEnrollmentPrograms.isEmpty()) {
+        if (possibleEnrollmentPrograms != null && !possibleEnrollmentPrograms.isEmpty()) {
             TeiProgramListItem thirdTeiProgramListItem = new TeiProgramListItem(null, null, TeiProgramListItem.TeiProgramListItemViewType.THIRD_TITLE);
             listItems.add(thirdTeiProgramListItem);
 

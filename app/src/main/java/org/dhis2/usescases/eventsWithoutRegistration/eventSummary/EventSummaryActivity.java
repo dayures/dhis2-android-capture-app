@@ -267,6 +267,12 @@ public class EventSummaryActivity extends ActivityGlobalAbstract implements Even
     }
 
     private void setUpErrors(View sectionView, List<String> errorFields, List<String> missingMandatoryFields) {
+        if (errorFields == null){
+            errorFields = new ArrayList<>();
+        }
+        if (missingMandatoryFields == null){
+            missingMandatoryFields = new ArrayList<>();
+        }
         if (!missingMandatoryFields.isEmpty() || !errorFields.isEmpty()) {
             sectionView.findViewById(R.id.section_info).setVisibility(View.VISIBLE);
 

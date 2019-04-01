@@ -508,7 +508,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                                     else
                                         return Flowable.just(dataElementRules.get(lastUpdatedUid) != null ? dataElementRules.get(lastUpdatedUid) : new ArrayList<Rule>())
                                                 .flatMap(rules -> {
-                                                    if (!rules.isEmpty())
+                                                    if (rules != null && !rules.isEmpty())
                                                         return Flowable.fromCallable(ruleEngine.evaluate(event, rules));
                                                     else
                                                         return Flowable.just(new ArrayList<RuleEffect>());

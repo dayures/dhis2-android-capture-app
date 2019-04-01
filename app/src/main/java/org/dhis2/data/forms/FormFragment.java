@@ -291,7 +291,7 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
             tabLayout.setupWithViewPager(viewPager);
             if (currentPostion != -1)
                 viewPager.setCurrentItem(currentPostion, false);
-            if (sectionViewModels.isEmpty()) {
+            if (sectionViewModels != null && sectionViewModels.isEmpty()) {
                 Timber.d("Show empty state");
                 // TODO: Show empty state
             }
@@ -514,7 +514,7 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
         }
         if (!mandatoryRequired) {
             if (enrollmentTrio != null) {
-                if (!enrollmentTrio.val2().isEmpty()) { //val0 is teiUid uid, val1 is programUid, val2 is event uid
+                if (enrollmentTrio.val2() != null && !enrollmentTrio.val2().isEmpty()) { //val0 is teiUid uid, val1 is programUid, val2 is event uid
                     this.programUid = enrollmentTrio.val1();
                     this.teiUid = enrollmentTrio.val0();
                     Intent eventCreationIntent = new Intent(getAbstracContext(), EventCaptureActivity.class);

@@ -8,6 +8,7 @@ import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.DatePeriod;
 import org.hisp.dhis.android.core.program.Program;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -42,6 +43,9 @@ class HomeRepositoryImpl implements HomeRepository {
     }
 
     private int getCount(Program program, List<DatePeriod> dateFilter) {
+        if (dateFilter == null){
+            dateFilter = new ArrayList<>();
+        }
         int count = 0;
         if (program.programType() == WITHOUT_REGISTRATION)
             if (!dateFilter.isEmpty())

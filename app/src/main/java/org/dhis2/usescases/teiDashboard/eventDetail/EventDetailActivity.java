@@ -106,7 +106,7 @@ public class EventDetailActivity extends ActivityGlobalAbstract implements Event
             setDataEditable();
             binding.orgUnit.setText(eventDetailModel.getOrgUnitName());
 
-            if (eventDetailModel.getOptionComboList().isEmpty()) {
+            if (eventDetailModel.getOptionComboList() != null && eventDetailModel.getOptionComboList().isEmpty()) {
                 binding.categoryComboLayout.setVisibility(View.GONE);
             } else {
                 binding.categoryComboLayout.setVisibility(View.VISIBLE);

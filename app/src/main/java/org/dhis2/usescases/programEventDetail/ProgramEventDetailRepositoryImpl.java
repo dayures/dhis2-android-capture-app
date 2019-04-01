@@ -57,11 +57,11 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
     @Override
     public LiveData<PagedList<ProgramEventViewModel>> filteredProgramEvents(List<DatePeriod> dateFilter, List<String> orgUnitFilter, List<CategoryOptionCombo> catOptCombList) {
         EventCollectionRepository eventRepo = d2.eventModule().events.byProgramUid().eq(programUid);
-        if (!dateFilter.isEmpty())
+        if (dateFilter != null && !dateFilter.isEmpty())
             eventRepo = eventRepo.byEventDate().inDatePeriods(dateFilter);
-        if (!orgUnitFilter.isEmpty())
+        if (orgUnitFilter != null && !orgUnitFilter.isEmpty())
             eventRepo = eventRepo.byOrganisationUnitUid().in(orgUnitFilter);
-        if (!catOptCombList.isEmpty())
+        if (catOptCombList != null && !catOptCombList.isEmpty())
             for (CategoryOptionCombo catOptComb : catOptCombList)
                 eventRepo = eventRepo.byAttributeOptionComboUid().eq(catOptComb.uid());
         return Transformations.switchMap(eventRepo.withAllChildren().getPaged(20), this::transform);

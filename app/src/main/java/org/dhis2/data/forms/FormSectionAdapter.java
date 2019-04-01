@@ -45,7 +45,7 @@ public class FormSectionAdapter extends FragmentStatePagerAdapter {
 
     @Override
     public int getCount() {
-        return sections.isEmpty() ? formSectionViewModelList.size() : sections.size();
+        return sections == null || sections.isEmpty() ? formSectionViewModelList.size() : sections.size();
     }
 
     @Override

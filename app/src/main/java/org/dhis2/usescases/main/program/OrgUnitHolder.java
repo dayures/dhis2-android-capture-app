@@ -81,7 +81,7 @@ public class OrgUnitHolder extends TreeNode.BaseNodeViewHolder<OrganisationUnit>
 
     @Override
     public void toggle(boolean active) {
-        if (!node.getChildren().isEmpty())
+        if (node.getChildren() != null && !node.getChildren().isEmpty())
             imageView.setImageResource(active ? R.drawable.ic_remove_circle : R.drawable.ic_add_circle);
     }
 
