@@ -48,15 +48,16 @@ public class ProgramEventDetailPresenterImpl implements ProgramEventDetailContra
     private List<OrganisationUnit> orgUnits = new ArrayList<>();
     private FlowableProcessor<Pair<TreeNode, String>> parentOrgUnit;
     private FlowableProcessor<Trio<List<DatePeriod>, List<String>, List<CategoryOptionCombo>>> programQueries;
-    private List<DatePeriod> currentDateFilter;
-    private List<String> currentOrgUnitFilter;
 
     //Search fields
+    private List<DatePeriod> currentDateFilter;
+    private List<String> currentOrgUnitFilter;
     private List<CategoryOptionCombo> currentCatOptionCombo;
 
     ProgramEventDetailPresenterImpl(@NonNull String programUid, @NonNull ProgramEventDetailRepository programEventDetailRepository) {
         this.eventRepository = programEventDetailRepository;
         this.programId = programUid;
+        this.currentCatOptionCombo = new ArrayList<>();
     }
 
     @Override

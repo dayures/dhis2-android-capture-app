@@ -18,7 +18,7 @@ import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.maintenance.D2Error;
 import org.hisp.dhis.android.core.option.Option;
-import org.hisp.dhis.android.core.option.OptionGroupOptionLinkTableInfo;
+import org.hisp.dhis.android.core.option.OptionModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStage;
@@ -32,7 +32,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -49,6 +48,7 @@ import static android.text.TextUtils.isEmpty;
 import static android.text.TextUtils.join;
 import static org.dhis2.utils.SqlConstants.JOIN_TABLE_ON;
 import static org.dhis2.utils.SqlConstants.LIMIT_1;
+import static org.dhis2.utils.SqlConstants.OPTION_TABLE;
 import static org.dhis2.utils.SqlConstants.QUOTE;
 import static org.dhis2.utils.SqlConstants.SELECT_ALL_FROM;
 import static org.dhis2.utils.SqlConstants.SELECT_ALL_FROM_TABLE_WHERE_TABLE_FIELD_EQUALS;
@@ -458,7 +458,18 @@ public class MetadataRepositoryImpl implements MetadataRepository {
         String formattedOptionsToHide = QUOTE + join("','", optionsToHide) + QUOTE;
         String formattedOptionGroupsToHide = QUOTE + join("','", optionsGroupsToHide) + QUOTE;
 
-        String optionGroupQuery = "SELECT Option.*, OptionGroupOptionLink.optionGroup FROM Option " +
+        String options = "SELECT Option.*, OptionGroupOptionLink.optionGroup FROM Option " +
+                "LEFT JOIN OptionGroupOptionLink ON OptionGroupOptionLink.option = Option.uid " +
+                "WHERE Option.optionSet = ? " +
+                (!optionsGroupsToHide.isEmpty() ? "AND (OptionGroupOptionLink.optionGroup IS NULL OR OptionGroupOptionLink.optionGroup NOT IN (" + formattedOptionGroupsToHide + ")) " : "") +
+                (!optionsToHide.isEmpty() ? "AND Option.uid NOT IN (" + formattedOptionsToHide + ") " : "") +
+                (!isEmpty(text) ? "AND Option.displayName LIKE '%" + text + "%' " : "") +
+                pageQuery;
+
+        return briteDatabase.createQuery(OPTION_TABLE, options, idOptionSet)
+                .mapToList(Option::create);
+
+        /*String optionGroupQuery = "SELECT Option.*, OptionGroupOptionLink.optionGroup FROM Option " +
                 "LEFT JOIN OptionGroupOptionLink ON OptionGroupOptionLink.option = Option.uid  " +
                 "WHERE Option.optionSet = ? " +
                 "AND (OptionGroupOptionLink.optionGroup IS NULL OR OptionGroupOptionLink.optionGroup NOT IN (" + formattedOptionGroupsToHide + ")) " +
@@ -486,9 +497,11 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                             Option option = iterator.next();
                             if (optionsToHide.contains(option.uid()))
                                 iterator.remove();
+                            if (!option.displayName().contains(text))
+                                iterator.remove();
                         }
                         return Observable.just(list);
                     }
-                });
+                });*/
     }
 }

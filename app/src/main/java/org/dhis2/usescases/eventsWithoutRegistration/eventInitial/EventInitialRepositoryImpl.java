@@ -21,6 +21,7 @@ import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.ProgramStage;
@@ -48,6 +49,7 @@ import static org.dhis2.utils.SqlConstants.NOT_EQUALS;
 import static org.dhis2.utils.SqlConstants.QUOTE;
 import static org.dhis2.utils.SqlConstants.SELECT_ALL_FROM;
 import static org.dhis2.utils.SqlConstants.WHERE;
+
 
 /**
  * QUADRAM. Created by Cristian on 22/03/2018.
@@ -314,55 +316,75 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
     @NonNull
     @Override
-    public Observable<Event> editEvent(String trackedEntityInstance, String eventUid, String date, String orgUnitUid, String catComboUid, String catOptionCombo, String latitude, String longitude) {
+    public Observable<Event> editEvent(String trackedEntityInstance,
+                                       String eventUid,
+                                       String date,
+                                       String orgUnitUid,
+                                       String catComboUid,
+                                       String catOptionCombo,
+                                       String latitude, String longitude) {
+
+        Event event = d2.eventModule().events.uid(eventUid).get();
+
+        boolean hasChanged = false;
 
         Date currentDate = Calendar.getInstance().getTime();
-        Date dueDate = null;
+        Date mDate = null;
         try {
-            dueDate = DateUtils.databaseDateFormat().parse(date);
+            mDate = DateUtils.databaseDateFormat().parse(date);
         } catch (ParseException e) {
             Timber.e(e);
         }
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(dueDate);
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
 
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
-        contentValues.put(SqlConstants.EVENT_ORG_UNIT, orgUnitUid);
-        // TODO CRIS: CHECK IF THESE ARE WORKING...
-        contentValues.put(SqlConstants.EVENT_LATITUDE, latitude);
-        contentValues.put(SqlConstants.EVENT_LONGITUDE, longitude);
-        contentValues.put(SqlConstants.EVENT_ATTR_OPTION_COMBO, catComboUid);
-        contentValues.put(SqlConstants.EVENT_LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(currentDate));
+        if (event.eventDate() != mDate)
+            hasChanged = true;
+        if (!event.organisationUnit().equals(orgUnitUid))
+            hasChanged = true;
+        if (!String.valueOf(event.coordinate().latitude()).equals(latitude) || !String.valueOf(event.coordinate().longitude()).equals(longitude))
+            hasChanged = true;
+        if (!event.attributeOptionCombo().equals(catOptionCombo))
+            hasChanged = true;
 
-        long row = -1;
+        if (hasChanged) {
 
-        String id = eventUid == null ? "" : eventUid;
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(mDate);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
 
-        try {
-            row = briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + " = ?", id);
-        } catch (Exception e) {
-            Timber.e(e);
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(EventModel.Columns.EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
+            contentValues.put(EventModel.Columns.ORGANISATION_UNIT, orgUnitUid);
+            contentValues.put(EventModel.Columns.LATITUDE, latitude);
+            contentValues.put(EventModel.Columns.LONGITUDE, longitude);
+            contentValues.put(EventModel.Columns.ATTRIBUTE_OPTION_COMBO, catOptionCombo);
+            contentValues.put(EventModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(currentDate));
+            contentValues.put(EventModel.Columns.STATE, event.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+
+            long row = -1;
+
+            try {
+                row = briteDatabase.update(EventModel.TABLE, contentValues, EventModel.Columns.UID + " = ?", eventUid);
+            } catch (Exception e) {
+                Timber.e(e);
+            }
+            if (row <= 0) {
+                String message = String.format(Locale.US, "Failed to update event for uid=[%s]", eventUid);
+                return Observable.error(new SQLiteConstraintException(message));
+            }
+            if (trackedEntityInstance != null)
+                updateTei(trackedEntityInstance);
         }
 
-        if (row <= 0) {
-            String message = String.format(Locale.US, "Failed to update event for uid=[%s]", id);
-            return Observable.error(new SQLiteConstraintException(message));
-        }
-        if (trackedEntityInstance != null) {
-            updateTei(trackedEntityInstance);
-        }
-//            updateProgramTable(currentDate, eventModel1.program()); //TODO: (inside the map) This is crashing the app
-        return event(id).map(eventModel1 -> eventModel1);
+        return event(eventUid).map(eventModel1 -> eventModel1);
     }
 
     @NonNull
     @Override
-    public Observable<List<Event>> getEventsFromProgramStage(String programUid, String enrollmentUid, String programStageUid) {
+    public Observable<List<Event>> getEventsFromProgramStage(String programUid, String
+            enrollmentUid, String programStageUid) {
         String eventsQuery = String.format(
                 "SELECT Event.* FROM %s JOIN %s " +
                         "ON %s.%s = %s.%s " +
