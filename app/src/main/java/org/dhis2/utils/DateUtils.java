@@ -1,5 +1,7 @@
 package org.dhis2.utils;
 
+import android.database.Cursor;
+
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.period.DatePeriod;
@@ -18,6 +20,7 @@ import javax.annotation.Nonnull;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import timber.log.Timber;
 
 /**
  * QUADRAM. Created by ppajuelo on 16/01/2018.
@@ -1068,5 +1071,59 @@ public class DateUtils {
         cal.set(Calendar.MILLISECOND, 0);
 
         return cal;
+    }
+
+    public static Date parseIncidentOrReportDate(String incidentOrReportDateString) {
+        if (incidentOrReportDateString != null)
+            try {
+                return DateUtils.databaseDateFormat().parse(incidentOrReportDateString);
+            } catch (Exception e) {
+                Timber.e(e);
+            }
+        return null;
+    }
+
+    public static Date getEventDate(Cursor cursor) {
+        Date eventDate;
+        int minDaysFromStart = cursor.getInt(3);
+        String reportDateToUse = cursor.getString(4) != null ? cursor.getString(4) : "";
+
+        String incidentDateString = cursor.getString(5);
+        String reportDateString = cursor.getString(6);
+        Date incidentDate;
+        Date enrollmentDate;
+        PeriodType periodType = cursor.getString(7) != null ? PeriodType.valueOf(cursor.getString(7)) : null;
+        boolean generatedByEnrollmentDate = cursor.getInt(8) == 1;
+
+        incidentDate = DateUtils.parseIncidentOrReportDate(incidentDateString);
+        enrollmentDate = DateUtils.parseIncidentOrReportDate(reportDateString);
+
+        Calendar cal = DateUtils.getInstance().getCalendar();
+        switch (reportDateToUse) {
+            case Constants.ENROLLMENT_DATE:
+                cal.setTime(enrollmentDate != null ? enrollmentDate : Calendar.getInstance().getTime());
+                break;
+            case Constants.INCIDENT_DATE:
+                cal.setTime(incidentDate != null ? incidentDate : Calendar.getInstance().getTime());
+                break;
+            default:
+                cal.setTime(Calendar.getInstance().getTime());
+                break;
+        }
+
+        if (!generatedByEnrollmentDate && incidentDate != null)
+            cal.setTime(incidentDate);
+
+        cal.set(Calendar.HOUR_OF_DAY, 0);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        cal.add(Calendar.DATE, minDaysFromStart);
+        eventDate = cal.getTime();
+
+        if (periodType != null)
+            eventDate = DateUtils.getInstance().getNextPeriod(periodType, eventDate, 0); //Sets eventDate to current Period date
+
+        return eventDate;
     }
 }
