@@ -7,16 +7,20 @@ import com.squareup.sqlbrite2.BriteDatabase;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Quartet;
 import org.dhis2.utils.DateUtils;
-import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.constant.Constant;
 import org.hisp.dhis.android.core.constant.ConstantTableInfo;
-import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.program.Program;
+import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
+import org.hisp.dhis.android.core.event.EventModel;
+import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.program.ProgramRuleActionModel;
 import org.hisp.dhis.android.core.program.ProgramRuleActionType;
+import org.hisp.dhis.android.core.program.ProgramRuleModel;
+import org.hisp.dhis.android.core.program.ProgramRuleVariableModel;
 import org.hisp.dhis.android.core.program.ProgramRuleVariableSourceType;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.rules.models.Rule;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionAssign;
@@ -46,7 +50,6 @@ import org.hisp.dhis.rules.models.RuleVariableNewestEvent;
 import org.hisp.dhis.rules.models.RuleVariableNewestStageEvent;
 import org.hisp.dhis.rules.models.RuleVariablePreviousEvent;
 
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -64,13 +67,6 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
 import static android.text.TextUtils.isEmpty;
-import static org.dhis2.utils.SqlConstants.AND;
-import static org.dhis2.utils.SqlConstants.FROM;
-import static org.dhis2.utils.SqlConstants.JOIN;
-import static org.dhis2.utils.SqlConstants.NOT_EQUALS;
-import static org.dhis2.utils.SqlConstants.ON;
-import static org.dhis2.utils.SqlConstants.QUOTE;
-import static org.dhis2.utils.SqlConstants.SELECT;
 
 
 @SuppressWarnings("PMD")
@@ -79,7 +75,7 @@ public final class RulesRepository {
             "FROM Constant";
 
 
-    private static final String QUERY_RULES = SELECT + "\n" +
+    private static final String QUERY_RULES = "SELECT\n" +
             "  ProgramRule.uid, \n" +
             "  ProgramRule.programStage,\n" +
             "  ProgramRule.priority,\n" +
@@ -87,7 +83,7 @@ public final class RulesRepository {
             "FROM ProgramRule\n" +
             "WHERE program = ?;";
 
-    private static final String QUERY_VARIABLES = SELECT + "\n" +
+    private static final String QUERY_VARIABLES = "SELECT\n" +
             "  name,\n" +
             "  programStage,\n" +
             "  programRuleVariableSourceType,\n" +
@@ -117,7 +113,7 @@ public final class RulesRepository {
             "  \"TEI_ATTRIBUTE\"\n" +
             ");";
 
-    private static final String QUERY_ACTIONS = SELECT + "\n" +
+    private static final String QUERY_ACTIONS = "SELECT\n" +
             "  ProgramRuleAction.programRule,\n" +
             "  ProgramRuleAction.programStage,\n" +
             "  ProgramRuleAction.programStageSection,\n" +
@@ -152,47 +148,47 @@ public final class RulesRepository {
     /**
      * Query all events except current one from a program without registration
      */
-    private static final String QUERY_OTHER_EVENTS = SELECT + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_UID + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATUS + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_DATE + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_DUE_DATE + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_ORG_UNIT + ",\n" +
-            " " + SqlConstants.PROGRAM_STAGE_TABLE + "." + SqlConstants.PROGRAM_STAGE_DISPLAY_NAME + ",\n" +
-            FROM + SqlConstants.EVENT_TABLE + "\n" +
-            JOIN + SqlConstants.PROGRAM_STAGE_TABLE + ON + SqlConstants.PROGRAM_STAGE_TABLE + "." + SqlConstants.PROGRAM_STAGE_UID + " = " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + "\n" +
+    private static final String QUERY_OTHER_EVENTS = "SELECT Event.uid,\n" +
+            "  Event.programStage,\n" +
+            "  Event.status,\n" +
+            "  Event.eventDate,\n" +
+            "  Event.dueDate,\n" +
+            "  Event.organisationUnit,\n" +
+            "  ProgramStage.displayName\n" +
+            "FROM Event\n" +
+            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
             "WHERE Event.program = ? AND Event.uid != ? AND Event.eventDate <= ? \n" +
-            AND + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
+            " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
 
     /**
      * Query all events except current one from an enrollment
      */
-    private static final String QUERY_OTHER_EVENTS_ENROLLMENTS = SELECT + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_UID + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATUS + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_DATE + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_DUE_DATE + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_ORG_UNIT + ",\n" +
-            " " + SqlConstants.PROGRAM_STAGE_TABLE + "." + SqlConstants.PROGRAM_STAGE_DISPLAY_NAME + ",\n" +
-            FROM + SqlConstants.EVENT_TABLE + "\n" +
-            JOIN + SqlConstants.PROGRAM_STAGE_TABLE + ON + SqlConstants.PROGRAM_STAGE_TABLE + "." + SqlConstants.PROGRAM_STAGE_UID + " = " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + "\n" +
+    private static final String QUERY_OTHER_EVENTS_ENROLLMENTS = "SELECT Event.uid,\n" +
+            "  Event.programStage,\n" +
+            "  Event.status,\n" +
+            "  Event.eventDate,\n" +
+            "  Event.dueDate,\n" +
+            "  Event.organisationUnit,\n" +
+            "  ProgramStage.displayName\n" +
+            "FROM Event\n" +
+            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
             "WHERE Event.enrollment = ? AND Event.uid != ? AND Event.eventDate <= ?\n" +
-            AND + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
+            " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
 
     /**
      * Query all events from an enrollment
      */
-    private static final String QUERY_EVENTS_ENROLLMENTS = SELECT + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_UID + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATUS + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_DATE + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_DUE_DATE + ",\n" +
-            " " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_ORG_UNIT + ",\n" +
-            " " + SqlConstants.PROGRAM_STAGE_TABLE + "." + SqlConstants.PROGRAM_STAGE_DISPLAY_NAME + ",\n" +
-            FROM + SqlConstants.EVENT_TABLE + "\n" +
-            JOIN + SqlConstants.PROGRAM_STAGE_TABLE + ON + SqlConstants.PROGRAM_STAGE_TABLE + "." + SqlConstants.PROGRAM_STAGE_UID + " = " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_PROGRAM_STAGE + "\n" +
+    private static final String QUERY_EVENTS_ENROLLMENTS = "SELECT Event.uid,\n" +
+            "  Event.programStage,\n" +
+            "  Event.status,\n" +
+            "  Event.eventDate,\n" +
+            "  Event.dueDate,\n" +
+            "  Event.organisationUnit,\n" +
+            "  ProgramStage.displayName\n" +
+            "FROM Event\n" +
+            "JOIN ProgramStage ON ProgramStage.uid = Event.programStage\n" +
             "WHERE Event.enrollment = ?\n" +
-            AND + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC LIMIT 10";
+            " AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC LIMIT 10";
 
     private static final String QUERY_VALUES = "SELECT " +
             "  Event.eventDate," +
@@ -207,9 +203,9 @@ public final class RulesRepository {
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
             "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + SqlConstants.EVENT_TABLE + "." + SqlConstants.EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "';";
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
 
-    private static final String QUERY_ENROLLMENT = SELECT + "\n" +
+    private static final String QUERY_ENROLLMENT = "SELECT\n" +
             "  Enrollment.uid,\n" +
             "  Enrollment.incidentDate,\n" +
             "  Enrollment.enrollmentDate,\n" +
@@ -221,7 +217,7 @@ public final class RulesRepository {
             "WHERE Enrollment.uid = ? \n" +
             "LIMIT 1;";
 
-    private static final String QUERY_ATTRIBUTE_VALUES = SELECT + "\n" +
+    private static final String QUERY_ATTRIBUTE_VALUES = "SELECT\n" +
             "  Field.id,\n" +
             "  Value.value,\n" +
             "  ProgramRuleVariable.useCodeForOptionSet,\n" +
@@ -258,13 +254,13 @@ public final class RulesRepository {
 
     @NonNull
     public Flowable<List<RuleVariable>> ruleVariables(@NonNull String programUid) {
-        return briteDatabase.createQuery(SqlConstants.PROGRAM_RULE_VARIABLE_TABLE, QUERY_VARIABLES, programUid)
+        return briteDatabase.createQuery(ProgramRuleVariableModel.TABLE, QUERY_VARIABLES, programUid)
                 .mapToList(RulesRepository::mapToRuleVariable).toFlowable(BackpressureStrategy.LATEST);
     }
 
     @NonNull
     public Flowable<List<RuleVariable>> ruleVariablesProgramStages(@NonNull String programUid) {
-        return briteDatabase.createQuery(SqlConstants.PROGRAM_RULE_VARIABLE_TABLE, QUERY_VARIABLES, programUid)
+        return briteDatabase.createQuery(ProgramRuleVariableModel.TABLE, QUERY_VARIABLES, programUid)
                 .mapToList(RulesRepository::mapToRuleVariableProgramStages).toFlowable(BackpressureStrategy.LATEST);
     }
 
@@ -285,15 +281,16 @@ public final class RulesRepository {
     @NonNull
     private Flowable<List<Quartet<String, String, Integer, String>>> queryRules(
             @NonNull String programUid) {
-        return briteDatabase.createQuery(SqlConstants.PROGRAM_RULE_TABLE, QUERY_RULES, programUid)
+        return briteDatabase.createQuery(ProgramRuleModel.TABLE, QUERY_RULES, programUid)
                 .mapToList(RulesRepository::mapToQuartet).toFlowable(BackpressureStrategy.LATEST);
     }
 
     @NonNull
     private Flowable<List<Pair<String, RuleAction>>> queryRuleActionsList(@NonNull String programUid) {
-        return briteDatabase.createQuery(SqlConstants.PROGRAM_RULE_ACTION_TABLE, QUERY_ACTIONS, programUid)
+        return briteDatabase.createQuery(ProgramRuleActionModel.TABLE, QUERY_ACTIONS, programUid)
                 .mapToList(RulesRepository::mapToActionPairs).toFlowable(BackpressureStrategy.LATEST);
     }
+
 
     @NonNull
     private static List<Rule> mapActionsToRulesNew(
@@ -345,7 +342,16 @@ public final class RulesRepository {
         String elementType = cursor.getString(6);
 
         // String representation of value type.
-        RuleValueType mimeType = getMimeType(attributeType, elementType);
+        RuleValueType mimeType = null;
+        if (!isEmpty(attributeType)) {
+            mimeType = convertType(attributeType);
+        } else if (!isEmpty(elementType)) {
+            mimeType = convertType(elementType);
+        }
+
+        if (mimeType == null) {
+            mimeType = RuleValueType.TEXT;
+        }
 
         switch (ProgramRuleVariableSourceType.valueOf(sourceType)) {
             case TEI_ATTRIBUTE:
@@ -369,7 +375,19 @@ public final class RulesRepository {
         }
     }
 
-    private static RuleValueType getMimeType(String attributeType, String elementType) {
+    @NonNull
+    private static RuleVariable mapToRuleVariableProgramStages(@NonNull Cursor cursor) {
+        String name = cursor.getString(0);
+        String stage = cursor.getString(1);
+        String sourceType = cursor.getString(2);
+        String dataElement = cursor.getString(3);
+        String attribute = cursor.getString(4);
+
+        // Mime types of the attribute and data element.
+        String attributeType = cursor.getString(5);
+        String elementType = cursor.getString(6);
+
+        // String representation of value type.
         RuleValueType mimeType = null;
         if (!isEmpty(attributeType)) {
             mimeType = convertType(attributeType);
@@ -380,12 +398,27 @@ public final class RulesRepository {
         if (mimeType == null) {
             mimeType = RuleValueType.TEXT;
         }
-        return mimeType;
-    }
 
-    @NonNull
-    private static RuleVariable mapToRuleVariableProgramStages(@NonNull Cursor cursor) {
-        return mapToRuleVariable(cursor);
+        switch (ProgramRuleVariableSourceType.valueOf(sourceType)) {
+            case TEI_ATTRIBUTE:
+                return RuleVariableAttribute.create(name, attribute, mimeType);
+            case DATAELEMENT_CURRENT_EVENT:
+                return RuleVariableCurrentEvent.create(name, dataElement, mimeType);
+            case DATAELEMENT_NEWEST_EVENT_PROGRAM:
+                return RuleVariableNewestEvent.create(name, dataElement, mimeType);
+            case DATAELEMENT_NEWEST_EVENT_PROGRAM_STAGE:
+                if (stage == null)
+                    stage = "";
+                return RuleVariableNewestStageEvent.create(name, dataElement, stage, mimeType);
+            case DATAELEMENT_PREVIOUS_EVENT:
+                return RuleVariablePreviousEvent.create(name, dataElement, mimeType);
+            case CALCULATED_VALUE:
+                String variable = dataElement != null ? dataElement : attribute;
+                return RuleVariableCalculatedValue.create(name, variable != null ? variable : "", mimeType);
+            default:
+                throw new IllegalArgumentException("Unsupported variable " +
+                        "source type: " + sourceType);
+        }
     }
 
     @NonNull
@@ -427,7 +460,6 @@ public final class RulesRepository {
         return create(actionType, programStage, section, attribute, dataElement, location, content, data, option, optionGroup);
     }
 
-    @SuppressWarnings("squid:S00107")
     @NonNull
     public static RuleAction create(ProgramRuleActionType actionType, String programStage, String section, String attribute,
                                     String dataElement, String location, String content, String data, String option, String optionGroup) {
@@ -438,7 +470,6 @@ public final class RulesRepository {
         }
 
         String field = dataElement == null ? "" : dataElement;
-        String finalField = isEmpty(attribute) ? field : attribute;
 
         switch (actionType) {
             case DISPLAYTEXT:
@@ -446,32 +477,38 @@ public final class RulesRepository {
             case DISPLAYKEYVALUEPAIR:
                 return createDisplayKeyValuePairAction(content, data, location);
             case HIDEFIELD:
-                return RuleActionHideField.create(content, finalField);
+                return RuleActionHideField.create(content,
+                        isEmpty(attribute) ? field : attribute);
             case HIDESECTION:
                 return RuleActionHideSection.create(section);
             case ASSIGN:
-                return RuleActionAssign.create(content, isEmpty(data) ? "" : data, finalField);
+                return RuleActionAssign.create(content, isEmpty(data) ? "" : data,
+                        isEmpty(attribute) ? field : attribute);
             case SHOWWARNING:
-                return RuleActionShowWarning.create(content, data, finalField);
+                return RuleActionShowWarning.create(content, data,
+                        isEmpty(attribute) ? field : attribute);
             case WARNINGONCOMPLETE:
-                return RuleActionWarningOnCompletion.create(content, data, finalField);
+                return RuleActionWarningOnCompletion.create(content, data,
+                        isEmpty(attribute) ? field : attribute);
             case SHOWERROR:
-                return RuleActionShowError.create(content, data, finalField);
+                return RuleActionShowError.create(content, data,
+                        isEmpty(attribute) ? field : attribute);
             case ERRORONCOMPLETE:
                 if (content == null)
                     content = "";
                 if (data == null)
                     data = "";
 
-                return RuleActionErrorOnCompletion.create(content, data, finalField);
+                return RuleActionErrorOnCompletion.create(content, data,
+                        isEmpty(attribute) ? field : attribute);
             case CREATEEVENT:
                 return RuleActionCreateEvent.create(content, data, programStage);
             case HIDEPROGRAMSTAGE:
                 return RuleActionHideProgramStage.create(programStage);
             case SETMANDATORYFIELD:
-                return RuleActionSetMandatoryField.create(finalField);
+                return RuleActionSetMandatoryField.create(isEmpty(attribute) ? field : attribute);
             case HIDEOPTION:
-                return RuleActionHideOption.create(content, finalField, option);
+                return RuleActionHideOption.create(content, isEmpty(attribute) ? field : attribute, option);
             case HIDEOPTIONGROUP:
                 return RuleActionHideOptionGroup.create(content, optionGroup);
             default:
@@ -499,36 +536,47 @@ public final class RulesRepository {
         }
     }
 
-    private Date getDueDate(Cursor cursor, Date eventDate) throws ParseException {
-        return cursor.isNull(4) ? eventDate : DateUtils.databaseDateFormat().parse(cursor.getString(4));
-    }
-
-    private RuleEvent.Status getStatus(Cursor cursor) {
-        return cursor.getString(2).equals(RuleEvent.Status.VISITED.toString()) ?
-                RuleEvent.Status.ACTIVE :
-                RuleEvent.Status.valueOf(cursor.getString(2)); //TODO: WHAT?
-    }
-
     public Flowable<List<RuleEvent>> otherEvents(String eventUidToEvaluate) {
-        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, "SELECT * FROM Event WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
-                .mapToOne(Event::create)
+        return briteDatabase.createQuery(EventModel.TABLE, "SELECT * FROM Event WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
+                .mapToOne(EventModel::create)
                 .flatMap(eventModel ->
-                        briteDatabase.createQuery(SqlConstants.PROGRAM_TABLE, "SELECT Program.* FROM Program JOIN Event ON Event.program = Program.uid WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
-                                .mapToOne(Program::create).flatMap(programModel ->
-                                briteDatabase.createQuery(SqlConstants.EVENT_TABLE,
-                                        eventModel.enrollment() == null ? QUERY_OTHER_EVENTS : QUERY_OTHER_EVENTS_ENROLLMENTS,
+                        briteDatabase.createQuery(ProgramModel.TABLE, "SELECT Program.* FROM Program JOIN Event ON Event.program = Program.uid WHERE Event.uid = ? LIMIT 1", eventUidToEvaluate == null ? "" : eventUidToEvaluate)
+                                .mapToOne(ProgramModel::create).flatMap(programModel ->
+                                briteDatabase.createQuery(EventModel.TABLE, eventModel.enrollment() == null ? QUERY_OTHER_EVENTS : QUERY_OTHER_EVENTS_ENROLLMENTS,
                                         eventModel.enrollment() == null ? programModel.uid() : eventModel.enrollment(),
                                         eventUidToEvaluate == null ? "" : eventUidToEvaluate,
                                         DateUtils.databaseDateFormat().format(eventModel.eventDate()))
                                         .mapToList(cursor -> {
+                                            List<RuleDataValue> dataValues = new ArrayList<>();
                                             String eventUid = cursor.getString(0);
                                             String programStageUid = cursor.getString(1);
                                             Date eventDate = DateUtils.databaseDateFormat().parse(cursor.getString(3));
-                                            Date dueDate = getDueDate(cursor, eventDate);
+                                            Date dueDate = cursor.isNull(4) ? eventDate : DateUtils.databaseDateFormat().parse(cursor.getString(4));
                                             String orgUnit = cursor.getString(5);
                                             String orgUnitCode = getOrgUnitCode(orgUnit);
                                             String programStageName = cursor.getString(6);
-                                            RuleEvent.Status status = getStatus(cursor);
+                                            RuleEvent.Status status = cursor.getString(2).equals(RuleEvent.Status.VISITED.toString()) ?
+                                                    RuleEvent.Status.ACTIVE :
+                                                    RuleEvent.Status.valueOf(cursor.getString(2)); //TODO: WHAT?
+
+                                            try (Cursor dataValueCursor = briteDatabase.query(QUERY_VALUES, eventUid)) {
+                                                if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
+                                                    for (int i = 0; i < dataValueCursor.getCount(); i++) {
+                                                        Date eventDateV = DateUtils.databaseDateFormat().parse(dataValueCursor.getString(0));
+                                                        String programStage = dataValueCursor.getString(1);
+                                                        String dataElement = dataValueCursor.getString(2);
+                                                        String value = dataValueCursor.getString(3) != null ? dataValueCursor.getString(3) : "";
+                                                        boolean useCode = dataValueCursor.getInt(4) == 1;
+                                                        String optionCode = dataValueCursor.getString(5);
+                                                        String optionName = dataValueCursor.getString(6);
+                                                        if (!isEmpty(optionCode) && !isEmpty(optionName))
+                                                            value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
+                                                        dataValues.add(RuleDataValue.create(eventDateV, programStage,
+                                                                dataElement, value));
+                                                        dataValueCursor.moveToNext();
+                                                    }
+                                                }
+                                            }
 
                                             return RuleEvent.builder()
                                                     .event(eventUid)
@@ -539,48 +587,44 @@ public final class RulesRepository {
                                                     .dueDate(dueDate)
                                                     .organisationUnit(orgUnit)
                                                     .organisationUnitCode(orgUnitCode)
-                                                    .dataValues(getDataValues(eventUid))
+                                                    .dataValues(dataValues)
                                                     .build();
 
                                         }))).toFlowable(BackpressureStrategy.LATEST);
     }
 
-    private List<RuleDataValue> getDataValues(String eventUid) throws ParseException {
-        List<RuleDataValue> dataValues = new ArrayList<>();
-        try (Cursor dataValueCursor = briteDatabase.query(QUERY_VALUES, eventUid)) {
-            if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
-                for (int i = 0; i < dataValueCursor.getCount(); i++) {
-                    Date eventDateV = DateUtils.databaseDateFormat().parse(dataValueCursor.getString(0));
-                    String programStage = dataValueCursor.getString(1);
-                    String dataElement = dataValueCursor.getString(2);
-                    String value = dataValueCursor.getString(3) != null ? dataValueCursor.getString(3) : "";
-                    boolean useCode = dataValueCursor.getInt(4) == 1;
-                    String optionCode = dataValueCursor.getString(5);
-                    String optionName = dataValueCursor.getString(6);
-                    if (!isEmpty(optionCode) && !isEmpty(optionName))
-                        value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
-                    dataValues.add(RuleDataValue.create(eventDateV, programStage,
-                            dataElement, value));
-                    dataValueCursor.moveToNext();
-                }
-            }
-        }
-
-        return dataValues;
-    }
-
 
     public Flowable<List<RuleEvent>> enrollmentEvents(String enrollmentUid) {
-        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, QUERY_EVENTS_ENROLLMENTS, enrollmentUid)
+        return briteDatabase.createQuery(EventModel.TABLE, QUERY_EVENTS_ENROLLMENTS, enrollmentUid)
                 .mapToList(cursor -> {
+                    List<RuleDataValue> dataValues = new ArrayList<>();
                     String eventUid = cursor.getString(0);
                     String programStageUid = cursor.getString(1);
                     Date eventDate = cursor.isNull(3) ? null : DateUtils.databaseDateFormat().parse(cursor.getString(3));
-                    Date dueDate = getDueDate(cursor, eventDate); //TODO: Should due date always be not null?
+                    Date dueDate = cursor.isNull(4) ? eventDate : DateUtils.databaseDateFormat().parse(cursor.getString(4)); //TODO: Should due date always be not null?
                     String orgUnit = cursor.getString(5);
                     String orgUnitCode = getOrgUnitCode(orgUnit);
                     String programStageName = cursor.getString(6);
-                    RuleEvent.Status status = getStatus(cursor);
+                    RuleEvent.Status status = cursor.getString(2).equals(RuleEvent.Status.VISITED.toString()) ? RuleEvent.Status.ACTIVE : RuleEvent.Status.valueOf(cursor.getString(2)); //TODO: WHAT?
+
+                    try (Cursor dataValueCursor = briteDatabase.query(QUERY_VALUES, eventUid)) {
+                        if (dataValueCursor != null && dataValueCursor.moveToFirst()) {
+                            for (int i = 0; i < dataValueCursor.getCount(); i++) {
+                                Date eventDateV = DateUtils.databaseDateFormat().parse(dataValueCursor.getString(0));
+                                String programStage = dataValueCursor.getString(1);
+                                String dataElement = dataValueCursor.getString(2);
+                                String value = dataValueCursor.getString(3) != null ? dataValueCursor.getString(3) : "";
+                                boolean useCode = dataValueCursor.getInt(4) == 1;
+                                String optionCode = dataValueCursor.getString(5);
+                                String optionName = dataValueCursor.getString(6);
+                                if (!isEmpty(optionCode) && !isEmpty(optionName))
+                                    value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
+                                dataValues.add(RuleDataValue.create(eventDateV, programStage,
+                                        dataElement, value));
+                                dataValueCursor.moveToNext();
+                            }
+                        }
+                    }
 
                     return RuleEvent.builder()
                             .event(eventUid)
@@ -591,7 +635,7 @@ public final class RulesRepository {
                             .dueDate(dueDate)
                             .organisationUnit(orgUnit)
                             .organisationUnitCode(orgUnitCode)
-                            .dataValues(getDataValues(eventUid))
+                            .dataValues(dataValues)
                             .build();
 
                 }).toFlowable(BackpressureStrategy.LATEST);
@@ -599,10 +643,10 @@ public final class RulesRepository {
     }
 
     public Flowable<RuleEnrollment> enrollment(String eventUid) {
-        return briteDatabase.createQuery(SqlConstants.EVENT_TABLE, "SELECT Event.*, Program.displayName FROM Event JOIN Program ON Program.uid = Event.program WHERE Event.uid = ? LIMIT 1", eventUid == null ? "" : eventUid)
-                .mapToOne(cursor -> Pair.create(Event.create(cursor), cursor.getString(cursor.getColumnIndex("displayName"))))
+        return briteDatabase.createQuery(EventModel.TABLE, "SELECT Event.*, Program.displayName FROM Event JOIN Program ON Program.uid = Event.program WHERE Event.uid = ? LIMIT 1", eventUid == null ? "" : eventUid)
+                .mapToOne(cursor -> Pair.create(EventModel.create(cursor), cursor.getString(cursor.getColumnIndex("displayName"))))
                 .flatMap(pair -> {
-                            Event eventModel = pair.val0();
+                            EventModel eventModel = pair.val0();
                             String programName = pair.val1();
 
                             String ouCode = getOrgUnitCode(eventModel.organisationUnit());
@@ -639,8 +683,8 @@ public final class RulesRepository {
 
     @NonNull
     private Flowable<List<RuleAttributeValue>> queryAttributeValues(String enrollmentUid) {
-        return briteDatabase.createQuery(Arrays.asList(SqlConstants.ENROLLMENT_TABLE,
-                SqlConstants.TE_ATTR_VALUE_TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid)
+        return briteDatabase.createQuery(Arrays.asList(EnrollmentModel.TABLE,
+                TrackedEntityAttributeValueModel.TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid)
                 .mapToList(cursor -> RuleAttributeValue.create(
                         cursor.getString(0), cursor.getString(1))
                 ).toFlowable(BackpressureStrategy.LATEST);
@@ -648,7 +692,7 @@ public final class RulesRepository {
 
     @NonNull
     private Flowable<RuleEnrollment> queryEnrollment(@NonNull List<RuleAttributeValue> attributeValues, @NonNull String enrollmentUid) {
-        return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, QUERY_ENROLLMENT, enrollmentUid)
+        return briteDatabase.createQuery(EnrollmentModel.TABLE, QUERY_ENROLLMENT, enrollmentUid)
                 .mapToOne(cursor -> {
                     Date enrollmentDate = BaseIdentifiableObject.DATE_FORMAT.parse(cursor.getString(2));
                     Date incidentDate = cursor.isNull(1) ?

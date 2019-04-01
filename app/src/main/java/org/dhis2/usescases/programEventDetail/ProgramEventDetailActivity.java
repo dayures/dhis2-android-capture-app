@@ -512,7 +512,7 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
 
             List<String> orgUnitsUids = new ArrayList<>();
             for (TreeNode treeNodeIterator : treeView.getSelected()) {
-                orgUnitsUids.add(((CategoryCombo) treeNodeIterator.getValue()).uid());
+                orgUnitsUids.add(((OrganisationUnit) treeNodeIterator.getValue()).uid());
             }
 
             if (treeView.getSelected() != null && !treeView.getSelected().isEmpty()) {

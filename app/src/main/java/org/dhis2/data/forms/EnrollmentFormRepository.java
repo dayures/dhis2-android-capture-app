@@ -8,18 +8,17 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactoryImpl;
-import org.dhis2.data.forms.dataentry.fields.FieldViewModelHelper;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.utils.CodeGenerator;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.DateUtils;
-import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.State;
+import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
@@ -29,7 +28,6 @@ import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.PeriodType;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStage;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityType;
 import org.hisp.dhis.rules.RuleEngine;
 import org.hisp.dhis.rules.RuleEngineContext;
 import org.hisp.dhis.rules.RuleExpressionEvaluator;
@@ -49,45 +47,66 @@ import io.reactivex.exceptions.OnErrorNotImplementedException;
 import io.reactivex.functions.Consumer;
 import timber.log.Timber;
 
+import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_ENROLLMENT_DATE;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_INCIDENT_DATE;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_LATITUDE;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_LONGITUDE;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_ORG_UNIT;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_PROGRAM;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_STATE;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_STATUS;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_TABLE;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_TEI;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_UID;
 import static org.dhis2.utils.SqlConstants.EQUAL;
+import static org.dhis2.utils.SqlConstants.EVENT_TABLE;
 import static org.dhis2.utils.SqlConstants.FROM;
+import static org.dhis2.utils.SqlConstants.JOIN;
 import static org.dhis2.utils.SqlConstants.LIMIT_1;
+import static org.dhis2.utils.SqlConstants.ON;
+import static org.dhis2.utils.SqlConstants.PROGRAM_STAGE_TABLE;
+import static org.dhis2.utils.SqlConstants.PROGRAM_TABLE;
+import static org.dhis2.utils.SqlConstants.PROGRAM_UID;
 import static org.dhis2.utils.SqlConstants.QUESTION_MARK;
 import static org.dhis2.utils.SqlConstants.SELECT;
 import static org.dhis2.utils.SqlConstants.TABLE_FIELD_EQUALS;
+import static org.dhis2.utils.SqlConstants.TEI_TABLE;
+import static org.dhis2.utils.SqlConstants.TEI_UID;
+import static org.dhis2.utils.SqlConstants.TE_ATTR_VALUE_TABLE;
+import static org.dhis2.utils.SqlConstants.TE_ATTR_VALUE_TEI;
 import static org.dhis2.utils.SqlConstants.WHERE;
-
 
 @SuppressWarnings({
         "PMD.AvoidDuplicateLiterals"
 })
 public class EnrollmentFormRepository implements FormRepository {
     private static final List<String> TITLE_TABLES = Arrays.asList(
-            SqlConstants.ENROLLMENT_TABLE, SqlConstants.PROGRAM_TABLE);
+            ENROLLMENT_TABLE, PROGRAM_TABLE);
 
     private static final String SELECT_TITLE = "SELECT Program.displayName\n" +
-            FROM + SqlConstants.ENROLLMENT_TABLE + "\n" +
-            "  JOIN Program ON Enrollment.program = Program.uid\n" +
-            WHERE + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_UID + EQUAL + QUESTION_MARK +
+            FROM + ENROLLMENT_TABLE + "\n" +
+            "   " + JOIN + PROGRAM_TABLE + ON + ENROLLMENT_TABLE + "." + ENROLLMENT_PROGRAM + EQUAL + PROGRAM_TABLE + "." + PROGRAM_UID + "\n" +
+            WHERE + ENROLLMENT_TABLE + "." + ENROLLMENT_UID + EQUAL + QUESTION_MARK +
             LIMIT_1;
 
     private static final String SELECT_ENROLLMENT_UID = "SELECT Enrollment.uid\n" +
-            FROM + SqlConstants.ENROLLMENT_TABLE + "\n" +
-            WHERE + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_UID + EQUAL + QUESTION_MARK;
+            FROM + ENROLLMENT_TABLE + "\n" +
+            "WHERE Enrollment.uid = ?";
 
     private static final String SELECT_ENROLLMENT_STATUS = "SELECT Enrollment.status\n" +
-            FROM + SqlConstants.ENROLLMENT_TABLE + "\n" +
-            WHERE + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_UID + EQUAL + QUESTION_MARK +
+            FROM + ENROLLMENT_TABLE + "\n" +
+            WHERE + ENROLLMENT_TABLE + "." + ENROLLMENT_UID + EQUAL + QUESTION_MARK +
             LIMIT_1;
 
     private static final String SELECT_ENROLLMENT_DATE = "SELECT Enrollment.*\n" +
-            FROM + SqlConstants.ENROLLMENT_TABLE + "\n" +
-            WHERE + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_UID + EQUAL + QUESTION_MARK +
+            FROM + ENROLLMENT_TABLE + "\n" +
+            WHERE + ENROLLMENT_TABLE + "." + ENROLLMENT_UID + EQUAL + QUESTION_MARK +
             LIMIT_1;
 
     private static final String SELECT_ENROLLMENT_PROGRAM = "SELECT Program.*\n" +
             "FROM Program JOIN Enrollment ON Enrollment.program = Program.uid\n" +
-            WHERE + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_UID + EQUAL + QUESTION_MARK +
+            WHERE + ENROLLMENT_TABLE + "." + ENROLLMENT_UID + EQUAL + QUESTION_MARK +
             LIMIT_1;
 
     private static final String SELECT_INCIDENT_DATE = "SELECT Enrollment.* FROM Enrollment WHERE Enrollment.uid = ? LIMIT 1";
@@ -95,21 +114,21 @@ public class EnrollmentFormRepository implements FormRepository {
     private static final String SELECT_AUTO_GENERATE_PROGRAM_STAGE = SELECT +
             "ProgramStage.uid, " +
             "Program.uid, " +
-            "Enrollment.organisationUnit, " +
+            ENROLLMENT_TABLE + "." + ENROLLMENT_ORG_UNIT + ", " +
             "ProgramStage.minDaysFromStart, " +
             "ProgramStage.reportDateToUse, " +
             "Enrollment.incidentDate, " +
             "Enrollment.enrollmentDate, " +
             "ProgramStage.periodType, \n" +
             "ProgramStage.generatedByEnrollmentDate \n" +
-            FROM + SqlConstants.ENROLLMENT_TABLE + "\n" +
-            "  JOIN Program ON Enrollment.program = Program.uid\n" +
+            FROM + ENROLLMENT_TABLE + "\n" +
+            "   " + JOIN + PROGRAM_TABLE + ON + ENROLLMENT_TABLE + "." + ENROLLMENT_PROGRAM + EQUAL + PROGRAM_TABLE + "." + PROGRAM_UID + "\n" +
             "  JOIN ProgramStage ON Program.uid = ProgramStage.program \n" +
             "WHERE Enrollment.uid = ? AND ProgramStage.autoGenerateEvent = 1";
 
     private static final String SELECT_PROGRAM = "SELECT \n" +
             "  program\n" +
-            FROM + SqlConstants.ENROLLMENT_TABLE + "\n" +
+            FROM + ENROLLMENT_TABLE + "\n" +
             "WHERE uid = ?\n" +
             "LIMIT 1;";
 
@@ -118,7 +137,7 @@ public class EnrollmentFormRepository implements FormRepository {
             "Enrollment.trackedEntityInstance\n" +
             "FROM Program\n" +
             "JOIN Enrollment ON Enrollment.program = Program.uid\n" +
-            WHERE + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_UID + " = ? LIMIT 1";
+            "WHERE Enrollment.uid = ? LIMIT 1";
 
     private static final String QUERY = "SELECT \n" +
             "  Field.id,\n" +
@@ -154,7 +173,7 @@ public class EnrollmentFormRepository implements FormRepository {
             "  LEFT OUTER JOIN Option ON (\n" +
             "    Field.optionSet = Option.optionSet AND Value.value = Option.code\n" +
             "  )\n" +
-            WHERE + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_UID + EQUAL + QUESTION_MARK;
+            "WHERE Enrollment.uid = ?";
     private static final String CHECK_STAGE_IS_NOT_CREATED = "SELECT * FROM Event JOIN Enrollment ON Event.enrollment = Enrollment.uid WHERE Enrollment.uid = ? AND Event.programStage = ?";
     @NonNull
     private final BriteDatabase briteDatabase;
@@ -223,9 +242,9 @@ public class EnrollmentFormRepository implements FormRepository {
     @NonNull
     @Override
     public Flowable<Pair<Program, String>> reportDate() {
-        return briteDatabase.createQuery(SqlConstants.PROGRAM_TABLE, SELECT_ENROLLMENT_PROGRAM, enrollmentUid)
+        return briteDatabase.createQuery(PROGRAM_TABLE, SELECT_ENROLLMENT_PROGRAM, enrollmentUid)
                 .mapToOne(Program::create)
-                .flatMap(programModel -> briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, SELECT_ENROLLMENT_DATE, enrollmentUid)
+                .flatMap(programModel -> briteDatabase.createQuery(ENROLLMENT_TABLE, SELECT_ENROLLMENT_DATE, enrollmentUid)
                         .mapToOne(Enrollment::create)
                         .map(enrollmentModel -> Pair.create(programModel, enrollmentModel.enrollmentDate() != null ?
                                 DateUtils.uiDateFormat().format(enrollmentModel.enrollmentDate()) : "")))
@@ -236,9 +255,9 @@ public class EnrollmentFormRepository implements FormRepository {
     @NonNull
     @Override
     public Flowable<Pair<Program, String>> incidentDate() {
-        return briteDatabase.createQuery(SqlConstants.PROGRAM_TABLE, SELECT_ENROLLMENT_PROGRAM, enrollmentUid)
+        return briteDatabase.createQuery(PROGRAM_TABLE, SELECT_ENROLLMENT_PROGRAM, enrollmentUid)
                 .mapToOne(Program::create)
-                .flatMap(programModel -> briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, SELECT_INCIDENT_DATE, enrollmentUid)
+                .flatMap(programModel -> briteDatabase.createQuery(ENROLLMENT_TABLE, SELECT_INCIDENT_DATE, enrollmentUid)
                         .mapToOne(Enrollment::create)
                         .map(enrollmentModel -> Pair.create(programModel, enrollmentModel.incidentDate() != null ?
                                 DateUtils.uiDateFormat().format(enrollmentModel.incidentDate()) : "")))
@@ -248,7 +267,7 @@ public class EnrollmentFormRepository implements FormRepository {
 
     @Override
     public Flowable<Program> getAllowDatesInFuture() {
-        return briteDatabase.createQuery(SqlConstants.PROGRAM_TABLE, SELECT_ENROLLMENT_PROGRAM, enrollmentUid)
+        return briteDatabase.createQuery(PROGRAM_TABLE, SELECT_ENROLLMENT_PROGRAM, enrollmentUid)
                 .mapToOne(Program::create)
                 .toFlowable(BackpressureStrategy.LATEST);
     }
@@ -257,7 +276,7 @@ public class EnrollmentFormRepository implements FormRepository {
     @Override
     public Flowable<ReportStatus> reportStatus() {
         return briteDatabase
-                .createQuery(SqlConstants.ENROLLMENT_TABLE, SELECT_ENROLLMENT_STATUS, enrollmentUid)
+                .createQuery(ENROLLMENT_TABLE, SELECT_ENROLLMENT_STATUS, enrollmentUid)
                 .mapToOne(cursor ->
                         ReportStatus.fromEnrollmentStatus(EnrollmentStatus.valueOf(cursor.getString(0)))).toFlowable(BackpressureStrategy.LATEST)
                 .distinctUntilChanged();
@@ -267,7 +286,7 @@ public class EnrollmentFormRepository implements FormRepository {
     @Override
     public Flowable<List<FormSectionViewModel>> sections() {
         return briteDatabase
-                .createQuery(SqlConstants.ENROLLMENT_TABLE, SELECT_ENROLLMENT_UID, enrollmentUid)
+                .createQuery(ENROLLMENT_TABLE, SELECT_ENROLLMENT_UID, enrollmentUid)
                 .mapToList(cursor -> FormSectionViewModel
                         .createForEnrollment(cursor.getString(0))).toFlowable(BackpressureStrategy.LATEST);
     }
@@ -276,15 +295,21 @@ public class EnrollmentFormRepository implements FormRepository {
     @Override
     public Consumer<String> storeReportDate() {
         return reportDate -> {
-            Calendar cal = DateUtils.getCalendarFromDate(reportDate);
+            Calendar cal = Calendar.getInstance();
+            Date date = DateUtils.databaseDateFormat().parse(reportDate);
+            cal.setTime(date);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
 
             ContentValues enrollment = new ContentValues();
-            enrollment.put(SqlConstants.ENROLLMENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
-            enrollment.put(SqlConstants.ENROLLMENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
+            enrollment.put(ENROLLMENT_ENROLLMENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
+            enrollment.put(ENROLLMENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
             // TODO: and if so, keep the TO_POST state
 
-            briteDatabase.update(SqlConstants.ENROLLMENT_TABLE, enrollment,
-                    SqlConstants.ENROLLMENT_UID + " = ?", enrollmentUid);
+            briteDatabase.update(ENROLLMENT_TABLE, enrollment,
+                    ENROLLMENT_UID + " = ?", enrollmentUid);
         };
     }
 
@@ -293,12 +318,12 @@ public class EnrollmentFormRepository implements FormRepository {
     public Consumer<LatLng> storeCoordinates() {
         return latLng -> {
             ContentValues enrollment = new ContentValues();
-            enrollment.put(SqlConstants.ENROLLMENT_LATITUDE, latLng.latitude);
-            enrollment.put(SqlConstants.ENROLLMENT_LONGITUDE, latLng.longitude); // TODO: Check if state is TO_POST
+            enrollment.put(ENROLLMENT_LATITUDE, latLng.latitude);
+            enrollment.put(ENROLLMENT_LONGITUDE, latLng.longitude); // TODO: Check if state is TO_POST
             // TODO: and if so, keep the TO_POST state
 
-            briteDatabase.update(SqlConstants.ENROLLMENT_TABLE, enrollment,
-                    SqlConstants.ENROLLMENT_UID + " = ?", enrollmentUid);
+            briteDatabase.update(ENROLLMENT_TABLE, enrollment,
+                    ENROLLMENT_UID + " = ?", enrollmentUid);
         };
     }
 
@@ -315,12 +340,12 @@ public class EnrollmentFormRepository implements FormRepository {
             cal.set(Calendar.MILLISECOND, 0);
 
             ContentValues enrollment = new ContentValues();
-            enrollment.put(SqlConstants.ENROLLMENT_INCIDENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
-            enrollment.put(SqlConstants.ENROLLMENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
+            enrollment.put(ENROLLMENT_INCIDENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
+            enrollment.put(ENROLLMENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
             // TODO: and if so, keep the TO_POST state
 
-            briteDatabase.update(SqlConstants.ENROLLMENT_TABLE, enrollment,
-                    SqlConstants.ENROLLMENT_UID + " = ?", enrollmentUid);
+            briteDatabase.update(ENROLLMENT_TABLE, enrollment,
+                    ENROLLMENT_UID + " = ?", enrollmentUid);
         };
     }
 
@@ -329,19 +354,20 @@ public class EnrollmentFormRepository implements FormRepository {
     public Consumer<ReportStatus> storeReportStatus() {
         return reportStatus -> {
             ContentValues enrollment = new ContentValues();
-            enrollment.put(SqlConstants.ENROLLMENT_STATUS,
+            enrollment.put(ENROLLMENT_STATUS,
                     ReportStatus.toEnrollmentStatus(reportStatus).name());
-            enrollment.put(SqlConstants.ENROLLMENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
+            enrollment.put(ENROLLMENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
             // TODO: and if so, keep the TO_POST state
 
-            briteDatabase.update(SqlConstants.ENROLLMENT_TABLE, enrollment,
-                    SqlConstants.ENROLLMENT_UID + " = ?", enrollmentUid);
+            briteDatabase.update(ENROLLMENT_TABLE, enrollment,
+                    ENROLLMENT_UID + " = ?", enrollmentUid);
         };
     }
 
     @NonNull
     @Override
     public Observable<String> autoGenerateEvents(String enrollmentUid) {
+
         Calendar calNow = Calendar.getInstance();
         calNow.set(Calendar.HOUR_OF_DAY, 0);
         calNow.set(Calendar.MINUTE, 0);
@@ -349,11 +375,97 @@ public class EnrollmentFormRepository implements FormRepository {
         calNow.set(Calendar.MILLISECOND, 0);
         Date now = calNow.getTime();
 
+
         try (Cursor cursor = briteDatabase.query(SELECT_AUTO_GENERATE_PROGRAM_STAGE, enrollmentUid == null ? "" : enrollmentUid)) {
+
             if (cursor != null) {
                 cursor.moveToFirst();
                 for (int i = 0; i < cursor.getCount(); i++) {
-                    createNextEvent(cursor, now);
+
+
+                    String programStage = cursor.getString(0);
+                    String program = cursor.getString(1);
+                    String orgUnit = cursor.getString(2);
+                    int minDaysFromStart = cursor.getInt(3);
+                    String reportDateToUse = cursor.getString(4) != null ? cursor.getString(4) : "";
+                    String incidentDateString = cursor.getString(5);
+                    String reportDateString = cursor.getString(6);
+                    Date incidentDate = null;
+                    Date enrollmentDate = null;
+                    PeriodType periodType = cursor.getString(7) != null ? PeriodType.valueOf(cursor.getString(7)) : null;
+                    boolean generatedByEnrollmentDate = cursor.getInt(8) == 1;
+
+                    if (incidentDateString != null)
+                        try {
+                            incidentDate = DateUtils.databaseDateFormat().parse(incidentDateString);
+                        } catch (Exception e) {
+                            Timber.e(e);
+                        }
+
+                    if (reportDateString != null)
+                        try {
+                            enrollmentDate = DateUtils.databaseDateFormat().parse(reportDateString);
+                        } catch (Exception e) {
+                            Timber.e(e);
+                        }
+
+                    Date eventDate;
+                    Calendar cal = DateUtils.getInstance().getCalendar();
+                    switch (reportDateToUse) {
+                        case Constants.ENROLLMENT_DATE:
+                            cal.setTime(enrollmentDate != null ? enrollmentDate : Calendar.getInstance().getTime());
+                            break;
+                        case Constants.INCIDENT_DATE:
+                            cal.setTime(incidentDate != null ? incidentDate : Calendar.getInstance().getTime());
+                            break;
+                        default:
+                            cal.setTime(Calendar.getInstance().getTime());
+                            break;
+                    }
+
+                    if (!generatedByEnrollmentDate && incidentDate != null)
+                        cal.setTime(incidentDate);
+
+                    cal.set(Calendar.HOUR_OF_DAY, 0);
+                    cal.set(Calendar.MINUTE, 0);
+                    cal.set(Calendar.SECOND, 0);
+                    cal.set(Calendar.MILLISECOND, 0);
+                    cal.add(Calendar.DATE, minDaysFromStart);
+                    eventDate = cal.getTime();
+
+                    if (periodType != null)
+                        eventDate = DateUtils.getInstance().getNextPeriod(periodType, eventDate, 0); //Sets eventDate to current Period date
+
+                    try (Cursor eventCursor = briteDatabase.query(CHECK_STAGE_IS_NOT_CREATED, enrollmentUid, programStage)) {
+
+                        if (!eventCursor.moveToFirst()) {
+
+                            Event.Builder eventBuilder = Event.builder()
+                                    .uid(codeGenerator.generate())
+                                    .created(Calendar.getInstance().getTime())
+                                    .lastUpdated(Calendar.getInstance().getTime())
+//                            .eventDate(eventDate)
+//                            .dueDate(eventDate)
+                                    .enrollment(enrollmentUid)
+                                    .program(program)
+                                    .programStage(programStage)
+                                    .organisationUnit(orgUnit)
+                                    .status(eventDate.after(now) ? EventStatus.SCHEDULE : EventStatus.ACTIVE)
+                                    .state(State.TO_POST);
+                            if (eventDate.after(now)) //scheduling
+                                eventBuilder.dueDate(eventDate);
+                            else
+                                eventBuilder.eventDate(eventDate);
+
+                            Event event = eventBuilder.build();
+
+
+                            if (briteDatabase.insert(EVENT_TABLE, event.toContentValues()) < 0) {
+                                throw new OnErrorNotImplementedException(new Throwable("Unable to store event:" + event));
+                            }
+                        }
+                    }
+
                     cursor.moveToNext();
                 }
             }
@@ -362,107 +474,11 @@ public class EnrollmentFormRepository implements FormRepository {
         return Observable.just(enrollmentUid);
     }
 
-
-    private Date getEventDate(String reportDateToUse, Date incidentDate, Date enrollmentDate,
-                              boolean generatedByEnrollmentDate, PeriodType periodType, int minDaysFromStart) {
-        Date eventDate;
-        Calendar cal = DateUtils.getInstance().getCalendar();
-        switch (reportDateToUse) {
-            case Constants.ENROLLMENT_DATE:
-                cal.setTime(enrollmentDate != null ? enrollmentDate : Calendar.getInstance().getTime());
-                break;
-            case Constants.INCIDENT_DATE:
-                cal.setTime(incidentDate != null ? incidentDate : Calendar.getInstance().getTime());
-                break;
-            default:
-                cal.setTime(Calendar.getInstance().getTime());
-                break;
-        }
-
-        if (!generatedByEnrollmentDate && incidentDate != null)
-            cal.setTime(incidentDate);
-
-        cal.set(Calendar.HOUR_OF_DAY, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        cal.add(Calendar.DATE, minDaysFromStart);
-        eventDate = cal.getTime();
-
-        if (periodType != null)
-            eventDate = DateUtils.getInstance().getNextPeriod(periodType, eventDate, 0); //Sets eventDate to current Period date
-
-        return eventDate;
-    }
-
-    private void createNextEvent(Cursor cursor, Date now) {
-        String programStage = cursor.getString(0);
-        String program = cursor.getString(1);
-        String orgUnit = cursor.getString(2);
-        int minDaysFromStart = cursor.getInt(3);
-        String reportDateToUse = cursor.getString(4) != null ? cursor.getString(4) : "";
-        String incidentDateString = cursor.getString(5);
-        String reportDateString = cursor.getString(6);
-        Date incidentDate = null;
-        Date enrollmentDate = null;
-        PeriodType periodType = cursor.getString(7) != null ? PeriodType.valueOf(cursor.getString(7)) : null;
-        boolean generatedByEnrollmentDate = cursor.getInt(8) == 1;
-
-        if (incidentDateString != null)
-            try {
-                incidentDate = DateUtils.databaseDateFormat().parse(incidentDateString);
-            } catch (Exception e) {
-                Timber.e(e);
-            }
-
-        if (reportDateString != null)
-            try {
-                enrollmentDate = DateUtils.databaseDateFormat().parse(reportDateString);
-            } catch (Exception e) {
-                Timber.e(e);
-            }
-
-        Date eventDate = getEventDate(reportDateToUse, incidentDate, enrollmentDate,
-                generatedByEnrollmentDate, periodType, minDaysFromStart);
-
-        insertEvent(programStage, program, eventDate, orgUnit, now);
-    }
-
-    private void insertEvent(String programStage, String program, Date eventDate, String
-            orgUnit, Date now) {
-        try (Cursor eventCursor = briteDatabase.query(CHECK_STAGE_IS_NOT_CREATED, enrollmentUid, programStage)) {
-            if (!eventCursor.moveToFirst()) {
-                Event.Builder eventBuilder = Event.builder()
-                        .uid(codeGenerator.generate())
-                        .created(Calendar.getInstance().getTime())
-                        .lastUpdated(Calendar.getInstance().getTime())
-//                            .eventDate(eventDate)
-//                            .dueDate(eventDate)
-                        .enrollment(enrollmentUid)
-                        .program(program)
-                        .programStage(programStage)
-                        .organisationUnit(orgUnit)
-                        .status(eventDate.after(now) ? EventStatus.SCHEDULE : EventStatus.ACTIVE)
-                        .state(State.TO_POST);
-                if (eventDate.after(now)) //scheduling
-                    eventBuilder.dueDate(eventDate);
-                else
-                    eventBuilder.eventDate(eventDate);
-
-                Event event = eventBuilder.build();
-
-                if (briteDatabase.insert(SqlConstants.EVENT_TABLE, event.toContentValues()) < 0) {
-                    throw new OnErrorNotImplementedException(new Throwable("Unable to store event:" + event));
-                }
-            }
-        }
-    }
-
     @NonNull
     @Override
     public Observable<List<FieldViewModel>> fieldValues() {
         return briteDatabase
-                .createQuery(SqlConstants.TE_ATTR_VALUE_TABLE, QUERY, enrollmentUid)
+                .createQuery(TE_ATTR_VALUE_TABLE, QUERY, enrollmentUid)
                 .mapToList(this::transform);
     }
 
@@ -471,16 +487,16 @@ public class EnrollmentFormRepository implements FormRepository {
     public void deleteTrackedEntityAttributeValues(@NonNull String trackedEntityInstanceId) {
         String deleteWhereRelationship = String.format(
                 TABLE_FIELD_EQUALS,
-                SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.TE_ATTR_VALUE_TEI);
-        briteDatabase.delete(SqlConstants.TE_ATTR_VALUE_TABLE, deleteWhereRelationship + "'" + trackedEntityInstanceId + "'");
+                TE_ATTR_VALUE_TABLE, TE_ATTR_VALUE_TEI);
+        briteDatabase.delete(TE_ATTR_VALUE_TABLE, deleteWhereRelationship + "'" + trackedEntityInstanceId + "'");
     }
 
     @Override
     public void deleteEnrollment(@NonNull String trackedEntityInstanceId) {
         String deleteWhereRelationship = String.format(
                 TABLE_FIELD_EQUALS,
-                SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI);
-        briteDatabase.delete(SqlConstants.ENROLLMENT_TABLE, deleteWhereRelationship + "'" + trackedEntityInstanceId + "'");
+                ENROLLMENT_TABLE, ENROLLMENT_TEI);
+        briteDatabase.delete(ENROLLMENT_TABLE, deleteWhereRelationship + "'" + trackedEntityInstanceId + "'");
     }
 
     @Override
@@ -492,24 +508,23 @@ public class EnrollmentFormRepository implements FormRepository {
     public void deleteTrackedEntityInstance(@NonNull String trackedEntityInstanceId) {
         String deleteWhereRelationship = String.format(
                 TABLE_FIELD_EQUALS,
-                SqlConstants.TEI_TABLE, SqlConstants.TEI_UID);
-        briteDatabase.delete(SqlConstants.TEI_TABLE, deleteWhereRelationship + "'" + trackedEntityInstanceId + "'");
+                TEI_TABLE, TEI_UID);
+        briteDatabase.delete(TEI_TABLE, deleteWhereRelationship + "'" + trackedEntityInstanceId + "'");
     }
 
     @NonNull
     @Override
     public Observable<String> getTrackedEntityInstanceUid() {
-        String selectTe = SELECT + SqlConstants.ENROLLMENT_TABLE + "." + SqlConstants.ENROLLMENT_TEI +
-                " FROM " + SqlConstants.ENROLLMENT_TABLE +
-                " WHERE " + SqlConstants.ENROLLMENT_UID + " = ?" +
+        String selectTe = SELECT + ENROLLMENT_TABLE + "." + ENROLLMENT_TEI +
+                " FROM " + ENROLLMENT_TABLE +
+                " WHERE " + ENROLLMENT_UID + " = ?" +
                 " LIMIT 1";
 
-        return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, selectTe, enrollmentUid).mapToOne(cursor -> cursor.getString(0));
+        return briteDatabase.createQuery(ENROLLMENT_TABLE, selectTe, enrollmentUid).mapToOne(cursor -> cursor.getString(0));
     }
 
     @Override
-    public Observable<Trio<Boolean, CategoryCombo, List<CategoryOptionCombo>>> getProgramCategoryCombo
-            () {
+    public Observable<Trio<Boolean, CategoryCombo, List<CategoryOptionCombo>>> getProgramCategoryCombo() {
         return null;
     }
 
@@ -533,15 +548,33 @@ public class EnrollmentFormRepository implements FormRepository {
 
     @NonNull
     private FieldViewModel transform(@NonNull Cursor cursor) {
-        FieldViewModelHelper fieldViewModelHelper = FieldViewModelHelper.createFromCursor(cursor);
+        String uid = cursor.getString(0);
+        String label = cursor.getString(1);
+        ValueType valueType = ValueType.valueOf(cursor.getString(2));
+        boolean mandatory = cursor.getInt(3) == 1;
+        String optionSetUid = cursor.getString(4);
+        String dataValue = cursor.getString(5);
+        String optionCodeName = cursor.getString(6);
+        String section = cursor.getString(7);
+        Boolean allowFutureDates = cursor.getInt(8) == 1;
         EnrollmentStatus status = EnrollmentStatus.valueOf(cursor.getString(10));
+        String description = cursor.getString(11);
+        if (!isEmpty(optionCodeName)) {
+            dataValue = optionCodeName;
+        }
 
-        int optionCount = FieldViewModelHelper.getOptionCount(briteDatabase, fieldViewModelHelper.getOptionSetUid());
+        int optionCount = 0;
+        if (optionSetUid != null)
+            try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSetUid)) {
+                if (countCursor != null && countCursor.moveToFirst())
+                    optionCount = countCursor.getInt(0);
+            } catch (Exception e) {
+                Timber.e(e);
+            }
 
         ValueTypeDeviceRendering fieldRendering = null;
         try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering " +
-                        "JOIN ProgramTrackedEntityAttribute ON ProgramTrackedEntityAttribute.uid = ValueTypeDeviceRendering.uid WHERE ProgramTrackedEntityAttribute.trackedEntityAttribute = ?",
-                fieldViewModelHelper.getUid())) {
+                "JOIN ProgramTrackedEntityAttribute ON ProgramTrackedEntityAttribute.uid = ValueTypeDeviceRendering.uid WHERE ProgramTrackedEntityAttribute.trackedEntityAttribute = ?", uid)) {
             if (rendering != null && rendering.moveToFirst()) {
                 fieldRendering = ValueTypeDeviceRendering.create(rendering);
             }
@@ -559,28 +592,34 @@ public class EnrollmentFormRepository implements FormRepository {
                 "");
 
         ObjectStyle objectStyle = ObjectStyle.builder().build();
-        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", fieldViewModelHelper.getUid())) {
+        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
             if (objStyleCursor != null && objStyleCursor.moveToFirst())
                 objectStyle = ObjectStyle.create(objStyleCursor);
         }
 
-        return fieldFactory.create(fieldViewModelHelper.getUid(), fieldViewModelHelper.getLabel(), fieldViewModelHelper.getValueType(),
-                fieldViewModelHelper.isMandatory(), fieldViewModelHelper.getOptionSetUid(), fieldViewModelHelper.getDataValue(),
-                fieldViewModelHelper.getSection(), fieldViewModelHelper.getAllowFutureDates(),
-                status == EnrollmentStatus.ACTIVE, null, fieldViewModelHelper.getDescription(), fieldRendering, optionCount, objectStyle);
+        return fieldFactory.create(uid, label, valueType, mandatory, optionSetUid, dataValue, section,
+                allowFutureDates, status == EnrollmentStatus.ACTIVE, null, description, fieldRendering, optionCount, objectStyle);
     }
 
     @NonNull
     @Override
     public Observable<Trio<String, String, String>> useFirstStageDuringRegistration() { //enrollment uid, trackedEntityType, event uid
 
-        return briteDatabase.createQuery(SqlConstants.PROGRAM_TABLE, "SELECT * FROM Program WHERE uid = ?", programUid)
+        return briteDatabase.createQuery(PROGRAM_TABLE, "SELECT * FROM Program WHERE uid = ?", programUid)
                 .mapToOne(Program::create)
                 .flatMap(programModel ->
-                        briteDatabase.createQuery(SqlConstants.PROGRAM_STAGE_TABLE, "SELECT * FROM ProgramStage WHERE program = ? ORDER BY ProgramStage.sortOrder", programModel.uid())
+                        briteDatabase.createQuery(PROGRAM_STAGE_TABLE, "SELECT * FROM ProgramStage WHERE program = ? ORDER BY ProgramStage.sortOrder", programModel.uid())
                                 .mapToList(ProgramStage::create).map(programstages -> Trio.create(programModel.useFirstStageDuringRegistration(), programstages, programModel.trackedEntityType())))
                 .map(data -> {
-                    ProgramStage stageToOpen = getStageToOpen(data);
+                    ProgramStage stageToOpen = null;
+                    if (data.val0() && !data.val1().isEmpty()) {
+                        stageToOpen = data.val1().get(0);
+                    } else if (!data.val1().isEmpty()) {
+                        for (ProgramStage programStage : data.val1()) {
+                            if (programStage.openAfterEnrollment() && stageToOpen == null)
+                                stageToOpen = programStage;
+                        }
+                    }
 
                     if (stageToOpen != null) { //we should check if event exist (if not create) and open
                         try (Cursor eventCursor = briteDatabase.query("SELECT Event.uid FROM Event WHERE Event.programStage = ? AND Event.enrollment = ?", stageToOpen.uid(), enrollmentUid)) {
@@ -588,67 +627,44 @@ public class EnrollmentFormRepository implements FormRepository {
                                 String eventUid = eventCursor.getString(0);
                                 return Trio.create(getTeiUid(), programUid, eventUid);
                             } else {
-                                return insertEvent(stageToOpen);
+                                try (Cursor enrollmentOrgUnitCursor = briteDatabase.query("SELECT Enrollment.organisationUnit FROM Enrollment WHERE Enrollment.uid = ?", enrollmentUid)) {
+                                    if (enrollmentOrgUnitCursor != null && enrollmentOrgUnitCursor.moveToFirst()) {
+                                        Date createdDate = DateUtils.getInstance().getCalendar().getTime();
+                                        Event eventToCreate = Event.builder()
+                                                .uid(codeGenerator.generate())
+                                                .created(createdDate)
+                                                .lastUpdated(createdDate)
+                                                .eventDate(createdDate)
+                                                .enrollment(enrollmentUid)
+                                                .program(stageToOpen.program().uid())
+                                                .programStage(stageToOpen.uid())
+                                                .organisationUnit(enrollmentOrgUnitCursor.getString(0))
+                                                .status(EventStatus.ACTIVE)
+                                                .state(State.TO_POST)
+                                                .build();
+
+                                        if (briteDatabase.insert(EVENT_TABLE, eventToCreate.toContentValues()) < 0) {
+                                            throw new OnErrorNotImplementedException(new Throwable("Unable to store event:" + eventToCreate));
+                                        }
+
+                                        return Trio.create(getTeiUid(), programUid, eventToCreate.uid());//teiUid, programUio, eventUid
+                                    } else
+                                        throw new IllegalArgumentException("Can't create event in enrollment with null organisation unit");
+                                }
                             }
                         }
                     } else { //open Dashboard
-                        return openDashboard();
+                        try (Cursor tetCursor = briteDatabase.query(SELECT_TE_TYPE, enrollmentUid)) {
+                            String programUidAux = "";
+                            String teiUid = "";
+                            if (tetCursor != null && tetCursor.moveToFirst()) {
+                                programUidAux = tetCursor.getString(0);
+                                teiUid = tetCursor.getString(1);
+                            }
+                            return Trio.create(teiUid, programUidAux, "");
+                        }
                     }
                 });
-    }
-
-    private ProgramStage getStageToOpen
-            (Trio<Boolean, List<ProgramStage>, TrackedEntityType> data) {
-        ProgramStage stageToOpen = null;
-        if (data.val0() && !data.val1().isEmpty()) {
-            stageToOpen = data.val1().get(0);
-        } else if (!data.val1().isEmpty()) {
-            for (ProgramStage programStage : data.val1()) {
-                if (programStage.openAfterEnrollment() && stageToOpen == null)
-                    stageToOpen = programStage;
-            }
-        }
-        return stageToOpen;
-    }
-
-    private Trio<String, String, String> insertEvent(@NonNull ProgramStage stageToOpen) {
-        try (Cursor enrollmentOrgUnitCursor = briteDatabase.query("SELECT Enrollment.organisationUnit FROM Enrollment WHERE Enrollment.uid = ?",
-                enrollmentUid)) {
-            if (enrollmentOrgUnitCursor != null && enrollmentOrgUnitCursor.moveToFirst()) {
-                Date createdDate = DateUtils.getInstance().getCalendar().getTime();
-                Event eventToCreate = Event.builder()
-                        .uid(codeGenerator.generate())
-                        .created(createdDate)
-                        .lastUpdated(createdDate)
-                        .eventDate(createdDate)
-                        .enrollment(enrollmentUid)
-                        .program(stageToOpen.program().uid())
-                        .programStage(stageToOpen.uid())
-                        .organisationUnit(enrollmentOrgUnitCursor.getString(0))
-                        .status(EventStatus.ACTIVE)
-                        .state(State.TO_POST)
-                        .build();
-
-                if (briteDatabase.insert(SqlConstants.EVENT_TABLE, eventToCreate.toContentValues()) < 0) {
-                    throw new OnErrorNotImplementedException(new Throwable("Unable to store event:" + eventToCreate));
-                }
-
-                return Trio.create(getTeiUid(), programUid, eventToCreate.uid());//teiUid, programUio, eventUid
-            } else
-                throw new IllegalArgumentException("Can't create event in enrollment with null organisation unit");
-        }
-    }
-
-    private Trio<String, String, String> openDashboard() {
-        try (Cursor tetCursor = briteDatabase.query(SELECT_TE_TYPE, enrollmentUid)) {
-            String programUidAux = "";
-            String teiUid = "";
-            if (tetCursor != null && tetCursor.moveToFirst()) {
-                programUidAux = tetCursor.getString(0);
-                teiUid = tetCursor.getString(1);
-            }
-            return Trio.create(teiUid, programUidAux, "");
-        }
     }
 
     private String getTeiUid() {
@@ -666,7 +682,7 @@ public class EnrollmentFormRepository implements FormRepository {
     @NonNull
     private Flowable<String> enrollmentProgram() {
         return briteDatabase
-                .createQuery(SqlConstants.ENROLLMENT_TABLE, SELECT_PROGRAM, enrollmentUid)
+                .createQuery(ENROLLMENT_TABLE, SELECT_PROGRAM, enrollmentUid)
                 .mapToOne(cursor -> {
                     programUid = cursor.getString(0);
                     return programUid;

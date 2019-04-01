@@ -19,7 +19,6 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 
-
 public interface FormRepository {
 
     @NonNull

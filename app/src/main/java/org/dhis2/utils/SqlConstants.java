@@ -76,6 +76,8 @@ public class SqlConstants {
     public static final String ENROLLMENT_PROGRAM = EnrollmentModel.Columns.PROGRAM;
     public static final String ENROLLMENT_LAST_UPDATED = EnrollmentModel.Columns.LAST_UPDATED;
     public static final String ENROLLMENT_FOLLOW_UP = EnrollmentModel.Columns.FOLLOW_UP;
+    public static final String ENROLLMENT_ENROLLMENT_DATE = EnrollmentModel.Columns.ENROLLMENT_DATE;
+    public static final String ENROLLMENT_ORG_UNIT = EnrollmentModel.Columns.ORGANISATION_UNIT;
 
     public static final String PROGRAM_TABLE = ProgramModel.TABLE;
     public static final String PROGRAM_UID = ProgramModel.Columns.UID;
