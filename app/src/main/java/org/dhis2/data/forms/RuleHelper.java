@@ -4,6 +4,7 @@ import android.database.Cursor;
 
 import com.squareup.sqlbrite2.BriteDatabase;
 
+import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.program.ProgramRule;
 import org.hisp.dhis.android.core.program.ProgramRuleAction;
@@ -20,6 +21,8 @@ import java.util.List;
 import javax.annotation.Nonnull;
 
 import androidx.annotation.NonNull;
+
+import static android.text.TextUtils.isEmpty;
 
 public class RuleHelper {
 
@@ -71,7 +74,8 @@ public class RuleHelper {
                 programRuleAction.optionGroup() != null ? programRuleAction.optionGroup().uid() : null);
     }
 
-    public static RuleEvent createRuleEventFromCursor(BriteDatabase briteDatabase, Cursor cursor, @NonNull List<RuleDataValue> dataValues) throws ParseException {
+    public static RuleEvent createRuleEventFromCursor(BriteDatabase briteDatabase, Cursor cursor,
+                                                      @NonNull List<RuleDataValue> dataValues) throws ParseException {
         String eventUidAux = cursor.getString(0);
         String programStageUid = cursor.getString(1);
         RuleEvent.Status status = RuleEvent.Status.valueOf(cursor.getString(2));
@@ -108,5 +112,18 @@ public class RuleHelper {
             }
         }
         return ouCode;
+    }
+
+    public static RuleDataValue createRuleDataValue(Cursor cursor) throws ParseException {
+        Date eventDate = DateUtils.databaseDateFormat().parse(cursor.getString(0));
+        String programStage = cursor.getString(1);
+        String dataElement = cursor.getString(2);
+        String value = cursor.getString(3) != null ? cursor.getString(3) : "";
+        boolean useCode = cursor.getInt(4) == 1;
+        String optionCode = cursor.getString(5);
+        String optionName = cursor.getString(6);
+        if (!isEmpty(optionCode) && !isEmpty(optionName))
+            value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
+        return RuleDataValue.create(eventDate, programStage, dataElement, value);
     }
 }

@@ -8,6 +8,7 @@ import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModelFactoryImpl;
+import org.dhis2.data.forms.dataentry.fields.FieldViewModelHelper;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.utils.DateUtils;
@@ -16,7 +17,6 @@ import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.State;
-import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
@@ -275,14 +275,7 @@ public class EventRepository implements FormRepository {
     @Override
     public Consumer<String> storeReportDate() {
         return reportDate -> {
-            Calendar cal = Calendar.getInstance();
-            Date date = DateUtils.databaseDateFormat().parse(reportDate);
-            cal.setTime(date);
-            cal.set(Calendar.HOUR_OF_DAY, 0);
-            cal.set(Calendar.MINUTE, 0);
-            cal.set(Calendar.SECOND, 0);
-            cal.set(Calendar.MILLISECOND, 0);
-
+            Calendar cal = DateUtils.getCalendarFromDate(reportDate);
             ContentValues event = new ContentValues();
             event.put(EVENT_DATE, DateUtils.databaseDateFormat().format(cal.getTime()));
             event.put(EVENT_STATE, State.TO_UPDATE.name()); // TODO: Check if state is TO_POST
@@ -427,32 +420,22 @@ public class EventRepository implements FormRepository {
 
     @NonNull
     private FieldViewModel transform(@NonNull Cursor cursor) {
-        String uid = cursor.getString(0);
-        String label = cursor.getString(1);
-        ValueType valueType = ValueType.valueOf(cursor.getString(2));
-        boolean mandatory = cursor.getInt(3) == 1;
-        String optionSetUid = cursor.getString(4);
-        String dataValue = cursor.getString(5);
-        String optionCodeName = cursor.getString(6);
-        String section = cursor.getString(7);
-        Boolean allowFutureDates = cursor.getInt(8) == 1;
+        FieldViewModelHelper fieldViewModelHelper = FieldViewModelHelper.createFromCursor(cursor);
         EventStatus status = EventStatus.valueOf(cursor.getString(9));
-        String formLabel = cursor.getString(10);
-        String description = cursor.getString(11);
-        if (!isEmpty(optionCodeName)) {
-            dataValue = optionCodeName;
-        }
 
         int optionCount = 0;
-        try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSetUid)) {
-            if (countCursor != null && countCursor.moveToFirst()) {
-                optionCount = countCursor.getInt(0);
+        if (fieldViewModelHelper.getOptionSetUid() != null) {
+            try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", fieldViewModelHelper.getOptionSetUid())) {
+                if (countCursor != null && countCursor.moveToFirst()) {
+                    optionCount = countCursor.getInt(0);
+                }
+            } catch (Exception e) {
+                Timber.e(e);
             }
-        } catch (Exception e) {
-            Timber.e(e);
         }
+
         ValueTypeDeviceRendering fieldRendering = null;
-        try (Cursor rendering = briteDatabase.query("SELECT * FROM ValueTypeDeviceRendering WHERE uid = ?", uid)) {
+        try (Cursor rendering = briteDatabase.query("SELECT * FROM ValueTypeDeviceRendering WHERE uid = ?", fieldViewModelHelper.getUid())) {
             if (rendering != null && rendering.moveToFirst()) {
                 fieldRendering = ValueTypeDeviceRendering.create(rendering);
             }
@@ -469,13 +452,15 @@ public class EventRepository implements FormRepository {
                 "",
                 "");
         ObjectStyle objectStyle = ObjectStyle.builder().build();
-        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
+        try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", fieldViewModelHelper.getUid())) {
             if (objStyleCursor.moveToFirst())
                 objectStyle = ObjectStyle.create(objStyleCursor);
         }
-        return fieldFactory.create(uid, isEmpty(formLabel) ? label : formLabel, valueType,
-                mandatory, optionSetUid, dataValue, section, allowFutureDates,
-                status == EventStatus.ACTIVE, null, description, fieldRendering, optionCount, objectStyle);
+        return fieldFactory.create(fieldViewModelHelper.getUid(), isEmpty(fieldViewModelHelper.getFormLabel()) ?
+                        fieldViewModelHelper.getLabel() : fieldViewModelHelper.getFormLabel(), fieldViewModelHelper.getValueType(),
+                fieldViewModelHelper.isMandatory(), fieldViewModelHelper.getOptionSetUid(), fieldViewModelHelper.getDataValue(),
+                fieldViewModelHelper.getSection(), fieldViewModelHelper.getAllowFutureDates(),
+                status == EventStatus.ACTIVE, null, fieldViewModelHelper.getDescription(), fieldRendering, optionCount, objectStyle);
     }
 
     @NonNull
@@ -501,7 +486,7 @@ public class EventRepository implements FormRepository {
         }
     }
 
-    @SuppressWarnings({"squid:S1172","squid:CommentedOutCodeLine"})
+    @SuppressWarnings({"squid:S1172", "squid:CommentedOutCodeLine"})
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues();TODO: Crash if active
         program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));

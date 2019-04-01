@@ -357,93 +357,93 @@ public final class RulesRepository {
 
     @NonNull
     private static RuleVariable mapToRuleVariable(@NonNull Cursor cursor) {
-        String name = cursor.getString(0);
-        String stage = cursor.getString(1);
-        String sourceType = cursor.getString(2);
-        String dataElement = cursor.getString(3);
-        String attribute = cursor.getString(4);
+        RuleVariableHelper ruleVariableHelper = new RuleVariableHelper(cursor);
 
-        // Mime types of the attribute and data element.
-        String attributeType = cursor.getString(5);
-        String elementType = cursor.getString(6);
-
-        // String representation of value type.
-        RuleValueType mimeType = null;
-        if (!isEmpty(attributeType)) {
-            mimeType = convertType(attributeType);
-        } else if (!isEmpty(elementType)) {
-            mimeType = convertType(elementType);
-        }
-
-        if (mimeType == null) {
-            mimeType = RuleValueType.TEXT;
-        }
-
-        switch (ProgramRuleVariableSourceType.valueOf(sourceType)) {
+        switch (ProgramRuleVariableSourceType.valueOf(ruleVariableHelper.sourceType)) {
             case TEI_ATTRIBUTE:
-                return RuleVariableAttribute.create(name, attribute == null ? "" : attribute, mimeType);
+                return RuleVariableAttribute.create(ruleVariableHelper.name, ruleVariableHelper.attribute == null ? "" : ruleVariableHelper.attribute, ruleVariableHelper.mimeType);
             case DATAELEMENT_CURRENT_EVENT:
-                return RuleVariableCurrentEvent.create(name, dataElement, mimeType);
+                return RuleVariableCurrentEvent.create(ruleVariableHelper.name, ruleVariableHelper.dataElement, ruleVariableHelper.mimeType);
             case DATAELEMENT_NEWEST_EVENT_PROGRAM:
-                return RuleVariableNewestEvent.create(name, dataElement, mimeType);
+                return RuleVariableNewestEvent.create(ruleVariableHelper.name, ruleVariableHelper.dataElement, ruleVariableHelper.mimeType);
             case DATAELEMENT_NEWEST_EVENT_PROGRAM_STAGE:
-                if (stage == null)
-                    stage = "";
-                return RuleVariableNewestStageEvent.create(name, dataElement, stage, mimeType);
+                if (ruleVariableHelper.stage == null)
+                    ruleVariableHelper.stage = "";
+                return RuleVariableNewestStageEvent.create(ruleVariableHelper.name, ruleVariableHelper.dataElement, ruleVariableHelper.stage, ruleVariableHelper.mimeType);
             case DATAELEMENT_PREVIOUS_EVENT:
-                return RuleVariablePreviousEvent.create(name, dataElement, mimeType);
+                return RuleVariablePreviousEvent.create(ruleVariableHelper.name, ruleVariableHelper.dataElement, ruleVariableHelper.mimeType);
             case CALCULATED_VALUE:
-                String variable = dataElement != null ? dataElement : attribute;
-                return RuleVariableCalculatedValue.create(name, variable != null ? variable : "", mimeType);
+                String variable = ruleVariableHelper.dataElement != null ? ruleVariableHelper.dataElement : ruleVariableHelper.attribute;
+                return RuleVariableCalculatedValue.create(ruleVariableHelper.name, variable != null ? variable : "", ruleVariableHelper.mimeType);
             default:
                 throw new IllegalArgumentException("Unsupported variable " +
-                        "source type: " + sourceType);
+                        "source type: " + ruleVariableHelper.sourceType);
+        }
+    }
+
+    private static class RuleVariableHelper {
+        private String name;
+        private String stage;
+        private String sourceType;
+        private String dataElement;
+        private String attribute;
+
+        // Mime types of the attribute and data element.
+        private String attributeType;
+        private String elementType;
+
+        // String representation of value type.
+        private RuleValueType mimeType;
+
+        RuleVariableHelper(Cursor cursor) {
+            this.name = cursor.getString(0);
+            this.stage = cursor.getString(1);
+            this.sourceType = cursor.getString(2);
+            this.dataElement = cursor.getString(3);
+            this.attribute = cursor.getString(4);
+
+            // Mime types of the attribute and data element.
+            this.attributeType = cursor.getString(5);
+            this.elementType = cursor.getString(6);
+
+            // String representation of value type.
+            this.mimeType = null;
+            if (!isEmpty(attributeType)) {
+                this.mimeType = convertType(attributeType);
+            } else if (!isEmpty(elementType)) {
+                this.mimeType = convertType(elementType);
+            }
+
+            if (this.mimeType == null) {
+                this.mimeType = RuleValueType.TEXT;
+            }
         }
     }
 
     @NonNull
     private static RuleVariable mapToRuleVariableProgramStages(@NonNull Cursor cursor) {
-        String name = cursor.getString(0);
-        String stage = cursor.getString(1);
-        String sourceType = cursor.getString(2);
-        String dataElement = cursor.getString(3);
-        String attribute = cursor.getString(4);
 
-        // Mime types of the attribute and data element.
-        String attributeType = cursor.getString(5);
-        String elementType = cursor.getString(6);
+        RuleVariableHelper ruleVariableHelper = new RuleVariableHelper(cursor);
 
-        // String representation of value type.
-        RuleValueType mimeType = null;
-        if (!isEmpty(attributeType)) {
-            mimeType = convertType(attributeType);
-        } else if (!isEmpty(elementType)) {
-            mimeType = convertType(elementType);
-        }
-
-        if (mimeType == null) {
-            mimeType = RuleValueType.TEXT;
-        }
-
-        switch (ProgramRuleVariableSourceType.valueOf(sourceType)) {
+        switch (ProgramRuleVariableSourceType.valueOf(ruleVariableHelper.sourceType)) {
             case TEI_ATTRIBUTE:
-                return RuleVariableAttribute.create(name, attribute, mimeType);
+                return RuleVariableAttribute.create(ruleVariableHelper.name, ruleVariableHelper.attribute, ruleVariableHelper.mimeType);
             case DATAELEMENT_CURRENT_EVENT:
-                return RuleVariableCurrentEvent.create(name, dataElement, mimeType);
+                return RuleVariableCurrentEvent.create(ruleVariableHelper.name, ruleVariableHelper.dataElement, ruleVariableHelper.mimeType);
             case DATAELEMENT_NEWEST_EVENT_PROGRAM:
-                return RuleVariableNewestEvent.create(name, dataElement, mimeType);
+                return RuleVariableNewestEvent.create(ruleVariableHelper.name, ruleVariableHelper.dataElement, ruleVariableHelper.mimeType);
             case DATAELEMENT_NEWEST_EVENT_PROGRAM_STAGE:
-                if (stage == null)
-                    stage = "";
-                return RuleVariableNewestStageEvent.create(name, dataElement, stage, mimeType);
+                if (ruleVariableHelper.stage == null)
+                    ruleVariableHelper.stage = "";
+                return RuleVariableNewestStageEvent.create(ruleVariableHelper.name, ruleVariableHelper.dataElement, ruleVariableHelper.stage, ruleVariableHelper.mimeType);
             case DATAELEMENT_PREVIOUS_EVENT:
-                return RuleVariablePreviousEvent.create(name, dataElement, mimeType);
+                return RuleVariablePreviousEvent.create(ruleVariableHelper.name, ruleVariableHelper.dataElement, ruleVariableHelper.mimeType);
             case CALCULATED_VALUE:
-                String variable = dataElement != null ? dataElement : attribute;
-                return RuleVariableCalculatedValue.create(name, variable != null ? variable : "", mimeType);
+                String variable = ruleVariableHelper.dataElement != null ? ruleVariableHelper.dataElement : ruleVariableHelper.attribute;
+                return RuleVariableCalculatedValue.create(ruleVariableHelper.name, variable != null ? variable : "", ruleVariableHelper.mimeType);
             default:
                 throw new IllegalArgumentException("Unsupported variable " +
-                        "source type: " + sourceType);
+                        "source type: " + ruleVariableHelper.sourceType);
         }
     }
 

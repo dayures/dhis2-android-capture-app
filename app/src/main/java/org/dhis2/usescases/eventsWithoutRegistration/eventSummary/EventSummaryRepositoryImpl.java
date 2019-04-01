@@ -30,7 +30,6 @@ import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEvent;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
@@ -385,17 +384,6 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
     private Flowable<List<RuleDataValue>> queryDataValues(String eventUid) {
         return briteDatabase.createQuery(Arrays.asList(SqlConstants.EVENT_TABLE,
                 SqlConstants.TEI_DATA_VALUE_TABLE), QUERY_VALUES, eventUid == null ? "" : eventUid)
-                .mapToList(cursor -> {
-                    Date eventDate = DateUtils.databaseDateFormat().parse(cursor.getString(0));
-                    String programStage = cursor.getString(1);
-                    String dataElement = cursor.getString(2);
-                    String value = cursor.getString(3) != null ? cursor.getString(3) : "";
-                    boolean useCode = cursor.getInt(4) == 1;
-                    String optionCode = cursor.getString(5);
-                    String optionName = cursor.getString(6);
-                    if (!isEmpty(optionCode) && !isEmpty(optionName))
-                        value = useCode ? optionCode : optionName; //If de has optionSet then check if value should be code or name for program rules
-                    return RuleDataValue.create(eventDate, programStage, dataElement, value);
-                }).toFlowable(BackpressureStrategy.LATEST);
+                .mapToList(RuleHelper::createRuleDataValue).toFlowable(BackpressureStrategy.LATEST);
     }
 }

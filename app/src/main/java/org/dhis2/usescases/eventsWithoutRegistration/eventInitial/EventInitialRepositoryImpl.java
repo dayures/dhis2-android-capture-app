@@ -314,6 +314,21 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
     }
 
 
+    private boolean hasChanged(Event event, Date mDate, String orgUnitUid, String latitude, String longitude, String catOptionCombo){
+        boolean hasChanged = false;
+        if (event.eventDate() != mDate)
+            hasChanged = true;
+        if (!event.organisationUnit().equals(orgUnitUid))
+            hasChanged = true;
+        if ((event.coordinate() == null && (!isEmpty(latitude) && !isEmpty(longitude))) ||
+                (event.coordinate() != null &&
+                        (!String.valueOf(event.coordinate().latitude()).equals(latitude) ||
+                                !String.valueOf(event.coordinate().longitude()).equals(longitude))))
+            hasChanged = true;
+        if (!event.attributeOptionCombo().equals(catOptionCombo))
+            hasChanged = true;
+        return hasChanged;
+    }
     @NonNull
     @Override
     public Observable<Event> editEvent(String trackedEntityInstance,
@@ -326,7 +341,6 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
         Event event = d2.eventModule().events.uid(eventUid).get();
 
-        boolean hasChanged = false;
 
         Date currentDate = Calendar.getInstance().getTime();
         Date mDate = null;
@@ -336,17 +350,9 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
             Timber.e(e);
         }
 
-        if (event.eventDate() != mDate)
-            hasChanged = true;
-        if (!event.organisationUnit().equals(orgUnitUid))
-            hasChanged = true;
-        if ((event.coordinate() == null && (!isEmpty(latitude) && !isEmpty(longitude))) ||
-                (event.coordinate() != null && (!String.valueOf(event.coordinate().latitude()).equals(latitude) || !String.valueOf(event.coordinate().longitude()).equals(longitude))))
-            hasChanged = true;
-        if (!event.attributeOptionCombo().equals(catOptionCombo))
-            hasChanged = true;
 
-        if (hasChanged) {
+
+        if (hasChanged(event, mDate, orgUnitUid, latitude, longitude, catOptionCombo)) {
 
             Calendar cal = Calendar.getInstance();
             cal.setTime(mDate);
