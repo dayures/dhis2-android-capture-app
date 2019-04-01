@@ -34,7 +34,6 @@ import org.dhis2.utils.HelpManager;
 import org.dhis2.utils.Period;
 import org.dhis2.utils.custom_views.RxDateDialog;
 import org.hisp.dhis.android.core.category.Category;
-import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.Program;
@@ -303,7 +302,8 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
         String textToShow = "";
         if (chosenDateYear != null && !chosenDateYear.isEmpty())
             textToShow = yearFormat.format(chosenDateYear.get(0));
-        if (chosenDateYear != null && !chosenDateYear.isEmpty() && chosenDateYear.size() > 1) textToShow += "... ";
+        if (chosenDateYear != null && !chosenDateYear.isEmpty() && chosenDateYear.size() > 1)
+            textToShow += "... ";
 
         presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(chosenDateYear, currentPeriod));
         return textToShow;
@@ -315,7 +315,8 @@ public class ProgramEventDetailActivity extends ActivityGlobalAbstract implement
             String dateFormatted = monthFormat.format(chosenDateMonth.get(0));
             textToShow = dateFormatted.substring(0, 1).toUpperCase() + dateFormatted.substring(1);
         }
-        if (chosenDateMonth != null && !chosenDateMonth.isEmpty() && chosenDateMonth.size() > 1) textToShow += "... ";
+        if (chosenDateMonth != null && !chosenDateMonth.isEmpty() && chosenDateMonth.size() > 1)
+            textToShow += "... ";
 
         presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(chosenDateMonth, currentPeriod));
         return textToShow;

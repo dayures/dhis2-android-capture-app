@@ -49,14 +49,11 @@ public class SectionSelectorAdapter extends RecyclerView.Adapter<EventSectionHol
         return items != null ? items.size() : 0;
     }
 
-    public void swapData(String currentSection, List<EventSectionModel> update) {
-
+    public void swapData(List<EventSectionModel> update) {
         this.items.clear();
         this.items.addAll(update);
         notifyDataSetChanged();
-
         percentageFlowable.onNext(calculateCompletionPercentage());
-
     }
 
     public FlowableProcessor<Float> completionPercentage() {

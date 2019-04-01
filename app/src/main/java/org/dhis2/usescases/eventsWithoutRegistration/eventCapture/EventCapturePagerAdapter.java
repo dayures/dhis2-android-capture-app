@@ -1,10 +1,11 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventCapture;
 
+import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureFragment.EventCaptureFormFragment;
+import org.jetbrains.annotations.NotNull;
+
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
-
-import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureFragment.EventCaptureFormFragment;
 
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
@@ -15,12 +16,10 @@ public class EventCapturePagerAdapter extends FragmentStatePagerAdapter {
         super(fm);
     }
 
+    @NotNull
     @Override
     public Fragment getItem(int position) {
-        switch (position) {
-            default:
-                return EventCaptureFormFragment.getInstance();
-        }
+        return EventCaptureFormFragment.getInstance();
     }
 
     @Override

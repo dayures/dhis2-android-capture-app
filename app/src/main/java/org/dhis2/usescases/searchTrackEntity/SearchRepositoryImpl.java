@@ -52,6 +52,7 @@ import static org.dhis2.utils.SqlConstants.SELECT;
  * QUADRAM. Created by ppajuelo on 02/11/2017.
  */
 
+@SuppressWarnings("squid:S1068")
 public class SearchRepositoryImpl implements SearchRepository {
 
     private static final String ATTR_QUERY = "ATTR_QUERY";

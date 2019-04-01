@@ -30,11 +30,9 @@ public class EventCaptureModule {
 
 
     private final String eventUid;
-    private final String programUid;
 
-    public EventCaptureModule(String eventUid, String programUid) {
+    public EventCaptureModule(String eventUid) {
         this.eventUid = eventUid;
-        this.programUid = programUid;
     }
 
     @Provides
@@ -51,7 +49,7 @@ public class EventCaptureModule {
     EventCaptureContract.EventCaptureRepository provideRepository(Context context,
                                                                   @NonNull BriteDatabase briteDatabase,
                                                                   FormRepository formRepository, D2 d2) {
-        return new EventCaptureRepositoryImpl(context, briteDatabase, formRepository, eventUid,d2);
+        return new EventCaptureRepositoryImpl(context, briteDatabase, formRepository, eventUid, d2);
     }
 
     @Provides
@@ -66,7 +64,7 @@ public class EventCaptureModule {
                                   @NonNull RuleExpressionEvaluator evaluator,
                                   @NonNull RulesRepository rulesRepository,
                                   @NonNull D2 d2) {
-        return new EventRepository(briteDatabase, evaluator, rulesRepository, eventUid,d2);
+        return new EventRepository(briteDatabase, evaluator, rulesRepository, eventUid, d2);
     }
 
     @Provides

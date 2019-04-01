@@ -118,10 +118,9 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
         binding.sectionSelector.sectionProgress.getProgressDrawable().setColorFilter(ColorUtils.getPrimaryColor(activity, ColorUtils.ColorType.PRIMARY_LIGHT), PorterDuff.Mode.SRC_IN);
     }
 
-    public void setSingleSection(DataEntryArguments arguments, FormSectionViewModel formSectionViewModel) {
+    public void setSingleSection(DataEntryArguments arguments) {
         this.currentSection = "NO_SECTION";
         binding.currentSectionTitle.root.setVisibility(View.GONE);
-
         setUpRecyclerView(arguments);
     }
 
@@ -171,7 +170,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
     }
 
     public void setSectionSelector(List<EventSectionModel> data) {
-        sectionSelectorAdapter.swapData(currentSection, data);
+        sectionSelectorAdapter.swapData(data);
     }
 
     public FlowableProcessor<RowAction> dataEntryFlowable() {
