@@ -127,5 +127,7 @@ public class TeiDashboardContracts {
         void getCatComboOptions(Event event);
 
         void changeCatOption(String eventUid, String catOptComboUid);
+
+        void setDefaultCatOptCombToEvent(String eventUid);
     }
 }

@@ -49,12 +49,15 @@ import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 
 import static org.dhis2.utils.SqlConstants.AND;
+import static org.dhis2.utils.SqlConstants.EVENT_ATTR_OPTION_COMBO;
+import static org.dhis2.utils.SqlConstants.EVENT_STATE;
 import static org.dhis2.utils.SqlConstants.JOIN_TABLE_ON;
 import static org.dhis2.utils.SqlConstants.QUESTION_MARK;
 import static org.dhis2.utils.SqlConstants.SELECT;
 import static org.dhis2.utils.SqlConstants.TABLE_FIELD_EQUALS;
 import static org.dhis2.utils.SqlConstants.WHERE;
 import static org.hisp.dhis.android.core.utils.StoreUtils.sqLiteBind;
+
 
 /**
  * QUADRAM. Created by ppajuelo on 30/11/2017.
@@ -111,7 +114,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
             SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_PROGRAM,
             SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI,
-            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_STATE, State.TO_DELETE,
+            SqlConstants.EVENT_TABLE, EVENT_STATE, State.TO_DELETE,
             SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_UID, SqlConstants.PROGRAM_STAGE_UID, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_PROGRAM,
             SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DUE_DATE,
             SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DATE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_SORT_ORDER);
@@ -309,7 +312,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     values.put(SqlConstants.EVENT_ORG_UNIT, event.organisationUnit());
                     values.put(SqlConstants.EVENT_DUE_DATE, DateUtils.databaseDateFormat().format(dueDate.getTime()));
                     values.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(dueDate.getTime()));
-                    values.put(SqlConstants.EVENT_STATE, State.TO_POST.toString());
+                    values.put(EVENT_STATE, State.TO_POST.toString());
 
                     if (briteDatabase.insert(SqlConstants.EVENT_TABLE, values) <= 0) {
                         return Observable.error(new IllegalStateException("Event has not been successfully added"));
@@ -354,11 +357,9 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     values.put(SqlConstants.EVENT_PROGRAM, event.program());
                     values.put(SqlConstants.EVENT_PROGRAM_STAGE, event.programStage());
                     values.put(SqlConstants.EVENT_ORG_UNIT, event.organisationUnit());
-                    if (chosenDate != null) {
-                        values.put(SqlConstants.EVENT_DUE_DATE, DateUtils.databaseDateFormat().format(chosenDate.getTime()));
-                        values.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(chosenDate.getTime()));
-                    }
-                    values.put(SqlConstants.EVENT_STATE, State.TO_POST.toString());
+                    values.put(SqlConstants.EVENT_DUE_DATE, DateUtils.databaseDateFormat().format(chosenDate.getTime()));
+                    values.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(chosenDate.getTime()));
+                    values.put(EVENT_STATE, State.TO_POST.toString());
 
                     if (briteDatabase.insert(SqlConstants.EVENT_TABLE, values) <= 0) {
                         return Observable.error(new IllegalStateException("Event has not been successfully added"));
@@ -445,7 +446,18 @@ public class DashboardRepositoryImpl implements DashboardRepository {
     }
 
     @Override
-    public Observable<List<TrackedEntityAttributeValue>> getTEIAttributeValues(String programUid, String teiUid) {
+    public void setDefaultCatOptCombToEvent(String eventUid) {
+        Event event = d2.eventModule().events.uid(eventUid).get();
+        ContentValues cv = event.toContentValues();
+        List<CategoryCombo> categoryCombos = d2.categoryModule().categoryCombos.byIsDefault().isTrue().withAllChildren().get();
+        cv.put(EVENT_ATTR_OPTION_COMBO, categoryCombos.get(0).categoryOptionCombos().get(0).uid());
+        cv.put(EVENT_STATE, event.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+        briteDatabase.update("Event", cv, "Event.uid = ?", eventUid);
+    }
+
+    @Override
+    public Observable<List<TrackedEntityAttributeValue>> getTEIAttributeValues(String
+                                                                                       programUid, String teiUid) {
         if (programUid != null)
             return briteDatabase.createQuery(ATTRIBUTE_VALUES_TABLE, ATTRIBUTE_VALUES_QUERY, programUid, teiUid == null ? "" : teiUid)
                     .mapToList(cursor -> ValueUtils.transform(briteDatabase, cursor));
@@ -524,7 +536,8 @@ public class DashboardRepositoryImpl implements DashboardRepository {
         };
     }
 
-    private SQLiteStatement getInsertNoteStatement(Cursor cursor, Cursor cursor1, Pair<String, Boolean> stringBooleanPair) {
+    private SQLiteStatement getInsertNoteStatement(Cursor cursor, Cursor
+            cursor1, Pair<String, Boolean> stringBooleanPair) {
         String userName = cursor.getString(0);
         String enrollmentUidAux = cursor1.getString(0);
 
@@ -577,7 +590,8 @@ public class DashboardRepositoryImpl implements DashboardRepository {
     }
 
     @Override
-    public Flowable<Long> updateEnrollmentStatus(@NonNull String uid, @NonNull EnrollmentStatus value) {
+    public Flowable<Long> updateEnrollmentStatus(@NonNull String uid, @NonNull EnrollmentStatus
+            value) {
         return Flowable
                 .defer(() -> {
                     long updated = update(uid, value);

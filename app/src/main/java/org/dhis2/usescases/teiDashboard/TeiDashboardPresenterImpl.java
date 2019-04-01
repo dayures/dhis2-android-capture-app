@@ -375,7 +375,7 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
     @Override
     public void deleteRelationship(Relationship relationship) {
         try {
-            d2.relationshipModule().relationships.uid(relationship.uid()).delete();
+            d2.relationshipModule().relationships.withAllChildren().uid(relationship.uid()).delete();
         } catch (D2Error e) {
             Timber.d(e);
         } finally {
@@ -618,5 +618,10 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
     @Override
     public void changeCatOption(String eventUid, String catOptionComboUid) {
         metadataRepository.saveCatOption(eventUid, catOptionComboUid);
+    }
+
+    @Override
+    public void setDefaultCatOptCombToEvent(String eventUid) {
+        dashboardRepository.setDefaultCatOptCombToEvent(eventUid);
     }
 }
