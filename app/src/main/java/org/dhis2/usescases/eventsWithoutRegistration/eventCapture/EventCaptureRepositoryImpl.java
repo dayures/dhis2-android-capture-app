@@ -22,24 +22,18 @@ import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
-import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
-import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramRule;
 import org.hisp.dhis.android.core.program.ProgramRuleAction;
 import org.hisp.dhis.android.core.program.ProgramRuleActionType;
 import org.hisp.dhis.android.core.program.ProgramRuleVariable;
 import org.hisp.dhis.android.core.program.ProgramStage;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.program.ProgramStageSectionDeviceRendering;
-import org.hisp.dhis.android.core.program.ProgramStageSectionModel;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.rules.models.Rule;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleDataValue;
@@ -64,6 +58,23 @@ import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
 import static android.text.TextUtils.isEmpty;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_LAST_UPDATED;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_STATE;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_TABLE;
+import static org.dhis2.utils.SqlConstants.EVENT_COMPLETE_DATE;
+import static org.dhis2.utils.SqlConstants.EVENT_DUE_DATE;
+import static org.dhis2.utils.SqlConstants.EVENT_LAST_UPDATED;
+import static org.dhis2.utils.SqlConstants.EVENT_STATE;
+import static org.dhis2.utils.SqlConstants.EVENT_STATUS;
+import static org.dhis2.utils.SqlConstants.EVENT_TABLE;
+import static org.dhis2.utils.SqlConstants.EVENT_UID;
+import static org.dhis2.utils.SqlConstants.PROGRAM_STAGE_SECTION_TABLE;
+import static org.dhis2.utils.SqlConstants.PROGRAM_STAGE_TABLE;
+import static org.dhis2.utils.SqlConstants.PROGRAM_TABLE;
+import static org.dhis2.utils.SqlConstants.TEI_DATA_VALUE_TABLE;
+import static org.dhis2.utils.SqlConstants.TEI_LAST_UPDATED;
+import static org.dhis2.utils.SqlConstants.TEI_STATE;
+import static org.dhis2.utils.SqlConstants.TEI_TABLE;
 
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
@@ -74,7 +85,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
 
 
     private static final List<String> SECTION_TABLES = Arrays.asList(
-            EventModel.TABLE, ProgramModel.TABLE, ProgramStageModel.TABLE, ProgramStageSectionModel.TABLE);
+            EVENT_TABLE, PROGRAM_TABLE, PROGRAM_STAGE_TABLE, PROGRAM_STAGE_SECTION_TABLE);
     private static final String SELECT_SECTIONS = "SELECT\n" +
             "  Program.uid AS programUid,\n" +
             "  ProgramStage.uid AS programStageUid,\n" +
@@ -87,7 +98,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             "  JOIN ProgramStage ON Event.programStage = ProgramStage.uid\n" +
             "  LEFT OUTER JOIN ProgramStageSection ON ProgramStageSection.programStage = Event.programStage\n" +
             "WHERE Event.uid = ?\n" +
-            "AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "' ORDER BY ProgramStageSection.sortOrder";
+            "AND " + EVENT_TABLE + "." + EVENT_STATE + " != '" + State.TO_DELETE + "' ORDER BY ProgramStageSection.sortOrder";
 
     private static final String QUERY = "SELECT\n" +
             "  Field.id,\n" +
@@ -192,15 +203,16 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             else if (rule.condition() == null)
                 ruleIterator.remove();
             for (ProgramRuleAction action : rule.programRuleActions())
-                if (action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
+                if ((action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDESECTION ||
                         action.programRuleActionType() == ProgramRuleActionType.ASSIGN ||
                         action.programRuleActionType() == ProgramRuleActionType.SHOWWARNING ||
                         action.programRuleActionType() == ProgramRuleActionType.SHOWERROR ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION)
-                    if (!mandatoryRules.contains(rule))
-                        mandatoryRules.add(rule);
+                        && (!mandatoryRules.contains(rule))) {
+                    mandatoryRules.add(rule);
+                }
         }
 
         List<ProgramRuleVariable> variables = d2.programModule().programRuleVariables
@@ -339,7 +351,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     public Flowable<List<FieldViewModel>> list(String sectionUid) {
         accessDataWrite = getAccessDataWrite();
         return briteDatabase
-                .createQuery(TrackedEntityDataValueModel.TABLE, prepareStatement(sectionUid, eventUid))
+                .createQuery(TEI_DATA_VALUE_TABLE, prepareStatement(sectionUid, eventUid))
                 .mapToList(this::transform)
                 .map(this::checkRenderType)
                 .toFlowable(BackpressureStrategy.LATEST);
@@ -409,7 +421,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     public Flowable<List<FieldViewModel>> list() {
         accessDataWrite = getAccessDataWrite();
         return briteDatabase
-                .createQuery(TrackedEntityDataValueModel.TABLE, prepareStatement(eventUid))
+                .createQuery(TEI_DATA_VALUE_TABLE, prepareStatement(eventUid))
                 .mapToList(this::transform)
                 .map(this::checkRenderType)
                 .toFlowable(BackpressureStrategy.LATEST);
@@ -424,7 +436,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             where = String.format(Locale.US, "WHERE Event.uid = '%s'", eventUid == null ? "" : eventUid);
         } else {
             where = String.format(Locale.US, "WHERE Event.uid = '%s' AND " +
-                    "Field.section = '%s'", eventUid == null ? "" : eventUid, sectionUid == null ? "" : sectionUid);
+                    "Field.section = '%s'", eventUid == null ? "" : eventUid, sectionUid);
         }
 
         return String.format(Locale.US, QUERY, where);
@@ -536,17 +548,17 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     @Override
     public Observable<Boolean> completeEvent() {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(EventModel.Columns.STATUS, EventStatus.COMPLETED.name());
+        contentValues.put(EVENT_STATUS, EventStatus.COMPLETED.name());
         String completeDate = DateUtils.databaseDateFormat().format(DateUtils.getInstance().getToday());
-        contentValues.put(EventModel.Columns.COMPLETE_DATE, completeDate);
-        return Observable.just(briteDatabase.update(EventModel.TABLE, contentValues, "uid = ?", eventUid) > 0);
+        contentValues.put(EVENT_COMPLETE_DATE, completeDate);
+        return Observable.just(briteDatabase.update(EVENT_TABLE, contentValues, "uid = ?", eventUid) > 0);
     }
 
     @Override
     public boolean reopenEvent() {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(EventModel.Columns.STATUS, EventStatus.ACTIVE.name());
-        return briteDatabase.update(EventModel.TABLE, contentValues, "uid = ?", eventUid) > 0;
+        contentValues.put(EVENT_STATUS, EventStatus.ACTIVE.name());
+        return briteDatabase.update(EVENT_TABLE, contentValues, "uid = ?", eventUid) > 0;
     }
 
     @Override
@@ -554,15 +566,15 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         Event event = d2.eventModule().events.uid(eventUid).withAllChildren().get();
         long status;
         if (event.state() == State.TO_POST) {
-            String DELETE_WHERE = String.format(
+            String deleteWhere = String.format(
                     "%s.%s = ?",
-                    EventModel.TABLE, EventModel.Columns.UID
+                    EVENT_TABLE, EVENT_UID
             );
-            status = briteDatabase.delete(EventModel.TABLE, DELETE_WHERE, eventUid);
+            status = briteDatabase.delete(EVENT_TABLE, deleteWhere, eventUid);
         } else {
             ContentValues contentValues = event.toContentValues();
-            contentValues.put(EventModel.Columns.STATE, State.TO_DELETE.name());
-            status = briteDatabase.update(EventModel.TABLE, contentValues, EventModel.Columns.UID + " = ?", eventUid);
+            contentValues.put(EVENT_STATE, State.TO_DELETE.name());
+            status = briteDatabase.update(EVENT_TABLE, contentValues, EVENT_UID + " = ?", eventUid);
         }
         if (status == 1 && event.enrollment() != null)
             updateEnrollment(event.enrollment());
@@ -571,17 +583,17 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     }
 
     private void updateEnrollment(String enrollmentUid) {
-        String SELECT_ENROLLMENT = "SELECT *\n" +
+        String selectEnrollment = "SELECT *\n" +
                 "FROM Enrollment\n" +
                 "WHERE uid = ? LIMIT 1;";
-        try (Cursor enrollmentCursor = briteDatabase.query(SELECT_ENROLLMENT, enrollmentUid)) {
+        try (Cursor enrollmentCursor = briteDatabase.query(selectEnrollment, enrollmentUid)) {
             if (enrollmentCursor != null && enrollmentCursor.moveToFirst()) {
-                EnrollmentModel enrollmentModel = EnrollmentModel.create(enrollmentCursor);
+                Enrollment enrollmentModel = Enrollment.create(enrollmentCursor);
 
                 ContentValues cv = enrollmentModel.toContentValues();
-                cv.put(EnrollmentModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-                cv.put(EnrollmentModel.Columns.STATE, enrollmentModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                briteDatabase.update(EnrollmentModel.TABLE, cv, "uid = ?", enrollmentUid);
+                cv.put(ENROLLMENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+                cv.put(ENROLLMENT_STATE, enrollmentModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+                briteDatabase.update(ENROLLMENT_TABLE, cv, "uid = ?", enrollmentUid);
                 updateTei(enrollmentModel.trackedEntityInstance());
             }
         }
@@ -591,12 +603,12 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         String selectTei = "SELECT * FROM TrackedEntityInstance WHERE uid = ?";
         try (Cursor teiCursor = briteDatabase.query(selectTei, teiUid)) {
             if (teiCursor != null && teiCursor.moveToFirst()) {
-                TrackedEntityInstanceModel teiModel = TrackedEntityInstanceModel.create(teiCursor);
+                TrackedEntityInstance teiModel = TrackedEntityInstance.create(teiCursor);
                 ContentValues cv = teiModel.toContentValues();
-                cv.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-                cv.put(TrackedEntityInstanceModel.Columns.STATE,
+                cv.put(TEI_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+                cv.put(TEI_STATE,
                         teiModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                briteDatabase.update(TrackedEntityInstanceModel.TABLE, cv, "uid = ?", teiUid);
+                briteDatabase.update(TEI_TABLE, cv, "uid = ?", teiUid);
             }
         }
     }
@@ -605,17 +617,17 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     public Observable<Boolean> updateEventStatus(EventStatus
                                                          status) {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(EventModel.Columns.STATUS, status.name());
+        contentValues.put(EVENT_STATUS, status.name());
         String updateDate = DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime());
-        contentValues.put(EventModel.Columns.LAST_UPDATED, updateDate);
-        return Observable.just(briteDatabase.update(EventModel.TABLE, contentValues, "uid = ?", eventUid) > 0);
+        contentValues.put(EVENT_LAST_UPDATED, updateDate);
+        return Observable.just(briteDatabase.update(EVENT_TABLE, contentValues, "uid = ?", eventUid) > 0);
     }
 
     @Override
     public Observable<Boolean> rescheduleEvent(Date newDate) {
         ContentValues contentValues = new ContentValues();
-        contentValues.put(EventModel.Columns.DUE_DATE, DateUtils.databaseDateFormat().format(newDate));
-        return Observable.just(briteDatabase.update(EventModel.TABLE, contentValues, "uid = ?", eventUid))
+        contentValues.put(EVENT_DUE_DATE, DateUtils.databaseDateFormat().format(newDate));
+        return Observable.just(briteDatabase.update(EVENT_TABLE, contentValues, "uid = ?", eventUid))
                 .flatMap(result -> updateEventStatus(EventStatus.SCHEDULE));
     }
 
@@ -663,18 +675,18 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             "  INNER JOIN DataElement ON DataElement.uid = TrackedEntityDataValue.dataElement " +
             "  LEFT JOIN ProgramRuleVariable ON ProgramRuleVariable.dataElement = DataElement.uid " +
             "  LEFT JOIN Option ON (Option.optionSet = DataElement.optionSet AND Option.code = TrackedEntityDataValue.value) " +
-            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EventModel.TABLE + "." + EventModel.Columns.STATE + " != '" + State.TO_DELETE + "';";
+            " WHERE Event.uid = ? AND value IS NOT NULL AND " + EVENT_TABLE + "." + EVENT_STATE + " != '" + State.TO_DELETE + "';";
 
     @NonNull
     private Flowable<List<RuleDataValue>> queryDataValues(String eventUid) {
-        return briteDatabase.createQuery(Arrays.asList(EventModel.TABLE,
-                TrackedEntityDataValueModel.TABLE), QUERY_VALUES, eventUid == null ? "" : eventUid)
+        return briteDatabase.createQuery(Arrays.asList(EVENT_TABLE,
+                TEI_DATA_VALUE_TABLE), QUERY_VALUES, eventUid == null ? "" : eventUid)
                 .mapToList(cursor -> {
                     Date eventDate = parseDate(cursor.getString(0));
                     String programStage = cursor.getString(1);
                     String dataElement = cursor.getString(2);
                     String value = cursor.getString(3);
-                    Boolean useCode = cursor.getInt(4) == 1;
+                    boolean useCode = cursor.getInt(4) == 1;
                     String optionCode = cursor.getString(5);
                     String optionName = cursor.getString(6);
                     if (!isEmpty(optionCode) && !isEmpty(optionName))
@@ -685,12 +697,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     }
 
     @NonNull
-    private static Date parseDate(@NonNull String date) {
-        try {
-            return BaseIdentifiableObject.DATE_FORMAT.parse(date);
-        } catch (ParseException parseException) {
-            throw new RuntimeException(parseException);
-        }
+    private static Date parseDate(@NonNull String date) throws ParseException {
+        return BaseIdentifiableObject.DATE_FORMAT.parse(date);
     }
 
     @NonNull
