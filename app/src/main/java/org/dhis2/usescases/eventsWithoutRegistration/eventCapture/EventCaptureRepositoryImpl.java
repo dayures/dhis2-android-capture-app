@@ -61,6 +61,8 @@ import static android.text.TextUtils.isEmpty;
 import static org.dhis2.utils.SqlConstants.ENROLLMENT_LAST_UPDATED;
 import static org.dhis2.utils.SqlConstants.ENROLLMENT_STATE;
 import static org.dhis2.utils.SqlConstants.ENROLLMENT_TABLE;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_UID;
+import static org.dhis2.utils.SqlConstants.EQUAL;
 import static org.dhis2.utils.SqlConstants.EVENT_COMPLETE_DATE;
 import static org.dhis2.utils.SqlConstants.EVENT_DUE_DATE;
 import static org.dhis2.utils.SqlConstants.EVENT_LAST_UPDATED;
@@ -71,10 +73,12 @@ import static org.dhis2.utils.SqlConstants.EVENT_UID;
 import static org.dhis2.utils.SqlConstants.PROGRAM_STAGE_SECTION_TABLE;
 import static org.dhis2.utils.SqlConstants.PROGRAM_STAGE_TABLE;
 import static org.dhis2.utils.SqlConstants.PROGRAM_TABLE;
+import static org.dhis2.utils.SqlConstants.QUESTION_MARK;
 import static org.dhis2.utils.SqlConstants.TEI_DATA_VALUE_TABLE;
 import static org.dhis2.utils.SqlConstants.TEI_LAST_UPDATED;
 import static org.dhis2.utils.SqlConstants.TEI_STATE;
 import static org.dhis2.utils.SqlConstants.TEI_TABLE;
+import static org.dhis2.utils.SqlConstants.TEI_UID;
 
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
@@ -198,10 +202,11 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         Iterator<ProgramRule> ruleIterator = rules.iterator();
         while (ruleIterator.hasNext()) {
             ProgramRule rule = ruleIterator.next();
-            if (rule.programStage() != null && rule.programStage().uid().equals(event.programStage()))
+            if ((rule.programStage() != null && rule.programStage().uid().equals(event.programStage())) ||
+                    (rule.condition() == null)) {
                 ruleIterator.remove();
-            else if (rule.condition() == null)
-                ruleIterator.remove();
+            }
+
             for (ProgramRuleAction action : rule.programRuleActions())
                 if ((action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDESECTION ||
@@ -221,10 +226,10 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         Iterator<ProgramRuleVariable> variableIterator = variables.iterator();
         while (variableIterator.hasNext()) {
             ProgramRuleVariable variable = variableIterator.next();
-            if (variable.programStage() != null && variable.programStage().uid().equals(event.programStage()))
+            if ((variable.programStage() != null && variable.programStage().uid().equals(event.programStage())) ||
+                    (variable.dataElement() == null)) {
                 variableIterator.remove();
-            else if (variable.dataElement() == null)
-                variableIterator.remove();
+            }
         }
         for (ProgramRuleVariable variable : variables) {
             if (variable.dataElement() != null && !dataElementRules.containsKey(variable.dataElement().uid()))
@@ -402,7 +407,9 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                                     fieldViewModel.uid() + "." + uid, //fist
                                     displayName + "-" + optionCode, ValueType.TEXT, false,
                                     fieldViewModel.optionSet(), fieldViewModel.value(), fieldViewModel.programStageSection(),
-                                    fieldViewModel.allowFutureDate(), fieldViewModel.editable() == null ? false : fieldViewModel.editable(), renderingType, fieldViewModel.description(), fieldRendering, optionCount, objectStyle));
+                                    fieldViewModel.allowFutureDate(), fieldViewModel.editable() == null ?
+                                            false : fieldViewModel.editable(),
+                                    renderingType, fieldViewModel.description(), fieldRendering, optionCount, objectStyle));
 
                             cursor.moveToNext();
                         }
@@ -551,14 +558,16 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         contentValues.put(EVENT_STATUS, EventStatus.COMPLETED.name());
         String completeDate = DateUtils.databaseDateFormat().format(DateUtils.getInstance().getToday());
         contentValues.put(EVENT_COMPLETE_DATE, completeDate);
-        return Observable.just(briteDatabase.update(EVENT_TABLE, contentValues, "uid = ?", eventUid) > 0);
+        return Observable.just(briteDatabase.update(EVENT_TABLE, contentValues,
+                EVENT_UID + EQUAL + QUESTION_MARK, eventUid) > 0);
     }
 
     @Override
     public boolean reopenEvent() {
         ContentValues contentValues = new ContentValues();
         contentValues.put(EVENT_STATUS, EventStatus.ACTIVE.name());
-        return briteDatabase.update(EVENT_TABLE, contentValues, "uid = ?", eventUid) > 0;
+        return briteDatabase.update(EVENT_TABLE, contentValues,
+                EVENT_UID + EQUAL + QUESTION_MARK, eventUid) > 0;
     }
 
     @Override
@@ -593,7 +602,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 ContentValues cv = enrollmentModel.toContentValues();
                 cv.put(ENROLLMENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
                 cv.put(ENROLLMENT_STATE, enrollmentModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                briteDatabase.update(ENROLLMENT_TABLE, cv, "uid = ?", enrollmentUid);
+                briteDatabase.update(ENROLLMENT_TABLE, cv,
+                        ENROLLMENT_UID + EQUAL + QUESTION_MARK, enrollmentUid);
                 updateTei(enrollmentModel.trackedEntityInstance());
             }
         }
@@ -608,7 +618,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 cv.put(TEI_LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
                 cv.put(TEI_STATE,
                         teiModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                briteDatabase.update(TEI_TABLE, cv, "uid = ?", teiUid);
+                briteDatabase.update(TEI_TABLE, cv,
+                        TEI_UID + EQUAL + QUESTION_MARK, teiUid);
             }
         }
     }
@@ -620,14 +631,16 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         contentValues.put(EVENT_STATUS, status.name());
         String updateDate = DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime());
         contentValues.put(EVENT_LAST_UPDATED, updateDate);
-        return Observable.just(briteDatabase.update(EVENT_TABLE, contentValues, "uid = ?", eventUid) > 0);
+        return Observable.just(briteDatabase.update(EVENT_TABLE, contentValues,
+                EVENT_UID + EQUAL + QUESTION_MARK, eventUid) > 0);
     }
 
     @Override
     public Observable<Boolean> rescheduleEvent(Date newDate) {
         ContentValues contentValues = new ContentValues();
         contentValues.put(EVENT_DUE_DATE, DateUtils.databaseDateFormat().format(newDate));
-        return Observable.just(briteDatabase.update(EVENT_TABLE, contentValues, "uid = ?", eventUid))
+        return Observable.just(briteDatabase.update(EVENT_TABLE, contentValues,
+                EVENT_UID + EQUAL + QUESTION_MARK, eventUid))
                 .flatMap(result -> updateEventStatus(EventStatus.SCHEDULE));
     }
 

@@ -44,10 +44,12 @@ import static org.dhis2.utils.Constants.PROGRAM_UID;
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
  */
+@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class EventCaptureActivity extends ActivityGlobalAbstract implements EventCaptureContract.EventCaptureView, View.OnTouchListener, GestureDetector.OnGestureListener {
 
     private static final int SWIPE_THRESHOLD = 100;
     private static final int SWIPE_VELOCITY_THRESHOLD = 100;
+    private static final String SHOW_OPTIONS = "SHOW_OPTIONS";
 
     private GestureDetector gestureScanner;
 
@@ -78,25 +80,8 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
         gestureScanner = new GestureDetector(this, this);
 
         presenter.init(this);
-
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-
-        super.onStop();
-    }
 
     @Override
     protected void onDestroy() {
@@ -171,7 +156,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 .setIsExpired(presenter.hasExpired())
                 .setCanComplete(canComplete)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
+                .show(getSupportFragmentManager(), SHOW_OPTIONS);
     }
 
     @Override
@@ -181,7 +166,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 .setIsExpired(presenter.hasExpired())
                 .setReopen(true)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
+                .show(getSupportFragmentManager(), SHOW_OPTIONS);
     }
 
     @Override
@@ -192,7 +177,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 .setIsExpired(presenter.hasExpired())
                 .setSkip(true)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
+                .show(getSupportFragmentManager(), SHOW_OPTIONS);
     }
 
     @Override
@@ -202,7 +187,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 .setIsExpired(presenter.hasExpired())
                 .setReschedule(true)
                 .setListener(this::setAction)
-                .show(getSupportFragmentManager(), "SHOW_OPTIONS");
+                .show(getSupportFragmentManager(), SHOW_OPTIONS);
     }
 
     @Override
@@ -425,13 +410,12 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
         try {
             float diffY = e2.getY() - e1.getY();
             float diffX = e2.getX() - e1.getX();
-            if (Math.abs(diffX) > Math.abs(diffY)) {
-                if (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD) {
-                    if (diffX > 0) {
-                        onSwipeRight();
-                    } else {
-                        onSwipeLeft();
-                    }
+            if ((Math.abs(diffX) > Math.abs(diffY)) &&
+                    (Math.abs(diffX) > SWIPE_THRESHOLD && Math.abs(velocityX) > SWIPE_VELOCITY_THRESHOLD)) {
+                if (diffX > 0) {
+                    onSwipeRight();
+                } else {
+                    onSwipeLeft();
                 }
             }
         } catch (Exception exception) {

@@ -50,6 +50,7 @@ import static android.text.TextUtils.isEmpty;
  */
 public class EventCapturePresenterImpl implements EventCaptureContract.EventCapturePresenter, RulesActionCallbacks {
 
+    private static final String NO_SECTION = "NO_SECTION";
     private final EventCaptureContract.EventCaptureRepository eventCaptureRepository;
     private final RulesUtilsProvider rulesUtils;
     private final DataEntryStore dataEntryStore;
@@ -176,13 +177,14 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
                                         if (!isEmpty(fieldViewModel.value()))
                                             cont++;
 
-                                    eventSectionModels.add(EventSectionModel.create(sectionModel.label(), sectionModel.sectionUid(), cont, fieldViewModels.size()));
+                                    eventSectionModels.add(EventSectionModel.create(sectionModel.label(),
+                                            sectionModel.sectionUid(), cont, fieldViewModels.size()));
                                 } else if (sectionList.size() == 1) {
                                     int cont = 0;
                                     for (FieldViewModel fieldViewModel : fields)
                                         if (!isEmpty(fieldViewModel.value()))
                                             cont++;
-                                    eventSectionModels.add(EventSectionModel.create("NO_SECTION", "no_section", cont, fields.size()));
+                                    eventSectionModels.add(EventSectionModel.create(NO_SECTION, NO_SECTION, cont, fields.size()));
                                 }
                             }
 
@@ -213,7 +215,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
                                         for (FieldViewModel fieldViewModel : fieldMap.get(null))
                                             fieldMap.get(section).add(fieldViewModel);
 
-                                    List<FieldViewModel> fieldsToShow = fieldMap.get(section.equals("NO_SECTION") ? null : section);
+                                    List<FieldViewModel> fieldsToShow = fieldMap.get(section.equals(NO_SECTION) ? null : section);
                                     return fieldsToShow != null ? fieldsToShow : new ArrayList<FieldViewModel>();
                                 }))
                         .observeOn(Schedulers.computation())
@@ -228,7 +230,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
     }
 
     private Flowable<List<FieldViewModel>> getFieldFlowable(@Nullable String sectionUid) {
-        if (sectionUid == null || sectionUid.equals("NO_SECTION")) {
+        if (sectionUid == null || sectionUid.equals(NO_SECTION)) {
             return Flowable.zip(
                     eventCaptureRepository.list().subscribeOn(Schedulers.computation()),
                     eventCaptureRepository.calculate().subscribeOn(Schedulers.computation()),
@@ -326,11 +328,12 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
 
                                 List<FormSectionViewModel> finalSectionList = getFinalSections();
 
-                                return Flowable.just(finalSectionList.size() > 0 ?
-                                        finalSectionList.get(position).sectionUid() != null ?
-                                                finalSectionList.get(position).sectionUid() :
-                                                "NO_SECTION" :
-                                        "NO_SECTION");
+                                String sectionUid = finalSectionList.get(position).sectionUid() != null ?
+                                        finalSectionList.get(position).sectionUid() :
+                                        NO_SECTION;
+                                return Flowable.just(!finalSectionList.isEmpty() ?
+                                        sectionUid :
+                                        NO_SECTION);
                             })
                             .observeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
@@ -423,7 +426,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
         view.clearFocus();
 
         new Handler().postDelayed(
-                () -> changeSection(),
+                this::changeSection,
                 1000);
 
     }
@@ -445,7 +448,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
                         Observable.just(completeMessage != null ? completeMessage : "")
                                 .subscribeOn(Schedulers.io())
                                 .observeOn(AndroidSchedulers.mainThread())
-                                .filter(completeMessage -> !isEmpty(completeMessage))
+                                .filter(completeMessageResult -> !isEmpty(completeMessageResult))
                                 .subscribe(
                                         data -> view.showMessageOnComplete(canComplete, completeMessage),
                                         Timber::e,
@@ -659,7 +662,6 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
 
     @Override
     public void unsupportedRuleAction() {
-//        view.displayMessage(view.getContext().getString(R.string.unsupported_program_rule));
         Timber.d(view.getContext().getString(R.string.unsupported_program_rule));
     }
 

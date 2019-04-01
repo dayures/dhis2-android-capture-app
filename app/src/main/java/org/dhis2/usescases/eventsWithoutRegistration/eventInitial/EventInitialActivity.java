@@ -828,7 +828,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             if (orgUnit.closedDate() != null && selectedDate.after(orgUnit.closedDate()))
                 iterator.remove();
         }
-        if (orgUnits != null && !orgUnits.isEmpty()) {
+        if (!orgUnits.isEmpty()) {
             orgUnitDialog = new OrgUnitDialog()
                     .setTitle(getString(R.string.org_unit))
                     .setMultiSelection(false)

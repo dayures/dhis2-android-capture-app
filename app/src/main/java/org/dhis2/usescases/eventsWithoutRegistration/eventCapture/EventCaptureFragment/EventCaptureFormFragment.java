@@ -21,9 +21,11 @@ import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.SectionSelecto
 import org.dhis2.usescases.general.FragmentGlobalAbstract;
 import org.dhis2.utils.ColorUtils;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -33,7 +35,6 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Flowable;
-import io.reactivex.functions.Consumer;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
 
@@ -62,7 +63,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
     }
 
     @Override
-    public void onAttach(Context context) {
+    public void onAttach(@NotNull Context context) {
         super.onAttach(context);
         this.activity = (EventCaptureActivity) context;
         setRetainInstance(true);
@@ -96,15 +97,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
         });
 
         activity.getPresenter().initCompletionPercentage(sectionSelectorAdapter.completionPercentage());
-//        activity.getPresenter().subscribeToSection();
-
         return binding.getRoot();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
     }
 
     public void setSectionTitle(DataEntryArguments arguments, FormSectionViewModel formSectionViewModel) {
@@ -134,7 +127,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
 
     private void setUpRecyclerView(DataEntryArguments arguments) {
 
-        if(!binding.progress.isShown())
+        if (!binding.progress.isShown())
             binding.progress.setVisibility(View.VISIBLE);
 
         dataEntryAdapter = new DataEntryAdapter(LayoutInflater.from(activity),
@@ -157,7 +150,6 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
 
     }
 
-    @NonNull
     public void showFields(List<FieldViewModel> updates) {
         binding.progress.setVisibility(View.GONE);
 
@@ -169,9 +161,11 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
             for (FieldViewModel fieldViewModel : updates) {
                 fields.put(fieldViewModel.optionSet() == null ? fieldViewModel.uid() : fieldViewModel.optionSet(), !isEmpty(fieldViewModel.value()));
             }
-            for (String key : fields.keySet())
-                if (fields.get(key))
+            for (Map.Entry<String, Boolean> entry : fields.entrySet()) {
+                if (entry.getValue()) {
                     completedValues++;
+                }
+            }
             binding.currentSectionTitle.sectionValues.setText(String.format("%s/%s", completedValues, fields.keySet().size()));
         }
     }
@@ -186,7 +180,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
 
 
     public void showSectionSelector() {
-        if (binding.sectionRecycler.getAdapter().getItemCount() > 1) {
+        if (binding.sectionRecycler.getAdapter() != null && binding.sectionRecycler.getAdapter().getItemCount() > 1) {
             binding.sectionRecycler.setVisibility(binding.sectionRecycler.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
             binding.currentSectionTitle.root.setVisibility(binding.currentSectionTitle.root.getVisibility() == View.VISIBLE ? View.GONE : View.VISIBLE);
         }
