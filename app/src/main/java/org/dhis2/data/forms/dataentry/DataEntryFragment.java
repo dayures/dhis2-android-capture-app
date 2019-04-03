@@ -36,6 +36,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 
+
 public final class DataEntryFragment extends FragmentGlobalAbstract implements DataEntryView {
     private static final String ARGUMENTS = "args";
 
@@ -69,10 +70,11 @@ public final class DataEntryFragment extends FragmentGlobalAbstract implements D
             if (args != null) {
                 this.section = args.section();
 
-                ((App) context.getApplicationContext())
-                        .formComponent()
-                        .plus(new DataEntryModule(context, args), new DataEntryStoreModule(args))
-                        .inject(this);
+                if (((App) context.getApplicationContext()).formComponent() != null)
+                    ((App) context.getApplicationContext())
+                            .formComponent()
+                            .plus(new DataEntryModule(context, args), new DataEntryStoreModule(args))
+                            .inject(this);
             }
         }
     }

@@ -16,8 +16,8 @@ import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialAc
 import org.dhis2.usescases.searchTrackEntity.SearchTEActivity;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.IndicatorsFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.NotesFragment;
-import org.dhis2.usescases.teiDashboard.dashboardfragments.RelationshipFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.TEIDataFragment;
+import org.dhis2.usescases.teiDashboard.dashboardfragments.relationships.RelationshipFragment;
 import org.dhis2.usescases.teiDashboard.eventDetail.EventDetailActivity;
 import org.dhis2.usescases.teiDashboard.mobile.TeiDashboardMobileActivity;
 import org.dhis2.usescases.teiDashboard.teiDataDetail.TeiDataDetailActivity;
@@ -51,6 +51,8 @@ import java.util.List;
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.Single;
@@ -81,13 +83,21 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
     private CompositeDisposable compositeDisposable;
     private DashboardProgramModel dashboardProgramModel;
 
-    TeiDashboardPresenterImpl(D2 d2, DashboardRepository dashboardRepository, MetadataRepository metadataRepository,
+    private MutableLiveData<DashboardProgramModel> dashboardProgramModelLiveData = new MutableLiveData<>();
+
+    TeiDashboardPresenterImpl(D2 d2, DashboardRepository dashboardRepository,
+                              MetadataRepository metadataRepository,
                               RuleEngineRepository formRepository) {
         this.d2 = d2;
         this.dashboardRepository = dashboardRepository;
         this.metadataRepository = metadataRepository;
         this.ruleRepository = formRepository;
         compositeDisposable = new CompositeDisposable();
+    }
+
+    @Override
+    public LiveData<DashboardProgramModel> observeDashboardModel() {
+        return dashboardProgramModelLiveData;
     }
 
     @Override
@@ -120,6 +130,7 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
                     .subscribe(
                             dashboardModel -> {
                                 this.dashboardProgramModel = dashboardModel;
+                                this.dashboardProgramModelLiveData.setValue(dashboardModel);
                                 this.programWritePermission = dashboardProgramModel.getCurrentProgram().access().data().write();
                                 this.teType = dashboardProgramModel.getTei().trackedEntityType();
                                 view.setData(dashboardProgramModel);
@@ -302,7 +313,8 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
         if (teiFragment != null && teiFragment.getContext() != null && teiFragment.isAdded()) {
             Intent intent = new Intent(teiFragment.getContext(), EventInitialActivity.class);
             intent.putExtras(EventInitialActivity.getBundle(
-                    programUid, uid, EventCreationType.DEFAULT.name(), teUid, null, null, null, dashboardProgramModel.getCurrentEnrollment().uid(), 0, dashboardProgramModel.getCurrentEnrollment().status()
+                    programUid, uid, EventCreationType.DEFAULT.name(), teUid, null, null,
+                    null, dashboardProgramModel.getCurrentEnrollment().uid(), 0, dashboardProgramModel.getCurrentEnrollment().status()
             ));
             teiFragment.startActivityForResult(intent, TEIDataFragment.getEventRequestCode(), null);
         }
@@ -452,10 +464,6 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
                 .flatMap(Single::toFlowable)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .map(data -> {
-                    Timber.d("INDICATOR SIZE IS %d", data.size());
-                    return data;
-                })
                 .subscribe(
                         indicatorsFragment.swapIndicators(),
                         Timber::d

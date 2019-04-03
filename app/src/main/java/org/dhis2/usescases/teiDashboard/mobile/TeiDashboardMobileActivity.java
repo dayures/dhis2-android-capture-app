@@ -101,10 +101,10 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
 
     @Override
     protected void onSaveInstanceState(@NotNull Bundle outState) {
-        super.onSaveInstanceState(outState);
         outState.clear();
         outState.putString(Constants.TRACKED_ENTITY_INSTANCE, teiUid);
         outState.putString(Constants.PROGRAM_UID, programUid);
+        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -149,8 +149,8 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
     public void setData(DashboardProgramModel program) {
         if (orientation == Configuration.ORIENTATION_LANDSCAPE)
             getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.tei_main_view, TEIDataFragment.getInstance())
-                    .commit();
+                    .replace(R.id.tei_main_view, TEIDataFragment.createInstance())
+                    .commitAllowingStateLoss();
 
         binding.setDashboardModel(program);
         binding.setTrackEntity(program.getTei());
@@ -166,7 +166,8 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
 
         setViewpagerAdapter();
 
-        boolean enrollmentStatus = program.getCurrentEnrollment().status() == EnrollmentStatus.ACTIVE;
+        boolean enrollmentStatus = program.getCurrentEnrollment() != null && program.getCurrentEnrollment().status() == EnrollmentStatus.ACTIVE;
+
         if (getIntent().getStringExtra(Constants.EVENT_UID) != null && enrollmentStatus)
             TEIDataFragment.getInstance().displayGenerateEvent(getIntent().getStringExtra(Constants.EVENT_UID));
 
@@ -195,7 +196,7 @@ public class TeiDashboardMobileActivity extends TeiDashboardActivity implements 
         if (orientation == Configuration.ORIENTATION_LANDSCAPE)
             getSupportFragmentManager().beginTransaction()
                     .replace(R.id.tei_main_view, TEIDataFragment.createInstance())
-                    .commit();
+                    .commitAllowingStateLoss();
 
         binding.setDashboardModel(program);
         binding.setTrackEntity(program.getTei());

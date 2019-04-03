@@ -7,8 +7,8 @@ import org.dhis2.data.tuples.Pair;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.IndicatorsFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.NotesFragment;
-import org.dhis2.usescases.teiDashboard.dashboardfragments.RelationshipFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.TEIDataFragment;
+import org.dhis2.usescases.teiDashboard.dashboardfragments.relationships.RelationshipFragment;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.program.Program;
@@ -19,8 +19,10 @@ import java.util.Calendar;
 import java.util.List;
 
 import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.lifecycle.LiveData;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
+
 
 /**
  * QUADRAM. Created by ppajuelo on 30/11/2017.
@@ -49,7 +51,11 @@ public class TeiDashboardContracts {
         void showCatComboDialog(String eventId, CategoryCombo catCombo);
     }
 
+
     public interface TeiDashboardPresenter {
+
+        LiveData<DashboardProgramModel> observeDashboardModel();
+
         void init(TeiDashboardView view, String uid, String programUid);
 
         void showDescription(String description);

@@ -9,6 +9,7 @@ import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.SqlConstants;
 import org.dhis2.utils.ValueUtils;
 import org.hisp.dhis.android.core.D2;
+import org.hisp.dhis.android.core.arch.repositories.scope.RepositoryScope;
 import org.hisp.dhis.android.core.category.Category;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOption;
@@ -64,7 +65,7 @@ public class ProgramEventDetailRepositoryImpl implements ProgramEventDetailRepos
         if (catOptCombList != null && !catOptCombList.isEmpty())
             for (CategoryOptionCombo catOptComb : catOptCombList)
                 eventRepo = eventRepo.byAttributeOptionComboUid().eq(catOptComb.uid());
-        return Transformations.switchMap(eventRepo.withAllChildren().getPaged(20), this::transform);
+        return Transformations.switchMap(eventRepo.orderByEventDate(RepositoryScope.OrderByDirection.DESC).withAllChildren().getPaged(20), this::transform);
     }
 
     @NonNull

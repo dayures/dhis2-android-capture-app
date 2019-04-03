@@ -1,4 +1,4 @@
-package org.dhis2.usescases.teiDashboard.dashboardfragments;
+package org.dhis2.usescases.teiDashboard.dashboardfragments.relationships;
 
 import android.content.Context;
 import android.content.Intent;
@@ -77,13 +77,8 @@ public class RelationshipFragment extends FragmentGlobalAbstract {
         binding.setPresenter(presenter);
         relationshipAdapter = new RelationshipAdapter(presenter);
         binding.relationshipRecycler.setAdapter(relationshipAdapter);
+        presenter.observeDashboardModel().observe(this, data -> setData());
         return binding.getRoot();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        setData();
     }
 
     public void setData() {

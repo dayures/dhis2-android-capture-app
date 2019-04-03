@@ -62,7 +62,8 @@ public class TeiDataDetailPresenterImpl implements TeiDataDetailContracts.TeiDat
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
                     .subscribe(
-                            view::setData, Timber::e)
+                            view::setData,
+                            Timber::d)
             );
 
             disposable.add(
@@ -70,7 +71,8 @@ public class TeiDataDetailPresenterImpl implements TeiDataDetailContracts.TeiDat
                             .subscribeOn(Schedulers.io())
                             .observeOn(AndroidSchedulers.mainThread())
                             .subscribe(
-                                    view.handleStatus(), Timber::e)
+                                    view.handleStatus(),
+                                    Timber::d)
 
             );
 
@@ -95,7 +97,8 @@ public class TeiDataDetailPresenterImpl implements TeiDataDetailContracts.TeiDat
                     DashboardProgramModel::new)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(view::setData, Timber::e)
+                    .subscribe(view::setData,
+                            Timber::d)
             );
         }
     }

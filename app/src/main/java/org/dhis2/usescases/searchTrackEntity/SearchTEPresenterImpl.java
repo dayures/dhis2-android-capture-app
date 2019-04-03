@@ -317,7 +317,8 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
                             .flatMap(list -> searchRepository.transformIntoModel(list, selectedProgram))
                             .map(this::parseSearchTeiModels)
                             .flatMap(list -> {
-                                if (currentPage == 1)
+                                int minAttrToSearch = selectedProgram.minAttributesRequiredToSearch() != null ? selectedProgram.minAttributesRequiredToSearch() : 0;
+                                if (currentPage == 1 && (minAttrToSearch <= queryData.size()))
                                     return searchRepository.trackedEntityInstancesToUpdate(trackedEntity.uid(), selectedProgram, queryData, list.size())
                                             .map(trackedEntityInstanceModels -> getHelperList(list, trackedEntityInstanceModels)).toFlowable(BackpressureStrategy.LATEST);
                                 else

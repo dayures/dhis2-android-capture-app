@@ -5,12 +5,13 @@ import android.content.Context;
 import org.dhis2.R;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.IndicatorsFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.NotesFragment;
-import org.dhis2.usescases.teiDashboard.dashboardfragments.RelationshipFragment;
+import org.dhis2.usescases.teiDashboard.dashboardfragments.relationships.RelationshipFragment;
 import org.jetbrains.annotations.NotNull;
 
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentStatePagerAdapter;
+
 
 /**
  * QUADRAM. Created by ppajuelo on 29/11/2017.
@@ -34,7 +35,7 @@ public class DashboardPagerTabletAdapter extends FragmentStatePagerAdapter {
     public Fragment getItem(int position) {
         switch (position) {
             case 1:
-                return RelationshipFragment.getInstance();
+                return RelationshipFragment.createInstance();
             case 2:
                 return NotesFragment.getInstance();
             default:

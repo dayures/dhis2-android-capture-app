@@ -128,6 +128,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
                     break;
             }
         });
+
         return binding.getRoot();
     }
 
@@ -138,6 +139,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
             presenter = ((TeiDashboardMobileActivity) getActivity()).getPresenter();
             binding.setPresenter(presenter);
             setData(presenter.getDashBoardData());
+            presenter.observeDashboardModel().observe(this, this::setData);
         }
     }
 
@@ -210,7 +212,7 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements DialogCli
                 if (hasCatComb && event.attributeOptionCombo() == null && !catComboShowed.contains(event)) {
                     presenter.getCatComboOptions(event);
                     catComboShowed.add(event);
-                }else if(!hasCatComb && event.attributeOptionCombo() == null)
+                } else if (!hasCatComb && event.attributeOptionCombo() == null)
                     presenter.setDefaultCatOptCombToEvent(event.uid());
             }
         };
