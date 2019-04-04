@@ -454,7 +454,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     @Override
     public Observable<List<Option>> searchOptions(String text, String idOptionSet,
                                                   int page, List<String> optionsToHide, List<String> optionsGroupsToHide) {
-        String pageQuery = String.format(Locale.US, " LIMIT %d,%d", page * 15, 15);
+        String pageQuery = String.format(Locale.US, "GROUP BY Option.uid ORDER BY sortOrder LIMIT %d,%d", page * 15, 15);
         String formattedOptionsToHide = QUOTE + join("','", optionsToHide) + QUOTE;
         String formattedOptionGroupsToHide = QUOTE + join("','", optionsGroupsToHide) + QUOTE;
 
