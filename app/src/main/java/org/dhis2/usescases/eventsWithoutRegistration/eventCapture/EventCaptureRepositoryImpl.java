@@ -87,7 +87,6 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
 
     private final FieldViewModelFactory fieldFactory;
 
-
     private static final List<String> SECTION_TABLES = Arrays.asList(
             EVENT_TABLE, PROGRAM_TABLE, PROGRAM_STAGE_TABLE, PROGRAM_STAGE_SECTION_TABLE);
     private static final String SELECT_SECTIONS = "SELECT\n" +
@@ -571,12 +570,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                                         return Flowable.fromCallable(ruleEngine.evaluate(event));
                                     else
                                         return Flowable.just(dataElementRules.get(lastUpdatedUid) != null ? dataElementRules.get(lastUpdatedUid) : new ArrayList<Rule>())
-                                                .flatMap(rules -> {
-                                                    if (!rules.isEmpty())
-                                                        return Flowable.fromCallable(ruleEngine.evaluate(event, rules));
-                                                    else
-                                                        return Flowable.just(new ArrayList<RuleEffect>());
-                                                });
+                                                .filter(rules -> !rules.isEmpty())
+                                                .flatMap(rules -> Flowable.fromCallable(ruleEngine.evaluate(event, rules)));
                                 })
                                 .map(Result::success)
                                 .onErrorReturn(error -> Result.failure(new Exception(error)))
