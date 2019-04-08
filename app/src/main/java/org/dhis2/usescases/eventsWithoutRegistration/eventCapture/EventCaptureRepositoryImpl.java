@@ -160,6 +160,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     private String lastUpdatedUid;
     private RuleEvent.Builder eventBuilder;
     private Map<String, List<Rule>> dataElementRules = new HashMap<>();
+    private List<ProgramRule> mandatoryRules;
 
     public EventCaptureRepositoryImpl(Context context, BriteDatabase briteDatabase, FormRepository formRepository, String eventUid, D2 d2) {
         this.briteDatabase = briteDatabase;
@@ -196,7 +197,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     }
 
     private List<ProgramRule> getRuleMandatoryRules(ProgramRule rule) {
-        List<ProgramRule> mandatoryRules = new ArrayList<>();
+        List<ProgramRule> mandatoryRulesAux = new ArrayList<>();
         for (ProgramRuleAction action : rule.programRuleActions()) {
             if ((action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
                     action.programRuleActionType() == ProgramRuleActionType.HIDESECTION ||
@@ -205,15 +206,15 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                     action.programRuleActionType() == ProgramRuleActionType.SHOWERROR ||
                     action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
                     action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION)
-                    && (!mandatoryRules.contains(rule))) {
-                mandatoryRules.add(rule);
+                    && (!mandatoryRulesAux.contains(rule))) {
+                mandatoryRulesAux.add(rule);
             }
         }
-        return mandatoryRules;
+        return mandatoryRulesAux;
     }
 
     private List<ProgramRule> getAllMandatoryRules(Event event, Iterator<ProgramRule> ruleIterator) {
-        List<ProgramRule> mandatoryRules = new ArrayList<>();
+        List<ProgramRule> mandatoryRulesAux = new ArrayList<>();
         while (ruleIterator.hasNext()) {
             ProgramRule rule = ruleIterator.next();
             if ((rule.programStage() != null && rule.programStage().uid().equals(event.programStage())) ||
@@ -221,15 +222,15 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 ruleIterator.remove();
             }
 
-            mandatoryRules.addAll(getRuleMandatoryRules(rule));
+            mandatoryRulesAux.addAll(getRuleMandatoryRules(rule));
         }
-        return mandatoryRules;
+        return mandatoryRulesAux;
     }
 
     private void loadDataElementRules(Event event) {
         List<ProgramRule> rules = d2.programModule().programRules.byProgramUid().eq(event.program()).withAllChildren().get();
         Iterator<ProgramRule> ruleIterator = rules.iterator();
-        List<ProgramRule> mandatoryRules = getAllMandatoryRules(event, ruleIterator);
+        List<ProgramRule> mandatoryRulesAux = getAllMandatoryRules(event, ruleIterator);
 
         List<ProgramRuleVariable> variables = d2.programModule().programRuleVariables
                 .byProgramUid().eq(event.program())
@@ -242,7 +243,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 variableIterator.remove();
             }
         }
-        addDataElementRules(variables, mandatoryRules, rules);
+        addDataElementRules(variables, mandatoryRulesAux, rules);
     }
 
     private void addDataElementRules(List<ProgramRuleVariable> variables, List<ProgramRule> mandatoryRules, List<ProgramRule> rules) {
@@ -253,7 +254,9 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 if (rule.condition().contains(variable.displayName()) || actionsContainsDE(rule.programRuleActions(), variable.displayName())) {
                     if (dataElementRules.get(variable.dataElement().uid()) == null)
                         dataElementRules.put(variable.dataElement().uid(), trasformToRule(mandatoryRules));
-                    dataElementRules.get(variable.dataElement().uid()).add(trasformToRule(rule));
+                    Rule fRule = trasformToRule(rule);
+                    if (!dataElementRules.get(variable.dataElement().uid()).contains(fRule))
+                        dataElementRules.get(variable.dataElement().uid()).add(fRule);
                 }
             }
         }
@@ -570,6 +573,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                                         return Flowable.fromCallable(ruleEngine.evaluate(event));
                                     else
                                         return Flowable.just(dataElementRules.get(lastUpdatedUid) != null ? dataElementRules.get(lastUpdatedUid) : new ArrayList<Rule>())
+                                                .map(rules -> rules.isEmpty() ? trasformToRule(mandatoryRules) : rules)
                                                 .filter(rules -> !rules.isEmpty())
                                                 .flatMap(rules -> Flowable.fromCallable(ruleEngine.evaluate(event, rules)));
                                 })

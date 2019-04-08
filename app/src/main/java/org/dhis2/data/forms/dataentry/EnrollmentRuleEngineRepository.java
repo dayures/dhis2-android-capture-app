@@ -1,15 +1,11 @@
 package org.dhis2.data.forms.dataentry;
 
-import android.database.Cursor;
-
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.FormRepository;
-import org.dhis2.data.forms.RuleHelper;
+import org.dhis2.data.forms.RulesRepository;
 import org.dhis2.utils.Result;
-import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.D2;
-import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.option.Option;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
@@ -22,23 +18,18 @@ import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.rules.models.Rule;
+import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleAttributeValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEnrollment;
 
-import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import javax.annotation.Nonnull;
-
 import androidx.annotation.NonNull;
-import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 import static android.text.TextUtils.isEmpty;
@@ -94,45 +85,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     private Map<String, RuleAttributeValue> ruleAttributeValueMap;
     private Map<String, List<Rule>> attributeRules = new HashMap<>();
     private String lastUpdatedAttr = null;
-
-    private String getAttrValue(TrackedEntityAttributeValue attributeValue) {
-        String value = attributeValue.value();
-        TrackedEntityAttribute attr = d2.trackedEntityModule().trackedEntityAttributes.uid(attributeValue.trackedEntityAttribute()).withAllChildren().get();
-        if (attr.optionSet() != null) {
-            List<Option> options = d2.optionModule().optionSets.uid(attr.optionSet().uid()).withAllChildren().get().options();
-            ProgramRuleVariable ruleVariable = attrRuleVariableMap.get(attr.uid());
-            if (ruleVariable != null && (ruleVariable.useCodeForOptionSet() == null || !ruleVariable.useCodeForOptionSet())) {
-                for (Option option : options) {
-                    if (value.equals(option.code()))
-                        value = option.displayName();
-                }
-            }
-        }
-
-        return value;
-    }
-
-    private Map<String, String> getAttrValueMap(List<TrackedEntityAttributeValue> attributeValueList, Program program) {
-        Map<String, String> attrValueMap = new HashMap<>();
-        for (TrackedEntityAttributeValue attributeValue : attributeValueList) {
-            String uid = attributeValue.trackedEntityAttribute();
-            String value = getAttrValue(attributeValue);
-            attrValueMap.put(uid, value);
-        }
-        for (ProgramTrackedEntityAttribute prgAttr : program.programTrackedEntityAttributes()) {
-            if (!attrValueMap.containsKey(prgAttr.uid()))
-                attrValueMap.put(prgAttr.uid(), "");
-        }
-        return attrValueMap;
-    }
-
-    private void getAttrRuleVariableMap(Program program) {
-        attrRuleVariableMap = new HashMap<>();
-        for (ProgramRuleVariable ruleVariable : program.programRuleVariables()) {
-            if (ruleVariable.trackedEntityAttribute() != null)
-                attrRuleVariableMap.put(ruleVariable.trackedEntityAttribute().uid(), ruleVariable);
-        }
-    }
+    private List<ProgramRule> mandatoryRules;
 
     public EnrollmentRuleEngineRepository(
             @NonNull BriteDatabase briteDatabase,
@@ -151,9 +104,35 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                 .byTrackedEntityInstance().eq(enrollment.trackedEntityInstance())
                 .withAllChildren().get();
 
-        getAttrRuleVariableMap(program);
+        attrRuleVariableMap = new HashMap<>();
+        for (ProgramRuleVariable ruleVariable : program.programRuleVariables()) {
+            if (ruleVariable.trackedEntityAttribute() != null)
+                attrRuleVariableMap.put(ruleVariable.trackedEntityAttribute().uid(), ruleVariable);
+        }
 
-        Map<String, String> attrValueMap = getAttrValueMap(attributeValueList, program);
+        Map<String, String> attrValueMap = new HashMap<>();
+        for (TrackedEntityAttributeValue attributeValue : attributeValueList) {
+            String uid = attributeValue.trackedEntityAttribute();
+            String value = attributeValue.value();
+            TrackedEntityAttribute attr = d2.trackedEntityModule().trackedEntityAttributes.uid(attributeValue.trackedEntityAttribute()).withAllChildren().get();
+            if (attr.optionSet() != null) {
+                List<Option> options = d2.optionModule().optionSets.uid(attr.optionSet().uid()).withAllChildren().get().options();
+                ProgramRuleVariable ruleVariable = attrRuleVariableMap.get(attr.uid());
+                if (ruleVariable != null && (ruleVariable.useCodeForOptionSet() == null || !ruleVariable.useCodeForOptionSet())) {
+                    for (Option option : options) {
+                        if (value.equals(option.code()))
+                            value = option.displayName();
+                    }
+                }
+            }
+
+            attrValueMap.put(uid, value);
+        }
+
+        for (ProgramTrackedEntityAttribute prgAttr : program.programTrackedEntityAttributes()) {
+            if (!attrValueMap.containsKey(prgAttr.uid()))
+                attrValueMap.put(prgAttr.uid(), "");
+        }
 
         initRuleAttributeMap(attrValueMap);
 
@@ -167,10 +146,13 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                 .programName(program.displayName());
 
         loadAttrRules(program.uid());
+
     }
 
-    private List<ProgramRule> getMandatoryRules(Iterator<ProgramRule> ruleIterator) {
-        List<ProgramRule> mandatoryRules = new ArrayList<>();
+    private void loadAttrRules(String programUid) {
+        List<ProgramRule> rules = d2.programModule().programRules.byProgramUid().eq(programUid).withAllChildren().get();
+        mandatoryRules = new ArrayList<>();
+        Iterator<ProgramRule> ruleIterator = rules.iterator();
         while (ruleIterator.hasNext()) {
             ProgramRule rule = ruleIterator.next();
             if (rule.condition() == null)
@@ -183,31 +165,10 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                         action.programRuleActionType() == ProgramRuleActionType.SHOWERROR ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION)
-                        && (!mandatoryRules.contains(rule))) {
+                        && (!mandatoryRules.contains(rule)))
                     mandatoryRules.add(rule);
-                }
         }
-        return mandatoryRules;
-    }
 
-    private void getAttributeRules(List<ProgramRule> rules, List<ProgramRuleVariable> variables, List<ProgramRule> mandatoryRules) {
-        for (ProgramRuleVariable variable : variables) {
-            if (variable.trackedEntityAttribute() != null && !attributeRules.containsKey(variable.trackedEntityAttribute().uid()))
-                attributeRules.put(variable.trackedEntityAttribute().uid(), RuleHelper.trasformToRule(mandatoryRules));
-            for (ProgramRule rule : rules) {
-                if (rule.condition().contains(variable.displayName()) || actionsContainsAttr(rule.programRuleActions(), variable.displayName())) {
-                    if (attributeRules.get(variable.trackedEntityAttribute().uid()) == null)
-                        attributeRules.put(variable.trackedEntityAttribute().uid(), RuleHelper.trasformToRule(mandatoryRules));
-                    attributeRules.get(variable.trackedEntityAttribute().uid()).add(RuleHelper.trasformToRule(rule));
-                }
-            }
-        }
-    }
-
-    private void loadAttrRules(String programUid) {
-        List<ProgramRule> rules = d2.programModule().programRules.byProgramUid().eq(programUid).withAllChildren().get();
-        Iterator<ProgramRule> ruleIterator = rules.iterator();
-        List<ProgramRule> mandatoryRules = getMandatoryRules(ruleIterator);
         List<ProgramRuleVariable> variables = d2.programModule().programRuleVariables
                 .byProgramUid().eq(programUid)
                 .withAllChildren().get();
@@ -217,7 +178,60 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
             if (variable.trackedEntityAttribute() == null)
                 variableIterator.remove();
         }
-        getAttributeRules(rules, variables, mandatoryRules);
+        for (ProgramRuleVariable variable : variables) {
+            if (variable.trackedEntityAttribute() != null && !attributeRules.containsKey(variable.trackedEntityAttribute().uid()))
+                attributeRules.put(variable.trackedEntityAttribute().uid(), trasformToRule(mandatoryRules));
+            for (ProgramRule rule : rules) {
+                if (rule.condition().contains(variable.displayName()) || actionsContainsAttr(rule.programRuleActions(), variable.displayName())) {
+                    if (attributeRules.get(variable.trackedEntityAttribute().uid()) == null)
+                        attributeRules.put(variable.trackedEntityAttribute().uid(), trasformToRule(mandatoryRules));
+                    attributeRules.get(variable.trackedEntityAttribute().uid()).add(trasformToRule(rule));
+                }
+            }
+        }
+
+    }
+
+    private Rule trasformToRule(ProgramRule rule) {
+        return Rule.create(
+                rule.programStage() != null ? rule.programStage().uid() : null,
+                rule.priority(),
+                rule.condition(),
+                transformToRuleAction(rule.programRuleActions()),
+                rule.displayName());
+    }
+
+    private List<Rule> trasformToRule(List<ProgramRule> rules) {
+        List<Rule> finalRules = new ArrayList<>();
+        for (ProgramRule rule : rules) {
+            finalRules.add(Rule.create(
+                    rule.programStage() != null ? rule.programStage().uid() : null,
+                    rule.priority(),
+                    rule.condition(),
+                    transformToRuleAction(rule.programRuleActions()),
+                    rule.displayName()));
+        }
+        return finalRules;
+    }
+
+    private List<RuleAction> transformToRuleAction(List<ProgramRuleAction> programRuleActions) {
+        List<RuleAction> ruleActions = new ArrayList<>();
+        if (programRuleActions != null)
+            for (ProgramRuleAction programRuleAction : programRuleActions)
+                ruleActions.add(
+                        RulesRepository.create(
+                                programRuleAction.programRuleActionType(),
+                                programRuleAction.programStage() != null ? programRuleAction.programStage().uid() : null,
+                                programRuleAction.programStageSection() != null ? programRuleAction.programStageSection().uid() : null,
+                                programRuleAction.trackedEntityAttribute() != null ? programRuleAction.trackedEntityAttribute().uid() : null,
+                                programRuleAction.dataElement() != null ? programRuleAction.dataElement().uid() : null,
+                                programRuleAction.location(),
+                                programRuleAction.content(),
+                                programRuleAction.data(),
+                                programRuleAction.option() != null ? programRuleAction.option().uid() : null,
+                                programRuleAction.optionGroup() != null ? programRuleAction.optionGroup().uid() : null)
+                );
+        return ruleActions;
     }
 
     private boolean actionsContainsAttr(List<ProgramRuleAction> programRuleActions, String variableName) {
@@ -265,72 +279,12 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                                 return Flowable.fromCallable(ruleEngine.evaluate(enrollment));
                             else
                                 return Flowable.just(attributeRules.get(lastUpdatedAttr) != null ? attributeRules.get(lastUpdatedAttr) : new ArrayList<Rule>())
+                                        .map(rules -> rules.isEmpty() ? trasformToRule(mandatoryRules) : rules)
                                         .filter(rules -> !rules.isEmpty())
                                         .flatMap(rules -> Flowable.fromCallable(ruleEngine.evaluate(enrollment, rules)));
-                           /* else
-                            if (attributeRules.get(lastUpdatedAttr) != null && !attributeRules.get(lastUpdatedAttr).isEmpty())
-                                return Flowable.fromCallable(ruleEngine.evaluate(enrollment, getRulesFor(lastUpdatedAttr)));
-                            else
-                                return Flowable.just(new ArrayList<RuleEffect>());*/
                         })
                         .map(Result::success)
                         .onErrorReturn(error -> Result.failure(new Exception(error)))
                 );
-    }
-
-    private List<Rule> getRulesFor(String lastUpdatedAttr) {
-        return attributeRules.get(lastUpdatedAttr);
-    }
-
-    @NonNull
-    private Flowable<RuleEnrollment> queryEnrollment(
-            @NonNull List<RuleAttributeValue> attributeValues) {
-        return briteDatabase.createQuery(SqlConstants.ENROLLMENT_TABLE, QUERY_ENROLLMENT, enrollmentUid)
-                .mapToOne(cursor -> {
-                    Date enrollmentDate = parseDate(cursor.getString(2));
-                    Date incidentDate = cursor.isNull(1) ?
-                            enrollmentDate : parseDate(cursor.getString(1));
-                    RuleEnrollment.Status status = RuleEnrollment.Status
-                            .valueOf(cursor.getString(3));
-                    String orgUnit = cursor.getString(4);
-                    String programName = cursor.getString(5);
-                    String ouCode = getOrgUnitCode(orgUnit);
-
-                    return RuleEnrollment.create(cursor.getString(0),
-                            incidentDate, enrollmentDate, status, orgUnit, ouCode, attributeValues, programName);
-                }).toFlowable(BackpressureStrategy.LATEST);
-    }
-
-    @NonNull
-    private Flowable<List<RuleAttributeValue>> queryAttributeValues() {
-        return briteDatabase.createQuery(Arrays.asList(SqlConstants.ENROLLMENT_TABLE,
-                SqlConstants.TE_ATTR_VALUE_TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid)
-                .mapToList(cursor -> {
-                            String value = cursor.getString(1);
-                            boolean useCode = cursor.getInt(2) == 1;
-                            String optionCode = cursor.getString(3);
-                            String optionName = cursor.getString(4);
-                            if (!isEmpty(optionCode) && !isEmpty(optionName))
-                                value = useCode ? optionCode : optionName;
-                            return RuleAttributeValue.create(cursor.getString(0), value);
-                        }
-                ).toFlowable(BackpressureStrategy.LATEST);
-    }
-
-    @NonNull
-    private static Date parseDate(@NonNull String date) throws ParseException {
-        return BaseIdentifiableObject.DATE_FORMAT.parse(date);
-    }
-
-    @Nonnull
-    private String getOrgUnitCode(String orgUnitUid) {
-        String ouCode = "";
-        try (Cursor cursor = briteDatabase.query("SELECT code FROM OrganisationUnit WHERE uid = ? LIMIT 1", orgUnitUid)) {
-            if (cursor != null && cursor.moveToFirst()) {
-                ouCode = cursor.getString(0);
-            }
-        }
-
-        return ouCode;
     }
 }

@@ -419,6 +419,18 @@ public final class RulesRepository {
                 this.mimeType = RuleValueType.TEXT;
             }
         }
+
+        @NonNull
+        private static RuleValueType convertType(@NonNull String type) {
+            ValueType valueType = ValueType.valueOf(type);
+            if (valueType.isInteger() || valueType.isNumeric()) {
+                return RuleValueType.NUMERIC;
+            } else if (valueType.isBoolean()) {
+                return RuleValueType.BOOLEAN;
+            } else {
+                return RuleValueType.TEXT;
+            }
+        }
     }
 
     @NonNull
@@ -457,18 +469,6 @@ public final class RulesRepository {
         if (cursor.moveToFirst())
             constants.put(uid, value);
         return constants;
-    }
-
-    @NonNull
-    private static RuleValueType convertType(@NonNull String type) {
-        ValueType valueType = ValueType.valueOf(type);
-        if (valueType.isInteger() || valueType.isNumeric()) {
-            return RuleValueType.NUMERIC;
-        } else if (valueType.isBoolean()) {
-            return RuleValueType.BOOLEAN;
-        } else {
-            return RuleValueType.TEXT;
-        }
     }
 
     @NonNull

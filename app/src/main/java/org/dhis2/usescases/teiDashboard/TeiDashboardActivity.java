@@ -6,7 +6,6 @@ import org.dhis2.App;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.utils.Constants;
 import org.hisp.dhis.android.core.category.CategoryCombo;
-import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
 
@@ -41,13 +40,6 @@ public class TeiDashboardActivity extends ActivityGlobalAbstract implements TeiD
         super.onCreate(savedInstanceState);
 
     }
-
-   /* @Override
-    protected void onSaveInstanceState(@NotNull Bundle outState) {
-        outState.putString("UID", teiUid);
-        outState.putString("PROGRAM_ID", programUid);
-        super.onSaveInstanceState(outState);
-    }*/
 
     @Override
     public void init(String teUid, String programUid) {
