@@ -446,6 +446,36 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
 
     @Override
     public void subscribeToIndicators(IndicatorsFragment indicatorsFragment) {
+        compositeDisposable.add(
+                dashboardRepository.getIndicators(programUid)
+                        .map(indicators ->
+                                Observable.fromIterable(indicators)
+                                        .filter(indicator -> indicator.displayInForm() != null && indicator.displayInForm())
+                                        .map(indicator -> {
+                                            String indicatorValue = d2.programModule().programIndicatorEngine.getProgramIndicatorValue(
+                                                    dashboardProgramModel.getCurrentEnrollment().uid(),
+                                                    null,
+                                                    indicator.uid());
+                                            return Pair.create(indicator, indicatorValue == null ? "" : indicatorValue);
+                                        })
+                                        .filter(pair -> !pair.val1().isEmpty())
+                                        .flatMap(pair -> dashboardRepository.getLegendColorForIndicator(pair.val0(), pair.val1()))
+                                        .toList()
+                        )
+                        .flatMap(Single::toFlowable)
+                        .flatMap(indicators -> ruleRepository.calculate().map(this::applyRuleEffects)
+                                .map(ruleIndicators -> {
+                                    indicators.addAll(ruleIndicators);
+                                    return indicators;
+                                }))
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(
+                                indicatorsFragment.swapIndicators(),
+                                Timber::d
+                        )
+        );
+        /*
         compositeDisposable.add(dashboardRepository.getIndicators(programUid)
                 .map(indicators ->
                         Observable.fromIterable(indicators)
@@ -474,14 +504,17 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
                 .subscribe(
                         calcResult -> applyRuleEffects(calcResult, indicatorsFragment),
                         Timber::e
-                ));
+                ));*/
     }
 
-    private void applyRuleEffects(Result<RuleEffect> calcResult, IndicatorsFragment indicatorsFragment) {
+
+    private List<Trio<ProgramIndicator, String, String>> applyRuleEffects(Result<RuleEffect> calcResult) {
+
+        List<Trio<ProgramIndicator, String, String>> indicators = new ArrayList<>();
 
         if (calcResult.error() != null) {
             Timber.e(calcResult.error());
-            return;
+            return new ArrayList<>();
         }
 
         for (RuleEffect ruleEffect : calcResult.items()) {
@@ -490,14 +523,16 @@ public class TeiDashboardPresenterImpl implements TeiDashboardContracts.TeiDashb
                 Trio<ProgramIndicator, String, String> indicator = Trio.create(
                         ProgramIndicator.builder().displayName(((RuleActionDisplayKeyValuePair) ruleAction).content()).build(),
                         ruleEffect.data(), "");
-                indicatorsFragment.addIndicator(indicator);
+                indicators.add(indicator);
             } else if (ruleAction instanceof RuleActionDisplayText) {
                 Trio<ProgramIndicator, String, String> indicator = Trio.create(
                         ProgramIndicator.builder().displayName(((RuleActionDisplayText) ruleAction).content()).build(),
                         ruleEffect.data(), "");
-                indicatorsFragment.addIndicator(indicator);
+                indicators.add(indicator);
             }
         }
+
+        return indicators;
     }
 
 
