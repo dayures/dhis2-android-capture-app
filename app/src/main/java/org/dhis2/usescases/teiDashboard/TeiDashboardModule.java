@@ -37,7 +37,7 @@ public class TeiDashboardModule {
 
     @Provides
     @PerActivity
-    TeiDashboardContracts.TeiDashboardView provideView(TeiDashboardActivity mobileActivity) {
+    TeiDashboardContracts.TeiDashboardView provideView(TeiDashboardMobileActivity mobileActivity) {
         return mobileActivity;
     }
 

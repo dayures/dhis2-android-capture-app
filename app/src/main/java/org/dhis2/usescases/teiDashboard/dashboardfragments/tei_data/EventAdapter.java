@@ -1,11 +1,10 @@
-package org.dhis2.usescases.teiDashboard.adapters;
+package org.dhis2.usescases.teiDashboard.dashboardfragments.tei_data;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import org.dhis2.R;
 import org.dhis2.databinding.ItemEventBinding;
-import org.dhis2.usescases.teiDashboard.TeiDashboardContracts;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.program.Program;
@@ -19,6 +18,7 @@ import androidx.databinding.DataBindingUtil;
 import androidx.recyclerview.widget.RecyclerView;
 import timber.log.Timber;
 
+
 /**
  * QUADRAM. Created by ppajuelo on 29/11/2017.
  */
@@ -26,12 +26,12 @@ import timber.log.Timber;
 public class EventAdapter extends RecyclerView.Adapter<EventViewHolder> {
 
     private final List<ProgramStage> programStageList;
-    private final TeiDashboardContracts.TeiDashboardPresenter presenter;
+    private final TEIDataContracts.Presenter presenter;
     private final Enrollment enrollment;
     private final Program program;
     private List<Event> events;
 
-    public EventAdapter(TeiDashboardContracts.TeiDashboardPresenter presenter, List<ProgramStage> programStageList,
+    public EventAdapter(TEIDataContracts.Presenter presenter, List<ProgramStage> programStageList,
                         List<Event> eventList, Enrollment currentEnrollment, Program currentProgram) {
         this.events = eventList;
         this.enrollment = currentEnrollment;

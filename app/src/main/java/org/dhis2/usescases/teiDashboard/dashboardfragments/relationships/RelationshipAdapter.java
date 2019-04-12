@@ -1,21 +1,20 @@
-package org.dhis2.usescases.teiDashboard.adapters;
+package org.dhis2.usescases.teiDashboard.dashboardfragments.relationships;
 
-import androidx.databinding.DataBindingUtil;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import org.dhis2.R;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.databinding.ItemRelationshipBinding;
-import org.dhis2.usescases.teiDashboard.TeiDashboardContracts;
-
 import org.hisp.dhis.android.core.relationship.Relationship;
 import org.hisp.dhis.android.core.relationship.RelationshipType;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * QUADRAM. Created by ppajuelo on 05/12/2017.
@@ -23,10 +22,10 @@ import java.util.List;
 
 public class RelationshipAdapter extends RecyclerView.Adapter<RelationshipViewHolder> {
 
-    private TeiDashboardContracts.TeiDashboardPresenter presenter;
+    private RelationshipContracts.Presenter presenter;
     private List<Pair<Relationship, RelationshipType>> relationships;
 
-    public RelationshipAdapter(TeiDashboardContracts.TeiDashboardPresenter presenter) {
+    public RelationshipAdapter(RelationshipContracts.Presenter presenter) {
         this.presenter = presenter;
         this.relationships = new ArrayList<>();
     }

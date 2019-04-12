@@ -9,7 +9,7 @@
 
         <variable
             name="presenter"
-            type="org.dhis2.usescases.teiDashboard.TeiDashboardContracts.TeiDashboardPresenter" />
+            type="org.dhis2.usescases.teiDashboard.dashboardfragments.tei_data.TEIDataContracts.Presenter" />
 
         <variable
             name="program"
@@ -31,9 +31,9 @@
             android:layout_height="0dp"
             android:background="?attr/colorPrimaryLight"
             app:layout_constraintBottom_toBottomOf="@id/enrollmentDateLabel"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:background="?attr/colorPrimaryLight"
-            app:layout_constraintStart_toStartOf="parent"
             tools:ignore="ContentDescription"
             tools:src="@drawable/ic_program_default" />
 
@@ -74,8 +74,8 @@
             android:layout_alignParentBottom="true"
             android:layout_marginStart="7.8dp"
             android:ellipsize="end"
-            android:paddingBottom="5dp"
             android:maxLines="1"
+            android:paddingBottom="5dp"
             android:text="@{program.enrollmentDateLabel()}"
             android:textColor="@color/text_black_333"
             android:textSize="12sp"
@@ -94,8 +94,8 @@
             android:textColor="@color/text_black_333"
             android:textSize="12sp"
             app:date="@{enrollment.enrollmentDate()}"
-            app:layout_constraintTop_toTopOf="@id/enrollmentDateLabel"
             app:layout_constraintEnd_toStartOf="@id/overdue"
+            app:layout_constraintTop_toTopOf="@id/enrollmentDateLabel"
             tools:text="2018-04-09" />
 
 
@@ -121,15 +121,15 @@
             android:layout_height="match_parent"
             android:layout_margin="10dp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"/>
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageView
             android:id="@+id/overdue"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_marginBottom="5dp"
-            android:layout_marginEnd="10dp"
             android:layout_marginStart="15dp"
+            android:layout_marginEnd="10dp"
+            android:layout_marginBottom="5dp"
             android:onClick="@{()->presenter.showDescription(program.displayDescription())}"
             android:visibility="@{program.displayDescription()!=null ? View.VISIBLE : View.GONE}"
             app:layout_constraintBottom_toBottomOf="parent"

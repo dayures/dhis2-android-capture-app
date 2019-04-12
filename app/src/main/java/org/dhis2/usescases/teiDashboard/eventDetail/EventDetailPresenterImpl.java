@@ -182,19 +182,52 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
 
     @Override
     public void eventStatus(View buttonView, Event eventModel, ProgramStage stageModel) {
-
         if (stageModel.access().data().write()) {
-            FormFragment formFragment = (FormFragment) view.getAbstractActivity().getSupportFragmentManager().getFragments().get(0);
-            formFragment.getDatesLayout().getRootView().requestFocus();
-            new Handler().postDelayed(() -> {
-                if (formFragment.hasErrorOnComple() != null) { //Checks if there is an error action to display
-                    view.showInfoDialog(view.getContext().getString(R.string.error), formFragment.hasErrorOnComple().content());
-                } else if (formFragment.hasError() != null) {
-                    view.showInfoDialog(view.getContext().getString(R.string.error), formFragment.hasError().content());
-                } else {
-                    checkForm(formFragment, eventModel);
-                }
-            }, 1500);
+            if (eventModel.status() == EventStatus.OVERDUE)
+                updateEventStatus(eventModel);
+            else {
+                FormFragment formFragment = (FormFragment) view.getAbstractActivity().getSupportFragmentManager().getFragments().get(0);
+                formFragment.getDatesLayout().getRootView().requestFocus();
+                new Handler().postDelayed(() -> {
+                    if (formFragment.hasErrorOnComple() != null) { //Checks if there is an error action to display
+                        view.showInfoDialog(view.getContext().getString(R.string.error), formFragment.hasErrorOnComple().content());
+                    } else if (formFragment.hasError() != null) {
+                        view.showInfoDialog(view.getContext().getString(R.string.error), formFragment.hasError().content());
+                    } else {
+                        if (formFragment.isAdded() && formFragment.getContext() != null) {
+                            List<Fragment> sectionFragments = formFragment.getChildFragmentManager().getFragments();
+                            boolean mandatoryOk = true;
+                            boolean hasError = false;
+                            for (Fragment dataEntryFragment : sectionFragments) {
+                                mandatoryOk = mandatoryOk && ((DataEntryFragment) dataEntryFragment).checkMandatory();
+                                hasError = ((DataEntryFragment) dataEntryFragment).checkErrors();
+                            }
+                            if (mandatoryOk && !hasError) {
+
+                                if (!isEmpty(formFragment.getMessageOnComplete())) {
+                                    final AlertDialog dialog = view.showInfoDialog(view.getContext().getString(R.string.warning_error_on_complete_title), formFragment.getMessageOnComplete(), new OnDialogClickListener() {
+                                        @Override
+                                        public void onPossitiveClick(AlertDialog alertDialog) {
+                                            updateEventStatus(eventModel);
+                                        }
+
+                                        @Override
+                                        public void onNegativeClick(AlertDialog alertDialog) {
+
+                                        }
+                                    });
+                                    dialog.show();
+                                } else {
+                                    updateEventStatus(eventModel);
+                                }
+                            } else if (!mandatoryOk)
+                                view.showInfoDialog(view.getContext().getString(R.string.unable_to_complete), view.getAbstractActivity().getString(R.string.missing_mandatory_fields));
+                            else
+                                view.showInfoDialog(view.getContext().getString(R.string.unable_to_complete), view.getAbstracContext().getString(R.string.field_errors));
+                        }
+                    }
+                }, 1500);
+            }
         } else
             view.displayMessage(null);
     }
@@ -232,7 +265,7 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
         OrgUnitDialog orgUnitDialog = OrgUnitDialog.getInstance().setMultiSelection(false);
         orgUnitDialog.setTitle("Event Org Unit")
                 .setPossitiveListener(v -> {
-                    if(orgUnitDialog.getSelectedOrgUnitModel() == null)
+                    if (orgUnitDialog.getSelectedOrgUnitModel() == null)
                         orgUnitDialog.dismiss();
                     view.setSelectedOrgUnit(orgUnitDialog.getSelectedOrgUnitModel());
                     orgUnitDialog.dismiss();
@@ -258,9 +291,20 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
     public void setDate() {
 
         if (eventDetailModel.getProgramStage().periodType() == null || eventDetailModel.getProgramStage().periodType() == PeriodType.Daily)
-            openDailySelector();
+            openDailySelector(false);
         else
-            openPeriodSelector();
+            openPeriodSelector(false);
+
+
+    }
+
+    @Override
+    public void setDueDate() {
+
+        if (eventDetailModel.getProgramStage().periodType() == null || eventDetailModel.getProgramStage().periodType() == PeriodType.Daily)
+            openDailySelector(true);
+        else
+            openPeriodSelector(true);
 
 
     }
@@ -275,8 +319,10 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
         eventDetailRepository.saveCatOption(selectedOption);
     }
 
-    private void openDailySelector() {
+    private void openDailySelector(boolean futureOnly) {
         Calendar c = Calendar.getInstance();
+        if (futureOnly)
+            c.add(Calendar.DAY_OF_YEAR, 1);
         int year = c.get(Calendar.YEAR);
         int month = c.get(Calendar.MONTH);
         int day = c.get(Calendar.DAY_OF_MONTH);
@@ -300,11 +346,14 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
                 year,
                 month,
                 day);
-        if (eventDetailModel.getEventModel().status() != EventStatus.SCHEDULE) {
+        if (eventDetailModel.getEventModel().status() != EventStatus.SCHEDULE && eventDetailModel.getEventModel().status() != EventStatus.OVERDUE) {
             dateDialog.getDatePicker().setMaxDate(System.currentTimeMillis());
         }
 
-        if (eventDetailModel.getProgram().expiryPeriodType() != null) {
+        if (futureOnly)
+            dateDialog.getDatePicker().setMinDate(c.getTimeInMillis());
+
+        if (eventDetailModel.getProgram().expiryPeriodType() != null) {// eventDetailModel.orgUnitOpeningDate() != null) {
             Date minDate = DateUtils.getInstance().expDate(null,
                     eventDetailModel.getProgram().expiryDays() != null ? eventDetailModel.getProgram().expiryDays() : 0,
                     eventDetailModel.getProgram().expiryPeriodType());
@@ -319,7 +368,7 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
         dateDialog.show();
     }
 
-    private void openPeriodSelector() {
+    private void openPeriodSelector(Boolean futureOnly) {
         PeriodDialog periodDialog = new PeriodDialog()
                 .setPeriod(eventDetailModel.getProgramStage().periodType())
                 .setPossitiveListener(selectedDate -> {
@@ -331,12 +380,16 @@ public class EventDetailPresenterImpl implements EventDetailContracts.EventDetai
                     }
                 });
 
-        if (eventDetailModel.getEventModel().status() != EventStatus.SCHEDULE) {
+        if (eventDetailModel.getEventModel().status() != EventStatus.SCHEDULE && eventDetailModel.getEventModel().status() != EventStatus.OVERDUE) {
             periodDialog.setMaxDate(Calendar.getInstance().getTime());
         }
 
         if (eventDetailModel.orgUnitOpeningDate() != null) {
             periodDialog.setMinDate(eventDetailModel.orgUnitOpeningDate());
+        }
+
+        if (futureOnly && eventDetailModel.orgUnitOpeningDate().before(Calendar.getInstance().getTime())) {
+            periodDialog.setMinDate(Calendar.getInstance().getTime());
         }
 
         if (eventDetailModel.orgUnitClosingDate() != null)

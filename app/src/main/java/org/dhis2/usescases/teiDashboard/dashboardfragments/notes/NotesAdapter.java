@@ -1,4 +1,4 @@
-package org.dhis2.usescases.teiDashboard.adapters;
+package org.dhis2.usescases.teiDashboard.dashboardfragments.notes;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;

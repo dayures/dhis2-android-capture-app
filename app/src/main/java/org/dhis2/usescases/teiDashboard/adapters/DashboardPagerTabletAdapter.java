@@ -1,10 +1,11 @@
 package org.dhis2.usescases.teiDashboard.adapters;
 
 import android.content.Context;
+import android.os.Parcelable;
 
 import org.dhis2.R;
-import org.dhis2.usescases.teiDashboard.dashboardfragments.IndicatorsFragment;
-import org.dhis2.usescases.teiDashboard.dashboardfragments.NotesFragment;
+import org.dhis2.usescases.teiDashboard.dashboardfragments.indicators.IndicatorsFragment;
+import org.dhis2.usescases.teiDashboard.dashboardfragments.notes.NotesFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.relationships.RelationshipFragment;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,16 +31,22 @@ public class DashboardPagerTabletAdapter extends FragmentStatePagerAdapter {
         this.context = context;
     }
 
+    @Override
+    public Parcelable saveState() {
+        // Do Nothing
+        return null;
+    }
+
     @NotNull
     @Override
     public Fragment getItem(int position) {
         switch (position) {
             case 1:
-                return RelationshipFragment.createInstance();
+                return new RelationshipFragment();
             case 2:
-                return NotesFragment.getInstance();
+                return new NotesFragment();
             default:
-                return IndicatorsFragment.getInstance();
+                return new IndicatorsFragment();
         }
     }
 

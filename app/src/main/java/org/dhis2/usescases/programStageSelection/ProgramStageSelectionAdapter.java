@@ -4,9 +4,7 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import org.dhis2.R;
-import org.dhis2.data.tuples.Pair;
 import org.dhis2.databinding.ItemProgramStageBinding;
-import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.program.ProgramStage;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,33 +21,33 @@ import androidx.recyclerview.widget.RecyclerView;
 public class ProgramStageSelectionAdapter extends RecyclerView.Adapter<ProgramStageSelectionViewHolder> {
 
     private ProgramStageSelectionContract.ProgramStageSelectionPresenter presenter;
-    private List<Pair<ProgramStage, ObjectStyle>> programStageModels;
+    private List<ProgramStage> programStages;
 
     ProgramStageSelectionAdapter(@NonNull ProgramStageSelectionContract.ProgramStageSelectionPresenter presenter) {
         this.presenter = presenter;
     }
 
-    public void setProgramStageModels(List<Pair<ProgramStage, ObjectStyle>> programStageModels) {
-        this.programStageModels = programStageModels;
+    public void setProgramStages(List<ProgramStage> programStages) {
+        this.programStages = programStages;
     }
 
     @NotNull
     @Override
-    public ProgramStageSelectionViewHolder onCreateViewHolder(@NotNull ViewGroup parent, int viewType) {
+    public ProgramStageSelectionViewHolder onCreateViewHolder(@NotNull ViewGroup parent,
+                                                              int viewType) {
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         ItemProgramStageBinding binding = DataBindingUtil.inflate(inflater, R.layout.item_program_stage, parent, false);
         return new ProgramStageSelectionViewHolder(binding);
     }
 
     @Override
-    public void onBindViewHolder(@NotNull ProgramStageSelectionViewHolder holder, int position) {
-        ProgramStage programStageModel = programStageModels.get(position).val0();
-        ObjectStyle objectStyleModel = programStageModels.get(position).val1();
-        holder.bind(presenter, programStageModel, objectStyleModel);
+    public void onBindViewHolder(ProgramStageSelectionViewHolder holder, int position) {
+        ProgramStage programStage = programStages.get(position);
+        holder.bind(presenter, programStage);
     }
 
     @Override
     public int getItemCount() {
-        return programStageModels != null ? programStageModels.size() : 0;
+        return programStages != null ? programStages.size() : 0;
     }
 }

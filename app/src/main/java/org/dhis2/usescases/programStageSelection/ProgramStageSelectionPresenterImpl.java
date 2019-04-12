@@ -53,7 +53,6 @@ public class ProgramStageSelectionPresenterImpl implements ProgramStageSelection
         Flowable<List<ProgramStage>> stageModelsFlowable = Flowable.zip(stagesFlowable, ruleEffectFlowable, this::applyEffects);
 
         compositeDisposable.add(stageModelsFlowable
-                .map(data -> programStageSelectionRepository.objectStyle(data))
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
@@ -67,18 +66,18 @@ public class ProgramStageSelectionPresenterImpl implements ProgramStageSelection
             return stageModels;
         }
 
-        Map<String, ProgramStage> stageViewModels = toMap(stageModels);
+        Map<String, ProgramStage> stageView = toMap(stageModels);
 
-        ruleUtils.applyRuleEffects(stageViewModels, calcResult);
+        ruleUtils.applyRuleEffects(stageView, calcResult);
 
-        return new ArrayList<>(stageViewModels.values());
+        return new ArrayList<>(stageView.values());
     }
 
     @NonNull
-    private static Map<String, ProgramStage> toMap(@NonNull List<ProgramStage> stageViewModels) {
+    private static Map<String, ProgramStage> toMap(@NonNull List<ProgramStage> stageViews) {
         Map<String, ProgramStage> map = new LinkedHashMap<>();
-        for (ProgramStage stageModelModel : stageViewModels) {
-            map.put(stageModelModel.uid(), stageModelModel);
+        for (ProgramStage stageModel : stageViews) {
+            map.put(stageModel.uid(), stageModel);
         }
         return map;
     }

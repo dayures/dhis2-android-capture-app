@@ -22,7 +22,7 @@ import org.dhis2.databinding.FragmentQrBinding;
 import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity;
 import org.dhis2.usescases.general.FragmentGlobalAbstract;
 import org.dhis2.usescases.main.MainActivity;
-import org.dhis2.usescases.teiDashboard.mobile.TeiDashboardMobileActivity;
+import org.dhis2.usescases.teiDashboard.TeiDashboardMobileActivity;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.NetworkUtils;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;

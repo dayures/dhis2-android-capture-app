@@ -19,5 +19,9 @@ public interface DataEntryStore {
 
     void updateEventStatus(Event eventModel);
 
+    void skipEvent(Event eventModel);
+
+    void rescheduleEvent(Event eventModel, Date newDate);
+
     void updateEvent(@NonNull Date eventDate, @NonNull Event eventModel);
 }

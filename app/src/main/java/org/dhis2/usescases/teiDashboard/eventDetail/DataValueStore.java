@@ -67,43 +67,77 @@ final class DataValueStore implements DataEntryStore {
 
     @Override
     public void updateEventStatus(Event eventModel) {
+        if (eventModel.status() == EventStatus.OVERDUE)
+            skipEvent(eventModel);
+        else {
+            ContentValues contentValues = new ContentValues();
+            Date currentDate = Calendar.getInstance().getTime();
+            contentValues.put(SqlConstants.EVENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
+            String eventStatus = null;
+            switch (eventModel.status()) {
+                case COMPLETED:
+                    eventStatus = EventStatus.ACTIVE.name(); //TODO: should check if visited/skiped/overdue
+                    contentValues.putNull(SqlConstants.EVENT_COMPLETE_DATE);
+                    break;
+                case SCHEDULE:
+                    eventStatus = EventStatus.ACTIVE.name();
+                    contentValues.putNull(SqlConstants.EVENT_COMPLETE_DATE);
+                    break;
+                default:
+                    eventStatus = EventStatus.COMPLETED.name();
+                    contentValues.put(SqlConstants.EVENT_COMPLETE_DATE, DateUtils.databaseDateFormat().format(currentDate));
+                    break;
+
+            }
+            contentValues.put(SqlConstants.EVENT_STATUS, eventStatus);
+            contentValues.put(SqlConstants.EVENT_STATE, eventModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+            updateProgramTable(currentDate, eventModel.program());
+
+            briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + "= ?", eventModel.uid());
+            updateTEi();
+        }
+    }
+
+    @Override
+    public void skipEvent(Event eventModel) {
         ContentValues contentValues = new ContentValues();
         Date currentDate = Calendar.getInstance().getTime();
         contentValues.put(SqlConstants.EVENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
-        String eventStatus = null;
-        switch (eventModel.status()) {
-            case SCHEDULE:
-            case COMPLETED:
-                eventStatus = EventStatus.ACTIVE.name(); //TODO: should check if visited/skiped/overdue
-                contentValues.putNull(SqlConstants.EVENT_COMPLETE_DATE);
-                break;
-            default:
-                eventStatus = EventStatus.COMPLETED.name();
-                contentValues.put(SqlConstants.EVENT_COMPLETE_DATE, DateUtils.databaseDateFormat().format(currentDate));
-                break;
-
-        }
-        contentValues.put(SqlConstants.EVENT_STATUS, eventStatus);
+        contentValues.putNull(SqlConstants.EVENT_COMPLETE_DATE);
+        contentValues.put(SqlConstants.EVENT_STATUS, EventStatus.SKIPPED.name());
         contentValues.put(SqlConstants.EVENT_STATE, eventModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
         updateProgramTable(currentDate, eventModel.program());
+        briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + "= ?", eventModel.uid());
+        updateTEi();
+    }
 
+    @Override
+    public void rescheduleEvent(Event eventModel, Date newDate) {
+        ContentValues contentValues = new ContentValues();
+        Date currentDate = Calendar.getInstance().getTime();
+        contentValues.put(SqlConstants.EVENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
+        contentValues.put(SqlConstants.EVENT_DUE_DATE, DateUtils.databaseDateFormat().format(newDate));
+        contentValues.put(SqlConstants.EVENT_STATUS, EventStatus.SCHEDULE.name());
         briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + "= ?", eventModel.uid());
         updateTEi();
     }
 
     @Override
     public void updateEvent(@NonNull Date eventDate, @NonNull Event eventModel) {
-        ContentValues contentValues = new ContentValues();
-        Date currentDate = Calendar.getInstance().getTime();
-        contentValues.put(SqlConstants.EVENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
-        contentValues.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(eventDate));
-        if (eventDate.before(currentDate))
-            contentValues.put(SqlConstants.EVENT_STATUS, EventStatus.ACTIVE.name());
-        briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + "= ?", eventModel.uid());
-        updateTEi();
+        if (eventModel.status() == EventStatus.OVERDUE)
+            rescheduleEvent(eventModel, eventDate);
+        else {
+            ContentValues contentValues = new ContentValues();
+            Date currentDate = Calendar.getInstance().getTime();
+            contentValues.put(SqlConstants.EVENT_LAST_UPDATED, DateUtils.databaseDateFormat().format(currentDate));
+            contentValues.put(SqlConstants.EVENT_DATE, DateUtils.databaseDateFormat().format(eventDate));
+            if (eventDate.before(currentDate))
+                contentValues.put(SqlConstants.EVENT_STATUS, EventStatus.ACTIVE.name());
+            briteDatabase.update(SqlConstants.EVENT_TABLE, contentValues, SqlConstants.EVENT_UID + "= ?", eventModel.uid());
+            updateTEi();
+        }
     }
 
-    @SuppressWarnings({"squid:S1172", "squid:CommentedOutCodeLine"})
     private void updateProgramTable(Date lastUpdated, String programUid) {
         /*ContentValues program = new ContentValues(); //TODO: Crash if active
         program.put(SqlConstants.ENROLLMENT_LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));

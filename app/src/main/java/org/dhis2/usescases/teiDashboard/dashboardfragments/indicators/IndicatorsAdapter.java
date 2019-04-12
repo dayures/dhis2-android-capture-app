@@ -1,4 +1,4 @@
-package org.dhis2.usescases.teiDashboard.adapters;
+package org.dhis2.usescases.teiDashboard.dashboardfragments.indicators;
 
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
@@ -23,7 +23,7 @@ public class IndicatorsAdapter extends RecyclerView.Adapter<IndicatorViewHolder>
 
     private List<Trio<ProgramIndicator, String, String>> programIndicators;
 
-    public IndicatorsAdapter() {
+    IndicatorsAdapter() {
         programIndicators = new ArrayList<>();
     }
 

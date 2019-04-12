@@ -53,11 +53,11 @@ public class CoordinateHolder extends FormViewHolder {
             customFormCoordinateBinding.formCoordinates.setInitialValue(coordinateViewModel.value());
 
         if (coordinateViewModel.warning() != null)
-            customFormCoordinateBinding.formCoordinates.setWargingOrError(coordinateViewModel.warning());
+            customFormCoordinateBinding.formCoordinates.setWarning(coordinateViewModel.warning());
         else if (coordinateViewModel.error() != null)
-            customFormCoordinateBinding.formCoordinates.setWargingOrError(coordinateViewModel.error());
+            customFormCoordinateBinding.formCoordinates.setError(coordinateViewModel.error());
         else
-            customFormCoordinateBinding.formCoordinates.setWargingOrError(null);
+            customFormCoordinateBinding.formCoordinates.setError(null);
 
         customFormCoordinateBinding.formCoordinates.setEditable(coordinateViewModel.editable());
 

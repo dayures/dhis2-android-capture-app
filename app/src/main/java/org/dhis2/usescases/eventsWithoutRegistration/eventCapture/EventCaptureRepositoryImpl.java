@@ -161,6 +161,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     private RuleEvent.Builder eventBuilder;
     private Map<String, List<Rule>> dataElementRules = new HashMap<>();
     private List<ProgramRule> mandatoryRules;
+    private List<ProgramRule> rules;
 
     public EventCaptureRepositoryImpl(Context context, BriteDatabase briteDatabase, FormRepository formRepository, String eventUid, D2 d2) {
         this.briteDatabase = briteDatabase;
@@ -196,54 +197,29 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         loadDataElementRules(event);
     }
 
-    private List<ProgramRule> getRuleMandatoryRules(ProgramRule rule) {
-        List<ProgramRule> mandatoryRulesAux = new ArrayList<>();
-        for (ProgramRuleAction action : rule.programRuleActions()) {
-            if ((action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
-                    action.programRuleActionType() == ProgramRuleActionType.HIDESECTION ||
-                    action.programRuleActionType() == ProgramRuleActionType.ASSIGN ||
-                    action.programRuleActionType() == ProgramRuleActionType.SHOWWARNING ||
-                    action.programRuleActionType() == ProgramRuleActionType.SHOWERROR ||
-                    action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
-                    action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION)
-                    && (!mandatoryRulesAux.contains(rule))) {
-                mandatoryRulesAux.add(rule);
-            }
-        }
-        return mandatoryRulesAux;
-    }
+    private void loadDataElementRules(Event event) {
+        rules = d2.programModule().programRules.byProgramUid().eq(event.program()).withAllChildren().get();
 
-    private List<ProgramRule> getAllMandatoryRules(Event event, Iterator<ProgramRule> ruleIterator) {
-        List<ProgramRule> mandatoryRulesAux = new ArrayList<>();
+        mandatoryRules = new ArrayList<>();
+        Iterator<ProgramRule> ruleIterator = rules.iterator();
         while (ruleIterator.hasNext()) {
             ProgramRule rule = ruleIterator.next();
-            if ((rule.programStage() != null && rule.programStage().uid().equals(event.programStage())) ||
-                    (rule.condition() == null)) {
+            if (rule.programStage() != null && !rule.programStage().uid().equals(event.programStage()))
                 ruleIterator.remove();
-            }
-
-            mandatoryRulesAux.addAll(getRuleMandatoryRules(rule));
+            else if (rule.condition() == null)
+                ruleIterator.remove();
+            else
+                for (ProgramRuleAction action : rule.programRuleActions())
+                    if (action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
+                            action.programRuleActionType() == ProgramRuleActionType.HIDESECTION ||
+                            action.programRuleActionType() == ProgramRuleActionType.ASSIGN ||
+                            action.programRuleActionType() == ProgramRuleActionType.SHOWWARNING ||
+                            action.programRuleActionType() == ProgramRuleActionType.SHOWERROR ||
+                            action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
+                            action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION)
+                        if (!mandatoryRules.contains(rule))
+                            mandatoryRules.add(rule);
         }
-        return mandatoryRulesAux;
-    }
-
-    private void loadDataElementRules(Event event) {
-        List<ProgramRule> rules = d2.programModule().programRules.byProgramUid().eq(event.program()).withAllChildren().get();
-        Iterator<ProgramRule> ruleIterator = rules.iterator();
-        List<ProgramRule> mandatoryRulesAux = getAllMandatoryRules(event, ruleIterator);
-
-        List<ProgramRuleVariable> variables = d2.programModule().programRuleVariables
-                .byProgramUid().eq(event.program())
-                .withAllChildren().get();
-        Iterator<ProgramRuleVariable> variableIterator = variables.iterator();
-        while (variableIterator.hasNext()) {
-            ProgramRuleVariable variable = variableIterator.next();
-            if ((variable.programStage() != null && variable.programStage().uid().equals(event.programStage())) ||
-                    (variable.dataElement() == null)) {
-                variableIterator.remove();
-            }
-        }
-        addDataElementRules(variables, mandatoryRulesAux, rules);
     }
 
     private void addDataElementRules(List<ProgramRuleVariable> variables, List<ProgramRule> mandatoryRules, List<ProgramRule> rules) {
@@ -585,7 +561,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                         event -> formRepository.ruleEngine()
                                 .switchMap(ruleEngine -> {
                                     if (isEmpty(lastUpdatedUid))
-                                        return Flowable.fromCallable(ruleEngine.evaluate(event));
+                                        return Flowable.fromCallable(ruleEngine.evaluate(event, trasformToRule(rules)));
                                     else
                                         return Flowable.just(dataElementRules.get(lastUpdatedUid) != null ? dataElementRules.get(lastUpdatedUid) : new ArrayList<Rule>())
                                                 .map(rules -> rules.isEmpty() ? trasformToRule(mandatoryRules) : rules)

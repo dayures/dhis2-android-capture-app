@@ -1,8 +1,7 @@
-package org.dhis2.usescases.teiDashboard.adapters;
+package org.dhis2.usescases.teiDashboard.dashboardfragments.tei_data;
 
 import org.dhis2.BR;
 import org.dhis2.databinding.ItemEventBinding;
-import org.dhis2.usescases.teiDashboard.TeiDashboardContracts;
 import org.dhis2.utils.DateUtils;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.event.Event;
@@ -26,8 +25,8 @@ class EventViewHolder extends RecyclerView.ViewHolder {
         this.binding = binding;
     }
 
-    public void bind(TeiDashboardContracts.TeiDashboardPresenter presenter, Event eventModel, ProgramStage programStage,
-                     Enrollment enrollment, Program program) {
+    public void bind(TEIDataContracts.Presenter presenter, Event eventModel,
+                     ProgramStage programStage, Enrollment enrollment, Program program) {
         binding.setVariable(BR.event, eventModel);
         binding.setVariable(BR.stage, programStage);
         binding.setVariable(BR.enrollment, enrollment);
@@ -38,7 +37,7 @@ class EventViewHolder extends RecyclerView.ViewHolder {
         binding.eventDate.setText(date);
 
         itemView.setOnClickListener(view -> {
-            if (eventModel.status() == EventStatus.SCHEDULE) {
+            if (eventModel.status() == EventStatus.SCHEDULE || eventModel.status() == EventStatus.SKIPPED || eventModel.status() == EventStatus.OVERDUE) {
                 presenter.onScheduleSelected(eventModel.uid(), binding.sharedView);
             } else
                 presenter.onEventSelected(eventModel.uid(), binding.sharedView);

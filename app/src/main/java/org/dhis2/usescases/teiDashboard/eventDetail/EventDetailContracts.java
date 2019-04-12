@@ -70,6 +70,8 @@ public class EventDetailContracts {
 
         void setDate();
 
+        void setDueDate();
+
         void selectCatOption();
 
         void changeCatOption(CategoryOptionCombo selectedOption);

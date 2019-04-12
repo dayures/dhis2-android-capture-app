@@ -44,34 +44,6 @@ public class DateTimeHolder extends FormViewHolder implements OnDateSelected {
         if (binding instanceof FormDateTimeTextBinding) {
             ((FormDateTimeTextBinding) binding).dateTimeView.setDateListener(this);
         }
-
-    }
-
-    private void setWarnings() {
-        if (binding instanceof FormTimeTextBinding)
-            ((FormTimeTextBinding) binding).timeView.setWarningOrError(dateTimeViewModel.warning());
-        if (binding instanceof FormDateTextBinding)
-            ((FormDateTextBinding) binding).dateView.setWarningOrError(dateTimeViewModel.warning());
-        if (binding instanceof FormDateTimeTextBinding)
-            ((FormDateTimeTextBinding) binding).dateTimeView.setWarningOrError(dateTimeViewModel.warning());
-    }
-
-    private void setErrors() {
-        if (binding instanceof FormTimeTextBinding)
-            ((FormTimeTextBinding) binding).timeView.setWarningOrError(dateTimeViewModel.error());
-        if (binding instanceof FormDateTextBinding)
-            ((FormDateTextBinding) binding).dateView.setWarningOrError(dateTimeViewModel.error());
-        if (binding instanceof FormDateTimeTextBinding)
-            ((FormDateTimeTextBinding) binding).dateTimeView.setWarningOrError(dateTimeViewModel.error());
-    }
-
-    private void setNoWarningsOrErrors() {
-        if (binding instanceof FormTimeTextBinding)
-            ((FormTimeTextBinding) binding).timeView.setWarningOrError(null);
-        if (binding instanceof FormDateTextBinding)
-            ((FormDateTextBinding) binding).dateView.setWarningOrError(null);
-        if (binding instanceof FormDateTimeTextBinding)
-            ((FormDateTimeTextBinding) binding).dateTimeView.setWarningOrError(null);
     }
 
     private void setEditable() {
@@ -100,13 +72,28 @@ public class DateTimeHolder extends FormViewHolder implements OnDateSelected {
 
     private void setWarningsAndErrors() {
         if (dateTimeViewModel.warning() != null) {
-            setWarnings();
+            if (binding instanceof FormTimeTextBinding)
+                ((FormTimeTextBinding) binding).timeView.setWarning(dateTimeViewModel.warning());
+            if (binding instanceof FormDateTextBinding)
+                ((FormDateTextBinding) binding).dateView.setWarning(dateTimeViewModel.warning());
+            if (binding instanceof FormDateTimeTextBinding)
+                ((FormDateTimeTextBinding) binding).dateTimeView.setWarning(dateTimeViewModel.warning());
 
         } else if (dateTimeViewModel.error() != null) {
-            setErrors();
+            if (binding instanceof FormTimeTextBinding)
+                ((FormTimeTextBinding) binding).timeView.setError(dateTimeViewModel.error());
+            if (binding instanceof FormDateTextBinding)
+                ((FormDateTextBinding) binding).dateView.setError(dateTimeViewModel.error());
+            if (binding instanceof FormDateTimeTextBinding)
+                ((FormDateTimeTextBinding) binding).dateTimeView.setError(dateTimeViewModel.error());
 
         } else {
-            setNoWarningsOrErrors();
+            if (binding instanceof FormTimeTextBinding)
+                ((FormTimeTextBinding) binding).timeView.setError(null);
+            if (binding instanceof FormDateTextBinding)
+                ((FormDateTextBinding) binding).dateView.setError(null);
+            if (binding instanceof FormDateTimeTextBinding)
+                ((FormDateTimeTextBinding) binding).dateTimeView.setError(null);
         }
     }
 

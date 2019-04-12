@@ -36,17 +36,17 @@ public class AgeHolder extends FormViewHolder {
         label = new StringBuilder(ageViewModel.label());
         if (ageViewModel.mandatory())
             label.append("*");
-        formAgeCustomBinding.customAgeview.setLabel(label.toString(),ageViewModel.description());
+        formAgeCustomBinding.customAgeview.setLabel(label.toString(), ageViewModel.description());
         if (!isEmpty(ageViewModel.value())) {
             formAgeCustomBinding.customAgeview.setInitialValue(ageViewModel.value());
         }
 
         if (ageViewModel.warning() != null)
-            formAgeCustomBinding.customAgeview.setWarningOrError(ageViewModel.warning());
+            formAgeCustomBinding.customAgeview.setWarning(ageViewModel.warning());
         else if (ageViewModel.error() != null)
-            formAgeCustomBinding.customAgeview.setWarningOrError(ageViewModel.error());
+            formAgeCustomBinding.customAgeview.setError(ageViewModel.error());
         else
-            formAgeCustomBinding.customAgeview.setWarningOrError(null);
+            formAgeCustomBinding.customAgeview.setError(null);
 
         formAgeCustomBinding.customAgeview.setEditable(ageViewModel.editable());
 

@@ -28,6 +28,8 @@ import org.dhis2.usescases.login.LoginComponent;
 import org.dhis2.usescases.login.LoginModule;
 import org.dhis2.usescases.sync.SyncComponent;
 import org.dhis2.usescases.sync.SyncModule;
+import org.dhis2.usescases.teiDashboard.TeiDashboardComponent;
+import org.dhis2.usescases.teiDashboard.TeiDashboardModule;
 import org.dhis2.utils.UtilsModule;
 import org.dhis2.utils.timber.DHIS2DebugTree;
 import org.dhis2.utils.timber.ReleaseTree;
@@ -86,6 +88,10 @@ public class App extends MultiDexApplication implements Components {
     @Nullable
     @PerActivity
     SyncComponent syncComponent;
+
+    @Nullable
+    @PerActivity
+    private TeiDashboardComponent dashboardComponent;
 
     @Override
     public void onCreate() {
@@ -297,6 +303,22 @@ public class App extends MultiDexApplication implements Components {
         formComponent = null;
     }
 
+    ////////////////////////////////////////////////////////////////////////
+    // Dashboard component
+    ////////////////////////////////////////////////////////////////////////
+    @NonNull
+    public TeiDashboardComponent createDashboardComponent(@NonNull TeiDashboardModule dashboardModule) {
+        return (dashboardComponent = userComponent.plus(dashboardModule));
+    }
+
+    @Nullable
+    public TeiDashboardComponent dashboardComponent() {
+        return dashboardComponent;
+    }
+
+    public void releaseDashboardComponent() {
+        dashboardComponent = null;
+    }
 
     ////////////////////////////////////////////////////////////////////////
     // AndroidInjector

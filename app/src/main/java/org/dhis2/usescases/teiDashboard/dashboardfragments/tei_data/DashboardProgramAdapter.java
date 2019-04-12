@@ -1,27 +1,26 @@
-package org.dhis2.usescases.teiDashboard.adapters;
+package org.dhis2.usescases.teiDashboard.dashboardfragments.tei_data;
 
-import androidx.databinding.DataBindingUtil;
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import org.dhis2.R;
 import org.dhis2.databinding.ItemDashboardProgramBinding;
 import org.dhis2.usescases.teiDashboard.DashboardProgramModel;
-import org.dhis2.usescases.teiDashboard.TeiDashboardContracts;
+
+import androidx.annotation.NonNull;
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * Created by ppajuelo on 27/02/2018.
- *
  */
 
 public class DashboardProgramAdapter extends RecyclerView.Adapter<DashboardProgramViewHolder> {
 
-    private final TeiDashboardContracts.TeiDashboardPresenter presenter;
+    private final TEIDataContracts.Presenter presenter;
     private DashboardProgramModel dashboardProgramModel;
 
-    public DashboardProgramAdapter(TeiDashboardContracts.TeiDashboardPresenter presenter, DashboardProgramModel program) {
+    public DashboardProgramAdapter(TEIDataContracts.Presenter presenter, DashboardProgramModel program) {
         this.dashboardProgramModel = program;
         this.presenter = presenter;
     }
