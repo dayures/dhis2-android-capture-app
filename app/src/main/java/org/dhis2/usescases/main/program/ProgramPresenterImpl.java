@@ -96,7 +96,7 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
 
     @Override
     public List<TreeNode> transformToNode(List<OrganisationUnit> orgUnits) {
-        return OrgUnitUtils.createNode(view.getContext(), orgUnits, true);
+        return OrgUnitUtils.createNode2(view.getContext(), orgUnits, true);
     }
 
     @Override
@@ -195,7 +195,7 @@ public class ProgramPresenterImpl implements ProgramContract.ProgramPresenter {
                                     data -> {
                                         this.myOrgs = data;
                                         view.orgUnitProgress(false);
-                                        view.addTree(OrgUnitUtils.renderTree(view.getContext(), myOrgs, true));
+                                        view.addTree(OrgUnitUtils.renderTree_2(view.getContext(), myOrgs, true));
                                     },
                                     throwable -> view.renderError(throwable.getMessage())));
         }

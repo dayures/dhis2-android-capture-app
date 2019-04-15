@@ -488,6 +488,7 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
                 binding.drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
 
                 List<String> orgUnitsUids = new ArrayList<>();
+
                 for (TreeNode treeNodeIterable : treeView.getSelected()) {
                     orgUnitsUids.add(((OrganisationUnit) treeNodeIterable.getValue()).uid());
                 }
