@@ -155,7 +155,7 @@ sonarqube {
 
 dependencies {
 
-//    implementation project(":core")
+    implementation project(":core")
     implementation project(":customFab")
     implementation project(":dhis2-rule-engine")
     implementation project(":viewpagerdotsindicator")
@@ -170,11 +170,6 @@ dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.0.0-alpha3'
     //endregion
-
-    //region DHIS2 LIBRARIES
-    implementation("org.hisp.dhis:android-core:${libraries.dhis2sdk}") {
-        exclude group: "org.hisp.dhis", module: "core-rules"
-    }
 
     //implementation "org.hisp.dhis.rules:rule-engine:${libraries.ruleEngine}"
     //endregion

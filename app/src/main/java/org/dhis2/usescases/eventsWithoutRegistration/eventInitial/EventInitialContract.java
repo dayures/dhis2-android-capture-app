@@ -80,7 +80,7 @@ public class EventInitialContract {
     }
 
     public interface Presenter extends AbstractActivityContracts.Presenter {
-        void init(EventInitialContract.View view, String programId, String eventId, String orgUnitId, String programStageId);
+        void init(EventInitialContract.View view, String programId, String eventId, String orgUnitId, String programStageId, String teiId);
 
         void getProgramStage(String programStageUid);
 

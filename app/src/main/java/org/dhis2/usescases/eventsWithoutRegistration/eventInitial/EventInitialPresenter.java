@@ -6,7 +6,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -28,8 +30,13 @@ import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
+import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
+import org.hisp.dhis.android.core.sms.domain.repository.WebApiRepository;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionHideField;
 import org.hisp.dhis.rules.models.RuleActionHideSection;
@@ -48,8 +55,12 @@ import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.observers.DisposableObserver;
+import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 import rx.exceptions.OnErrorNotImplementedException;
 import timber.log.Timber;
@@ -74,13 +85,15 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
     private CategoryCombo catCombo;
     private String programId;
     private String programStageId;
+    private String teiId;
     private List<OrganisationUnitModel> orgUnits;
+    private D2 d2;
 
     public EventInitialPresenter(@NonNull EventSummaryRepository eventSummaryRepository,
                                  @NonNull EventInitialRepository eventInitialRepository,
                                  @NonNull MetadataRepository metadataRepository,
                                  @NonNull SchedulerProvider schedulerProvider, D2 d2) {
-
+        this.d2 = d2;
         this.metadataRepository = metadataRepository;
         this.eventInitialRepository = eventInitialRepository;
         this.eventSummaryRepository = eventSummaryRepository;
@@ -88,11 +101,12 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
     }
 
     @Override
-    public void init(EventInitialContract.View mview, String programId, String eventId, String orgInitId, String programStageId) {
+    public void init(EventInitialContract.View mview, String programId, String eventId, String orgInitId, String programStageId, String teiId) {
         view = mview;
         this.eventId = eventId;
         this.programId = programId;
         this.programStageId = programStageId;
+        this.teiId = teiId;
 
         compositeDisposable = new CompositeDisposable();
 
@@ -198,9 +212,52 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
         return orgUnits;
     }
 
+    private WebApiRepository.GetMetadataIdsConfig getMetadataConfig() {
+        WebApiRepository.GetMetadataIdsConfig config = new WebApiRepository.GetMetadataIdsConfig();
+        config.categoryOptionCombos = true;
+        config.dataElements = true;
+        config.organisationUnits = true;
+        config.programs = true;
+        config.trackedEntityAttributes = true;
+        config.trackedEntityTypes = true;
+        config.users = true;
+        return config;
+    }
+
     @Override
     public void onShareClick(View mView) {
-        view.showQR();
+        SmsSubmitCase smsSender = d2.smsModule().smsSubmitCase();
+        Disposable d = d2.smsModule(
+        ).initCase().initSMSModule("+23279741472", getMetadataConfig()
+        ).andThen(Single.fromCallable(() ->
+                d2.trackedEntityModule().trackedEntityDataValues.byEvent().eq(eventId).get())
+        ).map(values ->
+                d2.eventModule().events.byUid().eq(eventId).one().get().toBuilder()
+                        .trackedEntityInstance(teiId)
+                        .trackedEntityDataValues(values)
+                        .build()
+        ).flatMapObservable(
+                smsSender::submit
+        ).subscribeWith(new DisposableObserver<SmsRepository.SmsSendingState>() {
+            @Override
+            public void onNext(SmsRepository.SmsSendingState state) {
+                if (state.getState() == SmsRepository.State.WAITING_SMS_COUNT_ACCEPT) {
+                    smsSender.acceptSMSCount(true);
+                }
+                Log.d("", "");
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                e.printStackTrace();
+                Log.d("", "");
+            }
+
+            @Override
+            public void onComplete() {
+                Log.d("", "");
+            }
+        });
     }
 
     @Override
