@@ -12,11 +12,9 @@ import android.widget.TextView;
 import com.andrognito.pinlockview.PinLockListener;
 
 import org.dhis2.App;
-import org.dhis2.BuildConfig;
 import org.dhis2.R;
 import org.dhis2.databinding.ActivityMainBinding;
 import org.dhis2.usescases.about.AboutFragment;
-import org.dhis2.usescases.development.DevelopmentActivity;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.jira.JiraFragment;
 import org.dhis2.usescases.main.program.ProgramFragment;
@@ -130,6 +128,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
     protected void onResume() {
         super.onResume();
         presenter.init(this);
+        throw new RuntimeException("BOOOM!");
     }
 
     @Override

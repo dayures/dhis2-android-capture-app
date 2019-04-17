@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="5dp">
+
+        <ImageView
+            android:id="@+id/errorImage"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentBottom="true"
+            android:layout_marginEnd="-200dp"
+            android:layout_marginBottom="-200dp"
+            android:alpha=".1"
+            tools:src="@drawable/ic_dhis" />
+
+        <TextView
+            android:id="@+id/errorDetailTitle"
+            style="@style/TextPrimary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ups, there's been an error:"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/errorDetail"
+            style="@style/TextSecondary"
+            android:layout_width="wrap_content"
+            android:layout_height="100dp"
+            android:layout_marginTop="10dp"
+            android:fadeScrollbars="false"
+            android:maxHeight="100dp"
+            android:scrollbars="vertical"
+            app:layout_constraintTop_toBottomOf="@id/errorDetailTitle"
+            tools:text="@string/lorem" />
+
+        <Button
+            android:id="@+id/restartAppButton"
+            style="@style/TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Restart App"
+            app:layout_constraintEnd_toStartOf="@+id/sendReportButton"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/errorDetail" />
+
+        <Button
+            android:id="@+id/sendReportButton"
+            style="@style/TextButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Send report"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toEndOf="@+id/restartAppButton"
+            app:layout_constraintTop_toTopOf="@id/restartAppButton" />
+
+
+        <FrameLayout
+            android:id="@+id/jiraFragment"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/sendReportButton" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</layout>

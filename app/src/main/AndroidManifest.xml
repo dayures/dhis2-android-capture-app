@@ -101,6 +101,7 @@
         <activity android:name=".usescases.sync.SyncActivity" />
         <activity android:name=".usescases.enrollment.EnrollmentActivity" />
         <activity android:name=".usescases.development.DevelopmentActivity" />
+        <activity android:name=".usescases.error.DhisCustomErrorActivity" />
     </application>
 
 </manifest>
