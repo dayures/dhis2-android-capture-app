@@ -126,4 +126,8 @@ public abstract class FragmentGlobalAbstract extends Fragment implements Abstrac
         Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
     }
 
+    @Override
+    public void getPermissions(int requestId, String[] permissions) {
+        requestPermissions(permissions, requestId);
+    }
 }

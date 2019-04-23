@@ -6,7 +6,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Pair;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -35,20 +37,24 @@ import org.dhis2.utils.OnDialogClickListener;
 import org.dhis2.utils.SyncUtils;
 import org.dhis2.utils.custom_views.CoordinatesView;
 import org.dhis2.utils.custom_views.CustomDialog;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.ActivityOptionsCompat;
 import androidx.core.content.ContextCompat;
 import androidx.core.widget.ContentLoadingProgressBar;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
 import timber.log.Timber;
@@ -328,8 +334,8 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
             //BODY
             final View msgView = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_body, null);
             ((TextView) msgView.findViewById(R.id.dialogBody)).setText(message);
-            ((Button)msgView.findViewById(R.id.dialogAccept)).setText(positiveButtonText);
-            ((Button)msgView.findViewById(R.id.dialogCancel)).setText(negativeButtonText);
+            ((Button) msgView.findViewById(R.id.dialogAccept)).setText(positiveButtonText);
+            ((Button) msgView.findViewById(R.id.dialogCancel)).setText(negativeButtonText);
             msgView.findViewById(R.id.dialogAccept).setOnClickListener(view -> {
                 clickListener.onPossitiveClick(alertDialog);
                 alertDialog.dismiss();
@@ -392,5 +398,35 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
                 progressBar.setVisibility(View.VISIBLE);
             else progressBar.setVisibility(View.GONE);
         }
+    }
+
+    @Override
+    public void getPermissions(int requestId, String[] permissions) {
+        ActivityCompat.requestPermissions(this, permissions, requestId);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NotNull String[] permissions, @NotNull int[] grantResults) {
+        ArrayList<Pair<String, Boolean>> results = new ArrayList<>();
+        if (grantResults.length == 0 || permissions.length != grantResults.length) {
+            for (String permission : permissions) {
+                results.add(new Pair<>(permission, false));
+            }
+            onPermissionsResult(requestCode, false, results);
+            return;
+        }
+        boolean allGranted = true;
+        for (int i = 0; i < grantResults.length; i++) {
+            if (grantResults[i] == PackageManager.PERMISSION_GRANTED) {
+                results.add(new Pair<>(permissions[i], true));
+            } else {
+                results.add(new Pair<>(permissions[i], false));
+                allGranted = false;
+            }
+        }
+        onPermissionsResult(requestCode, allGranted, results);
+    }
+
+    public void onPermissionsResult(int requestCode, boolean allGranted, ArrayList<Pair<String, Boolean>> results) {
     }
 }
