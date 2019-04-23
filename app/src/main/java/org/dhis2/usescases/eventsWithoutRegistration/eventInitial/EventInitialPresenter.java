@@ -1,7 +1,6 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventInitial;
 
 import android.Manifest;
-import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -9,10 +8,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
+import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -34,11 +30,13 @@ import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
+import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
 import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
 import org.hisp.dhis.android.core.sms.domain.repository.WebApiRepository;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionHideField;
 import org.hisp.dhis.rules.models.RuleActionHideSection;
@@ -52,6 +50,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Single;
@@ -59,6 +60,7 @@ import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.DisposableObserver;
+import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 import rx.exceptions.OnErrorNotImplementedException;
 import timber.log.Timber;
@@ -70,7 +72,6 @@ import timber.log.Timber;
 public class EventInitialPresenter implements EventInitialContract.Presenter {
 
     public static final int ACCESS_COARSE_LOCATION_PERMISSION_REQUEST = 101;
-    public static final int SMS_PERMISSIONS_REQ_ID = 102;
     static private EventInitialContract.View view;
     private final MetadataRepository metadataRepository;
     private final EventInitialRepository eventInitialRepository;
@@ -225,15 +226,6 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
 
     @Override
     public void onShareClick(View mView) {
-        String[] smsPermissions = new String[]{Manifest.permission.ACCESS_NETWORK_STATE,
-                Manifest.permission.READ_PHONE_STATE,
-                Manifest.permission.SEND_SMS,
-                Manifest.permission.RECEIVE_SMS,
-                Manifest.permission.READ_SMS};
-        if (!hasPermissions(smsPermissions)) {
-            getPermissions(smsPermissions);
-            return;
-        }
         SmsSubmitCase smsSender = d2.smsModule().smsSubmitCase();
         Disposable d = d2.smsModule(
         ).initCase().initSMSModule("+23279741472", getMetadataConfig()
@@ -266,20 +258,6 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 Log.d("", "");
             }
         });
-    }
-
-    private void getPermissions(String[] permissions) {
-        view.getAbstractActivity().getPermissions(SMS_PERMISSIONS_REQ_ID, permissions);
-    }
-
-    private boolean hasPermissions(String[] permissions) {
-        for (String permission : permissions) {
-            if (ContextCompat.checkSelfPermission(view.getContext(), permission)
-                    != PackageManager.PERMISSION_GRANTED) {
-                return false;
-            }
-        }
-        return true;
     }
 
     @Override
@@ -414,12 +392,20 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
         view.showOrgUnitSelector(orgUnits);
     }
 
-    @SuppressLint("MissingPermission")
     @Override
     public void onLocationClick() {
-        String[] locationPermissions = new String[]{Manifest.permission.ACCESS_COARSE_LOCATION};
-        if (!hasPermissions(locationPermissions)) {
-            view.getAbstractActivity().getPermissions(ACCESS_COARSE_LOCATION_PERMISSION_REQUEST, locationPermissions);
+        if (ActivityCompat.checkSelfPermission(view.getContext(), Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(view.getAbstractActivity(), Manifest.permission.ACCESS_COARSE_LOCATION)) {
+                // TODO CRIS:  Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+                ActivityCompat.requestPermissions(view.getAbstractActivity(),
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        ACCESS_COARSE_LOCATION_PERMISSION_REQUEST);
+            }
             return;
         }
         mFusedLocationClient.getLastLocation().addOnSuccessListener(location -> {

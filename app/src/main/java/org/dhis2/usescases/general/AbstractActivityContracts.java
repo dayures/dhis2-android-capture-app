@@ -49,8 +49,6 @@ public class AbstractActivityContracts {
         void showDescription(String description);
 
         SharedPreferences getSharedPreferences();
-
-        void getPermissions(int requestId, String[] permissions);
     }
 
     public interface Presenter {
