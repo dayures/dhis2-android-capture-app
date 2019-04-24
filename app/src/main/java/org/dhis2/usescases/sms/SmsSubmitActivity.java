@@ -24,6 +24,8 @@ import io.reactivex.disposables.Disposable;
 import io.reactivex.observers.DisposableObserver;
 
 public class SmsSubmitActivity extends ActivityGlobalAbstract {
+    public static String ARG_TEI = "tei";
+    public static String ARG_EVENT = "event";
     private static final int SMS_PERMISSIONS_REQ_ID = 102;
     private CompositeDisposable disposables;
     private String eventId;

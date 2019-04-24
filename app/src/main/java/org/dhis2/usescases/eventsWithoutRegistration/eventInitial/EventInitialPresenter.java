@@ -1,14 +1,17 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventInitial;
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -23,6 +26,7 @@ import org.dhis2.data.tuples.Quintet;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryActivity;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryRepository;
 import org.dhis2.usescases.map.MapSelectorActivity;
+import org.dhis2.usescases.sms.SmsSubmitActivity;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.OrgUnitUtils;
 import org.dhis2.utils.Result;
@@ -30,13 +34,9 @@ import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
-import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
-import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
 import org.hisp.dhis.android.core.sms.domain.repository.WebApiRepository;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionHideField;
 import org.hisp.dhis.rules.models.RuleActionHideSection;
@@ -50,17 +50,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.app.ActivityCompat;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
-import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
-import io.reactivex.disposables.Disposable;
-import io.reactivex.observers.DisposableObserver;
-import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 import rx.exceptions.OnErrorNotImplementedException;
 import timber.log.Timber;
@@ -226,38 +219,11 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
 
     @Override
     public void onShareClick(View mView) {
-        SmsSubmitCase smsSender = d2.smsModule().smsSubmitCase();
-        Disposable d = d2.smsModule(
-        ).initCase().initSMSModule("+23279741472", getMetadataConfig()
-        ).andThen(Single.fromCallable(() ->
-                d2.trackedEntityModule().trackedEntityDataValues.byEvent().eq(eventId).get())
-        ).map(values ->
-                d2.eventModule().events.byUid().eq(eventId).one().get().toBuilder()
-                        .trackedEntityInstance(teiId)
-                        .trackedEntityDataValues(values)
-                        .build()
-        ).flatMapObservable(
-                smsSender::submit
-        ).subscribeWith(new DisposableObserver<SmsRepository.SmsSendingState>() {
-            @Override
-            public void onNext(SmsRepository.SmsSendingState state) {
-                if (state.getState() == SmsRepository.State.WAITING_SMS_COUNT_ACCEPT) {
-                    smsSender.acceptSMSCount(true);
-                }
-                Log.d("", "");
-            }
-
-            @Override
-            public void onError(Throwable e) {
-                e.printStackTrace();
-                Log.d("", "");
-            }
-
-            @Override
-            public void onComplete() {
-                Log.d("", "");
-            }
-        });
+        Activity activity = view.getAbstractActivity();
+        Intent intent = new Intent(activity, SmsSubmitActivity.class);
+        intent.putExtra(SmsSubmitActivity.ARG_EVENT, eventId);
+        intent.putExtra(SmsSubmitActivity.ARG_TEI, teiId);
+        activity.startActivity(intent);
     }
 
     @Override
