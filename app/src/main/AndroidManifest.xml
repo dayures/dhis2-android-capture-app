@@ -105,6 +105,9 @@
         <activity android:name=".usescases.sync.SyncActivity" />
         <activity android:name=".usescases.enrollment.EnrollmentActivity" />
         <activity android:name=".usescases.development.DevelopmentActivity" />
+        <activity
+            android:name=".usescases.sms.SmsSubmitActivity"
+            android:theme="@style/Theme.AppCompat.Translucent" />
     </application>
 
 </manifest>

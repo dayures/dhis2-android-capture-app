@@ -43,6 +43,7 @@ import org.dhis2.usescases.reservedValue.ReservedValueComponent;
 import org.dhis2.usescases.reservedValue.ReservedValueModule;
 import org.dhis2.usescases.searchTrackEntity.SearchTEComponent;
 import org.dhis2.usescases.searchTrackEntity.SearchTEModule;
+import org.dhis2.usescases.sms.SmsSubmitActivity;
 import org.dhis2.usescases.syncManager.SyncManagerComponent;
 import org.dhis2.usescases.syncManager.SyncManagerModule;
 import org.dhis2.usescases.teiDashboard.TeiDashboardComponent;
@@ -141,4 +142,5 @@ public interface UserComponent {
     @NonNull
     EnrollmentComponent plus(EnrollmentModule enrollmentModule);
 
+    void inject(SmsSubmitActivity activity);
 }
