@@ -426,4 +426,17 @@
     <string name="error_no_network_during_sync">You lost your internet connection while performing your configuration sync. Please try again later</string>
     <string name="action_agree">Agree</string>
 
+    <string name="sms_receiver_number">Receiver number</string>
+    <string name="sms_amount_question">Do you accept to send %d messages?</string>
+    <string name="sms_sending">Sending %1$d/%2$d</string>
+    <string name="sms_waiting_amount_confirm">Waiting amount confirmation</string>
+    <string name="sms_all_sent">All sent</string>
+    <string name="sms_error">Error sending</string>
+    <string name="sms_error_no_network">No network</string>
+    <string name="sms_error_no_check_network_permission">No check network permission</string>
+    <string name="sms_error_no_receive_sms_permission">No receive sms permission</string>
+    <string name="sms_error_no_send_sms_permission">No send permission</string>
+    <string name="sms_error_no_gateway_set">No gateway set</string>
+    <string name="sms_error_no_user_login">User not logged in</string>
+    <string name="sms_completed">Completed</string>
 </resources>
