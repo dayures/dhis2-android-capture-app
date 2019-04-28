@@ -23,13 +23,19 @@ import androidx.fragment.app.DialogFragment;
 import org.dhis2.App;
 import org.dhis2.R;
 import org.hisp.dhis.android.core.D2;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
 import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
 import org.hisp.dhis.android.core.sms.domain.repository.WebApiRepository;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Collections;
+import java.util.List;
 
 import javax.inject.Inject;
 
+import io.reactivex.Observable;
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
@@ -39,8 +45,10 @@ import io.reactivex.schedulers.Schedulers;
 public class SmsSubmitActivity extends AppCompatActivity {
     private static String ARG_TEI = "tei";
     private static String ARG_EVENT = "event";
+    private static String ARG_ENROLLMENT = "enrollment";
     private static final int SMS_PERMISSIONS_REQ_ID = 102;
     private CompositeDisposable disposables;
+    private String enrollmentId;
     private String eventId;
     private String teiId;
     private String gatewayNumber = null;
@@ -54,6 +62,11 @@ public class SmsSubmitActivity extends AppCompatActivity {
         args.putString(ARG_TEI, teiId);
     }
 
+    public static void setEnrollmentData(Bundle args, String teiId, String enrollmentId) {
+        args.putString(ARG_ENROLLMENT, enrollmentId);
+        args.putString(ARG_TEI, teiId);
+    }
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,6 +75,7 @@ public class SmsSubmitActivity extends AppCompatActivity {
         findViewById(R.id.smsOverlay).setOnClickListener(v -> finish());
         layout = findViewById(R.id.smsLogLayout);
         eventId = getIntent().getStringExtra(ARG_EVENT);
+        enrollmentId = getIntent().getStringExtra(ARG_ENROLLMENT);
         teiId = getIntent().getStringExtra(ARG_TEI);
         ((App) getApplicationContext()).userComponent().inject(this);
         smsSender = d2.smsModule().smsSubmitCase();
@@ -109,14 +123,14 @@ public class SmsSubmitActivity extends AppCompatActivity {
         return config;
     }
 
-    public void sendSMS(boolean skipPermissionCheck) {
+    private boolean initialCheck(boolean skipPermissionCheck) {
         addText(R.string.sms_state_started);
         // check number
         String number = gatewayNumber;
         if (number == null || number.length() < 2) {
             addText(R.string.sms_state_asking_number);
             askForNumber();
-            return;
+            return false;
         }
         // check permissions
         String[] smsPermissions = new String[]{Manifest.permission.ACCESS_NETWORK_STATE,
@@ -127,13 +141,14 @@ public class SmsSubmitActivity extends AppCompatActivity {
         if (!skipPermissionCheck && !hasPermissions(smsPermissions)) {
             addText(R.string.sms_state_asking_permissions);
             ActivityCompat.requestPermissions(this, smsPermissions, SMS_PERMISSIONS_REQ_ID);
-            return;
+            return false;
         }
+        return true;
+    }
 
-        disposables.add(d2.smsModule(
-        ).initCase().initSMSModule(number, getMetadataConfig()
-        ).andThen(Single.fromCallable(() ->
-                d2.trackedEntityModule().trackedEntityDataValues.byEvent().eq(eventId).get())
+    private Observable<SmsRepository.SmsSendingState> sendEventSMS() {
+        return Single.fromCallable(() ->
+                d2.trackedEntityModule().trackedEntityDataValues.byEvent().eq(eventId).get()
         ).map(values ->
                 d2.eventModule().events.byUid().eq(eventId).one().get().toBuilder()
                         .trackedEntityInstance(teiId)
@@ -141,9 +156,77 @@ public class SmsSubmitActivity extends AppCompatActivity {
                         .build()
         ).flatMapObservable(
                 smsSender::submit
+        );
+    }
+
+    private Observable<SmsRepository.SmsSendingState> sendTeiEnrollmentSMS() {
+        return Single.fromCallable(() ->
+                d2.trackedEntityModule().trackedEntityInstances.byUid().eq(teiId).one().get()
+        ).map(tei -> {
+            Enrollment enrollment = d2.enrollmentModule().enrollments.byUid().eq(enrollmentId).one().get();
+            List<TrackedEntityAttributeValue> attributes =
+                    d2.trackedEntityModule().trackedEntityAttributeValues.byTrackedEntityInstance().eq(teiId).get();
+            return tei.toBuilder()
+                    .trackedEntityAttributeValues(attributes)
+                    .enrollments(Collections.singletonList(enrollment))
+                    .build();
+        }).flatMapObservable(tei ->
+                smsSender.submit(tei.enrollments().get(0), tei.trackedEntityType(), tei.trackedEntityAttributeValues())
+        );
+    }
+
+    private void addText(int text) {
+        addText(getString(text));
+    }
+
+    private void addText(String text) {
+        TextView textView = new TextView(SmsSubmitActivity.this);
+        textView.setText(text);
+        layout.addView(textView, 0);
+    }
+
+    private void askForMessagesAmount(int amount) {
+        Bundle args = new Bundle();
+        args.putInt(MessagesAmountDialog.ARG_AMOUNT, amount);
+        MessagesAmountDialog dialog = new MessagesAmountDialog();
+        dialog.setArguments(args);
+        dialog.show(getSupportFragmentManager(), null);
+    }
+
+    private void askForNumber() {
+        ReceiverDialog dialog = new ReceiverDialog();
+        dialog.show(getSupportFragmentManager(), null);
+    }
+
+    private void numberSet(String number) {
+        if (number.length() > 1) {
+            gatewayNumber = number;
+            sendSMS(false);
+        }
+    }
+
+    private void sendSMS(boolean skipPermissionCheck) {
+        if (!initialCheck(skipPermissionCheck)) return;
+        Observable<SmsRepository.SmsSendingState> sendingTask;
+        if (enrollmentId != null) {
+            sendingTask = sendTeiEnrollmentSMS();
+        } else if (eventId != null) {
+            sendingTask = sendEventSMS();
+        } else {
+            addText(R.string.sms_general_error);
+            return;
+        }
+
+        disposables.add(d2.smsModule(
+        ).initCase().initSMSModule(gatewayNumber, getMetadataConfig()
+        ).andThen(sendingTask
         ).subscribeOn(Schedulers.newThread()
         ).observeOn(AndroidSchedulers.mainThread()
-        ).subscribeWith(new DisposableObserver<SmsRepository.SmsSendingState>() {
+        ).subscribeWith(observer()));
+    }
+
+    private DisposableObserver<SmsRepository.SmsSendingState> observer() {
+        return new DisposableObserver<SmsRepository.SmsSendingState>() {
             @Override
             public void onNext(SmsRepository.SmsSendingState state) {
                 switch (state.getState()) {
@@ -194,41 +277,9 @@ public class SmsSubmitActivity extends AppCompatActivity {
 
             @Override
             public void onComplete() {
-                TextView text = new TextView(SmsSubmitActivity.this);
-                text.setText(R.string.sms_completed);
-                layout.addView(text, 0);
+                addText(R.string.sms_completed);
             }
-        }));
-    }
-
-    private void addText(int text) {
-        addText(getString(text));
-    }
-
-    private void addText(String text) {
-        TextView textView = new TextView(SmsSubmitActivity.this);
-        textView.setText(text);
-        layout.addView(textView, 0);
-    }
-
-    private void askForMessagesAmount(int amount) {
-        Bundle args = new Bundle();
-        args.putInt(MessagesAmountDialog.ARG_AMOUNT, amount);
-        MessagesAmountDialog dialog = new MessagesAmountDialog();
-        dialog.setArguments(args);
-        dialog.show(getSupportFragmentManager(), null);
-    }
-
-    private void askForNumber() {
-        ReceiverDialog dialog = new ReceiverDialog();
-        dialog.show(getSupportFragmentManager(), null);
-    }
-
-    private void numberSet(String number) {
-        if (number.length() > 1) {
-            gatewayNumber = number;
-            sendSMS(false);
-        }
+        };
     }
 
     public static class MessagesAmountDialog extends DialogFragment {

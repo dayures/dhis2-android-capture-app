@@ -1,5 +1,6 @@
 package org.dhis2.usescases.teiDashboard.dashboardfragments.tei_data;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
@@ -9,6 +10,7 @@ import org.dhis2.R;
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity;
 import org.dhis2.usescases.qrCodes.QrActivity;
+import org.dhis2.usescases.sms.SmsSubmitActivity;
 import org.dhis2.usescases.teiDashboard.DashboardProgramModel;
 import org.dhis2.usescases.teiDashboard.DashboardRepository;
 import org.dhis2.usescases.teiDashboard.eventDetail.EventDetailActivity;
@@ -24,6 +26,7 @@ import org.hisp.dhis.android.core.program.ProgramStageModel;
 
 import androidx.appcompat.widget.PopupMenu;
 import androidx.core.app.ActivityOptionsCompat;
+
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -172,7 +175,7 @@ class TEIDataPresenterImpl implements TEIDataContracts.Presenter {
         PopupMenu menu = new PopupMenu(view.getContext(), mView);
 
         menu.getMenu().add(Menu.NONE, Menu.NONE, 0, "QR");
-        //menu.getMenu().add(Menu.NONE, Menu.NONE, 1, "SMS"); TODO: When SMS is ready, reactivate option
+        menu.getMenu().add(Menu.NONE, Menu.NONE, 1, "SMS");
 
         menu.setOnMenuItemClickListener(item -> {
             switch (item.getOrder()) {
@@ -182,7 +185,12 @@ class TEIDataPresenterImpl implements TEIDataContracts.Presenter {
                     view.showQR(intent);
                     return true;
                 case 1:
-                    view.displayMessage(view.getContext().getString(R.string.feature_unavaible));
+                    Activity activity = view.getAbstractActivity();
+                    Intent i = new Intent(activity, SmsSubmitActivity.class);
+                    Bundle args = new Bundle();
+                    SmsSubmitActivity.setEnrollmentData(args, teiUid, dashboardModel.getCurrentEnrollment().uid());
+                    i.putExtras(args);
+                    activity.startActivity(i);
                     return true;
                 default:
                     return true;

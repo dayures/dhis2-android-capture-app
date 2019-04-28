@@ -442,5 +442,6 @@
     <string name="sms_count_error">Sms count %d not accepted</string>
     <string name="sms_state_started">Started sms submission</string>
     <string name="sms_state_asking_number">Asking for gateway number</string>
-    <string name="sms_state_asking_permissions">Asking for permissions"</string>
+    <string name="sms_state_asking_permissions">Asking for permissions</string>
+    <string name="sms_general_error">Error sending sms submission</string>
 </resources>
