@@ -36,7 +36,6 @@ import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.sms.domain.repository.WebApiRepository;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionHideField;
 import org.hisp.dhis.rules.models.RuleActionHideSection;
@@ -205,24 +204,13 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
         return orgUnits;
     }
 
-    private WebApiRepository.GetMetadataIdsConfig getMetadataConfig() {
-        WebApiRepository.GetMetadataIdsConfig config = new WebApiRepository.GetMetadataIdsConfig();
-        config.categoryOptionCombos = true;
-        config.dataElements = true;
-        config.organisationUnits = true;
-        config.programs = true;
-        config.trackedEntityAttributes = true;
-        config.trackedEntityTypes = true;
-        config.users = true;
-        return config;
-    }
-
     @Override
     public void onShareClick(View mView) {
         Activity activity = view.getAbstractActivity();
         Intent intent = new Intent(activity, SmsSubmitActivity.class);
-        intent.putExtra(SmsSubmitActivity.ARG_EVENT, eventId);
-        intent.putExtra(SmsSubmitActivity.ARG_TEI, teiId);
+        Bundle args = new Bundle();
+        SmsSubmitActivity.setEventData(args, eventId, teiId);
+        intent.putExtras(args);
         activity.startActivity(intent);
     }
 

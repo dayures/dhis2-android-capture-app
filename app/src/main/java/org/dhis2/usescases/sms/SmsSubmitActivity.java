@@ -2,6 +2,7 @@ package org.dhis2.usescases.sms;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.text.InputType;
@@ -12,13 +13,13 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 
 import org.dhis2.App;
 import org.dhis2.R;
-import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
 import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
@@ -33,9 +34,9 @@ import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
 import io.reactivex.schedulers.Schedulers;
 
-public class SmsSubmitActivity extends ActivityGlobalAbstract {
-    public static String ARG_TEI = "tei";
-    public static String ARG_EVENT = "event";
+public class SmsSubmitActivity extends AppCompatActivity {
+    private static String ARG_TEI = "tei";
+    private static String ARG_EVENT = "event";
     private static final int SMS_PERMISSIONS_REQ_ID = 102;
     private CompositeDisposable disposables;
     private String eventId;
@@ -45,6 +46,11 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
     private LinearLayout layout;
     @Inject
     D2 d2;
+
+    public static void setEventData(Bundle args, String eventId, String teiId) {
+        args.putString(ARG_EVENT, eventId);
+        args.putString(ARG_TEI, teiId);
+    }
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -100,11 +106,11 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
     }
 
     public void sendSMS(boolean skipPermissionCheck) {
-        addText("Started sending");
+        addText(R.string.sms_state_started);
         // check number
         String number = gatewayNumber;
         if (number == null || number.length() < 2) {
-            addText("Asking for number");
+            addText(R.string.sms_state_asking_number);
             askForNumber();
             return;
         }
@@ -115,7 +121,7 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
                 Manifest.permission.RECEIVE_SMS,
                 Manifest.permission.READ_SMS};
         if (!skipPermissionCheck && !hasPermissions(smsPermissions)) {
-            addText("Asking for permissions");
+            addText(R.string.sms_state_asking_permissions);
             ActivityCompat.requestPermissions(this, smsPermissions, SMS_PERMISSIONS_REQ_ID);
             return;
         }
@@ -175,6 +181,8 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
                             addText(R.string.sms_error_no_user_login);
                             break;
                     }
+                } else if (e instanceof SmsRepository.SMSCountException) {
+                    addText(getString(R.string.sms_count_error, ((SmsRepository.SMSCountException) e).getCount()));
                 } else {
                     addText(R.string.sms_error);
                 }
@@ -265,10 +273,13 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
             builder.setPositiveButton(android.R.string.ok, (dialog, which) ->
                     ((SmsSubmitActivity) getActivity()).numberSet(input.getText().toString())
             );
-            builder.setNegativeButton(android.R.string.cancel, (dialog, which) ->
-                    dialog.cancel()
-            );
+            builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
             return builder.create();
+        }
+
+        @Override
+        public void onCancel(@NonNull DialogInterface dialog) {
+            ((SmsSubmitActivity) getActivity()).addText(R.string.sms_error_no_gateway_set);
         }
     }
 }
