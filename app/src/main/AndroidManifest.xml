@@ -107,7 +107,7 @@
         <activity android:name=".usescases.development.DevelopmentActivity" />
         <activity
             android:name=".usescases.sms.SmsSubmitActivity"
-            android:theme="@style/Theme.AppCompat.Light.NoActionBar" />
+            android:theme="@style/Theme.AppCompat.Translucent" />
     </application>
 
 </manifest>

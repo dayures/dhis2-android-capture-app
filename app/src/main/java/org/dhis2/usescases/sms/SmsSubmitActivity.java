@@ -4,6 +4,8 @@ import android.Manifest;
 import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.InputType;
 import android.widget.EditText;
@@ -56,6 +58,8 @@ public class SmsSubmitActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sms);
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        findViewById(R.id.smsOverlay).setOnClickListener(v -> finish());
         layout = findViewById(R.id.smsLogLayout);
         eventId = getIntent().getStringExtra(ARG_EVENT);
         teiId = getIntent().getStringExtra(ARG_TEI);
