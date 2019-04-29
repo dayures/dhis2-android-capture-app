@@ -2,6 +2,8 @@ package org.dhis2.data.forms;
 
 import android.database.Cursor;
 
+import androidx.annotation.NonNull;
+
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.tuples.Pair;
@@ -57,7 +59,6 @@ import java.util.Objects;
 
 import javax.annotation.Nonnull;
 
-import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -200,6 +201,7 @@ public final class RulesRepository {
             AND + EVENT_TABLE + "." + EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE +
             "' ORDER BY Event.eventDate DESC,Event.lastUpdated DESC LIMIT 10";
 
+
     /**
      * Query all events from an enrollment
      */
@@ -214,7 +216,8 @@ public final class RulesRepository {
             JOIN + PROGRAM_STAGE_TABLE + ON +
             PROGRAM_STAGE_TABLE + "." + PROGRAM_STAGE_UID + EQUAL + EVENT_TABLE + "." + EVENT_PROGRAM_STAGE + "\n" +
             "WHERE Event.enrollment = ?\n" +
-            AND + EVENT_TABLE + "." + EVENT_STATE + NOT_EQUALS + QUOTE + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC LIMIT 10";
+            " AND Event.Status NOT IN ('SCHEDULE', 'SKIPPED', 'OVERDUE')" +
+            " AND " + EVENT_TABLE + "." + EVENT_STATE + " != '" + State.TO_DELETE + "' ORDER BY Event.eventDate,Event.lastUpdated DESC ";
 
     private static final String QUERY_VALUES = "SELECT " +
             "  Event.eventDate," +
@@ -502,9 +505,11 @@ public final class RulesRepository {
 
         switch (actionType) {
             case DISPLAYTEXT:
-                return createDisplayTextAction(content, data, location);
+                if (location != null)
+                    return createDisplayTextAction(content, data, location);
             case DISPLAYKEYVALUEPAIR:
-                return createDisplayKeyValuePairAction(content, data, location);
+                if (location != null)
+                    return createDisplayKeyValuePairAction(content, data, location);
             case HIDEFIELD:
                 return RuleActionHideField.create(content, attributeFinal);
             case HIDESECTION:

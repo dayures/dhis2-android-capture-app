@@ -1,6 +1,8 @@
 package org.dhis2.data.forms;
 
-import com.google.android.gms.maps.model.LatLng;
+import androidx.annotation.NonNull;
+
+import com.mapbox.mapboxsdk.geometry.LatLng;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.tuples.Pair;
@@ -15,7 +17,6 @@ import org.hisp.dhis.rules.models.RuleActionWarningOnCompletion;
 import java.util.Date;
 import java.util.List;
 
-import androidx.annotation.NonNull;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 

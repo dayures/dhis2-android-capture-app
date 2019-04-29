@@ -46,9 +46,6 @@
                     android:scheme="https" />
             </intent-filter>
         </activity>
-        <activity
-            android:name=".usescases.login.LoginActivity"
-            android:windowSoftInputMode="adjustPan" />
         <activity android:name=".usescases.main.MainActivity" />
         <activity android:name=".usescases.programEventDetail.ProgramEventDetailActivity" />
         <activity
@@ -66,6 +63,7 @@
         <activity android:name=".usescases.map.MapSelectorActivity" />
         <activity android:name=".usescases.eventsWithoutRegistration.eventSummary.EventSummaryActivity" />
         <activity android:name=".usescases.programStageSelection.ProgramStageSelectionActivity" />
+        <activity android:name=".utils.WebViewActivity" />
         <activity
             android:name=".usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity"
             android:windowSoftInputMode="stateHidden" />

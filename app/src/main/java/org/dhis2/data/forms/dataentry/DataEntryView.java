@@ -28,4 +28,6 @@ interface DataEntryView {
     void setListOptions(List<Option> options);
 
     void showMessage(int messageId);
+
+    void updateAdapter(RowAction rowAction);
 }

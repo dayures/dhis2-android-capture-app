@@ -3,7 +3,9 @@ package org.dhis2.data.forms;
 import android.content.ContentValues;
 import android.database.Cursor;
 
-import com.google.android.gms.maps.model.LatLng;
+import androidx.annotation.NonNull;
+
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
@@ -38,7 +40,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
-import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -74,6 +75,7 @@ import static org.dhis2.utils.SqlConstants.TEI_UID;
 import static org.dhis2.utils.SqlConstants.TE_ATTR_VALUE_TABLE;
 import static org.dhis2.utils.SqlConstants.TE_ATTR_VALUE_TEI;
 import static org.dhis2.utils.SqlConstants.WHERE;
+
 
 @SuppressWarnings({
         "PMD.AvoidDuplicateLiterals"
@@ -180,11 +182,13 @@ public class EnrollmentFormRepository implements FormRepository {
     private final CodeGenerator codeGenerator;
 
     @NonNull
-    private final Flowable<RuleEngine> cachedRuleEngineFlowable;
+    private Flowable<RuleEngine> cachedRuleEngineFlowable;
 
     @NonNull
     private final String enrollmentUid;
     private final D2 d2;
+    private final RulesRepository rulesRepository;
+    private final RuleExpressionEvaluator expressionEvaluator;
 
     private String programUid;
 
@@ -198,10 +202,35 @@ public class EnrollmentFormRepository implements FormRepository {
         this.briteDatabase = briteDatabase;
         this.codeGenerator = codeGenerator;
         this.enrollmentUid = enrollmentUid;
+        this.rulesRepository = rulesRepository;
+        this.expressionEvaluator = expressionEvaluator;
 
         // We don't want to rebuild RuleEngine on each request, since metadata of
         // the event is not changing throughout lifecycle of FormComponent.
         this.cachedRuleEngineFlowable = enrollmentProgram()
+                .switchMap(program -> Flowable.zip(
+                        rulesRepository.rulesNew(program),
+                        rulesRepository.ruleVariables(program),
+                        rulesRepository.enrollmentEvents(enrollmentUid),
+                        rulesRepository.queryConstants(),
+                        (rules, variables, events, constants) -> {
+                            RuleEngine.Builder builder = RuleEngineContext.builder(expressionEvaluator)
+                                    .rules(rules)
+                                    .ruleVariables(variables)
+                                    .calculatedValueMap(new HashMap<>())
+                                    .supplementaryData(new HashMap<>())
+                                    .constantsValue(constants)
+                                    .build().toEngineBuilder();
+                            builder.triggerEnvironment(TriggerEnvironment.ANDROIDCLIENT);
+                            builder.events(events);
+                            return builder.build();
+                        }))
+                .cacheWithInitialCapacity(1);
+    }
+
+    @Override
+    public Flowable<RuleEngine> restartRuleEngine() {
+        return this.cachedRuleEngineFlowable = enrollmentProgram()
                 .switchMap(program -> Flowable.zip(
                         rulesRepository.rulesNew(program),
                         rulesRepository.ruleVariables(program),
@@ -309,8 +338,8 @@ public class EnrollmentFormRepository implements FormRepository {
     public Consumer<LatLng> storeCoordinates() {
         return latLng -> {
             ContentValues enrollment = new ContentValues();
-            enrollment.put(ENROLLMENT_LATITUDE, latLng.latitude);
-            enrollment.put(ENROLLMENT_LONGITUDE, latLng.longitude); // TODO: Check if state is TO_POST
+            enrollment.put(ENROLLMENT_LATITUDE, latLng.getLatitude());
+            enrollment.put(ENROLLMENT_LONGITUDE, latLng.getLongitude()); // TODO: Check if state is TO_POST
             // TODO: and if so, keep the TO_POST state
 
             briteDatabase.update(ENROLLMENT_TABLE, enrollment,

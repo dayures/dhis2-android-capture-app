@@ -2,6 +2,9 @@ package org.dhis2.data.forms.dataentry.fields.orgUnit;
 
 import android.view.View;
 
+import androidx.databinding.ViewDataBinding;
+import androidx.fragment.app.FragmentManager;
+
 import com.google.android.material.textfield.TextInputLayout;
 
 import org.dhis2.R;
@@ -10,16 +13,16 @@ import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.utils.custom_views.TextInputAutoCompleteTextView;
 import org.dhis2.utils.custom_views.orgUnitCascade.OrgUnitCascadeDialog;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 
 import java.util.List;
 
-import androidx.databinding.ViewDataBinding;
-import androidx.fragment.app.FragmentManager;
 import io.reactivex.Observable;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
+
 
 /**
  * QUADRAM. Created by ppajuelo on 19/03/2018.
@@ -33,22 +36,26 @@ public class OrgUnitHolder extends FormViewHolder {
     private OrgUnitCascadeDialog orgUnitDialog;
     private CompositeDisposable compositeDisposable;
     private OrgUnitViewModel model;
+    private String selectedOrgUnit;
+    private Observable<List<OrganisationUnitLevel>> levelsObservable;
+    private List<OrganisationUnitLevel> levels;
 
-    OrgUnitHolder(FragmentManager fm, ViewDataBinding binding, FlowableProcessor<RowAction> processor,
-                  Observable<List<OrganisationUnit>> orgUnits) {
+    OrgUnitHolder(FragmentManager fm, ViewDataBinding binding, FlowableProcessor<RowAction> processor, Observable<List<OrganisationUnit>> orgUnits, Observable<List<OrganisationUnitLevel>> levels) {
         super(binding);
         compositeDisposable = new CompositeDisposable();
         this.editText = binding.getRoot().findViewById(R.id.input_editText);
         this.inputLayout = binding.getRoot().findViewById(R.id.input_layout);
         this.description = binding.getRoot().findViewById(R.id.descriptionLabel);
         this.orgUnitsObservable = orgUnits;
+        this.levelsObservable = levels;
 
         this.editText.setOnClickListener(view -> {
             editText.setEnabled(false);
             orgUnitDialog = new OrgUnitCascadeDialog()
                     .setTitle(model.label())
                     .setOrgUnits(this.orgUnits)
-                    .setSelectedOrgUnit(model.value())
+                    .setSelectedOrgUnit(selectedOrgUnit)
+                    .setLevels(this.levels)
                     .setCallbacks(new OrgUnitCascadeDialog.CascadeOrgUnitCallbacks() {
                         @Override
                         public void textChangedConsumer(String selectedOrgUnitUid, String selectedOrgUnitName) {
@@ -70,6 +77,7 @@ public class OrgUnitHolder extends FormViewHolder {
 
 
         getOrgUnits();
+        getLevels();
     }
 
     @Override
@@ -93,7 +101,7 @@ public class OrgUnitHolder extends FormViewHolder {
         if (viewModel.warning() != null) {
             inputLayout.setErrorTextAppearance(R.style.warning_appearance);
             inputLayout.setError(viewModel.warning());
-        } else if (viewModel.error() != null){
+        } else if (viewModel.error() != null) {
             inputLayout.setErrorTextAppearance(R.style.error_appearance);
             inputLayout.setError(viewModel.error());
         } else
@@ -136,5 +144,13 @@ public class OrgUnitHolder extends FormViewHolder {
                         Timber::d
                 )
         );
+    }
+
+    private void getLevels() {
+        compositeDisposable.add(levelsObservable
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .subscribe(data -> this.levels = data,
+                        Timber::e));
     }
 }

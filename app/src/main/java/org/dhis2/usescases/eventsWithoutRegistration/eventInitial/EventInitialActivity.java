@@ -1,7 +1,9 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventInitial;
 
 import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -16,6 +18,13 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.DatePicker;
 import android.widget.PopupMenu;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.core.view.GravityCompat;
+import androidx.core.view.ViewCompat;
+import androidx.databinding.DataBindingUtil;
 
 import com.unnamed.b.atv.model.TreeNode;
 import com.unnamed.b.atv.view.AndroidTreeView;
@@ -68,11 +77,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.view.GravityCompat;
-import androidx.core.view.ViewCompat;
-import androidx.databinding.DataBindingUtil;
 import io.reactivex.functions.Consumer;
 import me.toptas.fancyshowcase.FancyShowCaseView;
 import timber.log.Timber;
@@ -442,11 +446,12 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
 
     private void setDisabledFields() {
         if (eventModel != null &&
-                (DateUtils.getInstance().isEventExpired(null, eventModel.completedDate(), program.completeEventsExpiryDays()) ||
+                (DateUtils.getInstance().isEventExpired(eventModel.eventDate(), eventModel.completedDate(), eventModel.status(), program.completeEventsExpiryDays(), program.expiryPeriodType(), program.expiryDays()) ||
                         eventModel.status() == EventStatus.COMPLETED ||
                         eventModel.status() == EventStatus.SKIPPED)) {
             binding.date.setEnabled(false);
-            binding.catCombo.setEnabled(false);
+            for (int i = 0; i < binding.catComboLayout.getChildCount(); i++)
+                binding.catComboLayout.getChildAt(i).findViewById(R.id.cat_combo).setEnabled(false);
             binding.lat.setEnabled(false);
             binding.lon.setEnabled(false);
             binding.orgUnit.setEnabled(false);
@@ -665,6 +670,10 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
 
     @Override
     public void showDateDialog(DatePickerDialog.OnDateSetListener listener) {
+        showNativeCalendar(listener);
+    }
+
+    private void showNativeCalendar(DatePickerDialog.OnDateSetListener listener) {
         Calendar calendar = Calendar.getInstance();
 
         if (selectedDate != null)
@@ -684,7 +693,48 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         }
         if (eventCreationType != EventCreationType.SCHEDULE)
             datePickerDialog.getDatePicker().setMaxDate(System.currentTimeMillis() - 1000);
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            datePickerDialog.setButton(DialogInterface.BUTTON_NEUTRAL, getContext().getResources().getString(R.string.change_calendar), (dialog, which) -> {
+                datePickerDialog.dismiss();
+                showCustomCalendar(listener);
+            });
+        }
+
         datePickerDialog.show();
+    }
+
+    private void showCustomCalendar(DatePickerDialog.OnDateSetListener listener) {
+        LayoutInflater layoutInflater = LayoutInflater.from(getContext());
+        View datePickerView = layoutInflater.inflate(R.layout.widget_datepicker, null);
+        final DatePicker datePicker = datePickerView.findViewById(R.id.widget_datepicker);
+
+        Calendar calendar = Calendar.getInstance();
+
+        if (selectedDate != null)
+            calendar.setTime(selectedDate);
+
+        if (eventCreationType == EventCreationType.SCHEDULE)
+            calendar.add(Calendar.DAY_OF_YEAR, eventScheduleInterval);
+
+        datePicker.updateDate(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get(Calendar.DAY_OF_MONTH));
+
+        if (program.expiryPeriodType() != null) {
+            Date minDate = DateUtils.getInstance().expDate(null, program.expiryDays() == null ? 0 : program.expiryDays(), program.expiryPeriodType());
+            datePicker.setMinDate(minDate.getTime());
+        }
+        if (eventCreationType != EventCreationType.SCHEDULE)
+            datePicker.setMaxDate(System.currentTimeMillis() - 1000);
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext(), R.style.DatePickerTheme)
+                .setPositiveButton(R.string.action_accept, (dialog, which) -> {
+                    listener.onDateSet(datePicker, datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
+                })
+                .setNeutralButton(getContext().getResources().getString(R.string.change_calendar), (dialog, which) -> showNativeCalendar(listener));
+
+        alertDialog.setView(datePickerView);
+        Dialog dialog = alertDialog.create();
+        dialog.show();
     }
 
     @Override
@@ -829,7 +879,8 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
             binding.date.setEnabled(false);
             binding.date.setClickable(false);
             binding.orgUnit.setEnabled(false);
-            binding.catCombo.setEnabled(false);
+            for (int i = 0; i < binding.catComboLayout.getChildCount(); i++)
+                binding.catComboLayout.getChildAt(i).findViewById(R.id.cat_combo).setEnabled(false);
             binding.actionButton.setText(getString(R.string.check_event));
             binding.location1.setClickable(false);
             binding.location2.setClickable(false);

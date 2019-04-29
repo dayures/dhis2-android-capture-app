@@ -134,7 +134,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
                 activity.getPresenter().getOrgUnits(),
                 new ObservableBoolean(true),
                 flowableProcessor,
-                flowableOptions);
+                flowableOptions, activity.getPresenter().getLevels());
 
         binding.formRecycler.setAdapter(dataEntryAdapter);
 
@@ -191,5 +191,9 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
 
     public Flowable<Trio<String, String, Integer>> optionSetActions() {
         return dataEntryAdapter.asFlowableOption();
+    }
+
+    public void updateAdapter(RowAction rowAction) {
+        dataEntryAdapter.notifyChanges(rowAction);
     }
 }

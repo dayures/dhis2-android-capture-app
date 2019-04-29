@@ -253,12 +253,13 @@ public class EventSummaryRepositoryImpl implements EventSummaryRepository {
         }
 
         int optionCount = 0;
-        try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSet)) {
-            if (countCursor != null && countCursor.moveToFirst())
-                optionCount = countCursor.getInt(0);
-        } catch (Exception e) {
-            Timber.e(e);
-        }
+        if (optionSet != null)
+            try (Cursor countCursor = briteDatabase.query("SELECT COUNT (uid) FROM Option WHERE optionSet = ?", optionSet)) {
+                if (countCursor != null && countCursor.moveToFirst())
+                    optionCount = countCursor.getInt(0);
+            } catch (Exception e) {
+                Timber.e(e);
+            }
 
         ValueTypeDeviceRendering fieldRendering = null;
         try (Cursor rendering = briteDatabase.query("SELECT * FROM ValueTypeDeviceRendering WHERE uid = ?", uid)) {

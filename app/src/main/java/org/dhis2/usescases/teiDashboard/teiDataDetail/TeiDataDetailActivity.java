@@ -2,7 +2,11 @@ package org.dhis2.usescases.teiDashboard.teiDataDetail;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.MenuInflater;
 import android.view.View;
+
+import androidx.appcompat.widget.PopupMenu;
+import androidx.databinding.DataBindingUtil;
 
 import org.dhis2.App;
 import org.dhis2.Bindings.Bindings;
@@ -20,7 +24,6 @@ import java.util.Locale;
 
 import javax.inject.Inject;
 
-import androidx.databinding.DataBindingUtil;
 import io.reactivex.functions.Consumer;
 
 @SuppressWarnings("squid:MaximumInheritanceDepth")
@@ -45,34 +48,45 @@ public class TeiDataDetailActivity extends ActivityGlobalAbstract implements Tei
                 getIntent().getStringExtra("PROGRAM_UID"),
                 getIntent().getStringExtra("ENROLLMENT_UID"));
 
-        binding.fabActive.setOptionsClick(integer -> {
-            if (integer == null)
-                return;
+        binding.programLockLayout.setOnClickListener(this::showScheduleContentOptions);
+    }
 
-            switch (integer) {
+    private void showScheduleContentOptions(View v) {
+        PopupMenu popup = new PopupMenu(this, v);
+        popup.setOnMenuItemClickListener(item -> {
+            switch (item.getItemId()) {
                 case R.id.deactivate:
                     presenter.onDeactivate(dashboardProgramModel);
                     break;
                 case R.id.complete:
                     presenter.onComplete(dashboardProgramModel);
                     break;
+                case R.id.activate:
+                    presenter.onActivate(dashboardProgramModel);
+                    break;
+                case R.id.reOpen:
+                    presenter.onReOpen(dashboardProgramModel);
+                    break;
                 default:
                     break;
             }
-        });
-
-        binding.fabCompleted.setOptionsClick(integer -> {
-            if (integer != null && R.id.reOpen == integer) {
-                presenter.onReOpen(dashboardProgramModel);
-            }
-        });
-
-        binding.fabCancelled.setOptionsClick(integer -> {
-            if (integer != null && R.id.reOpen == integer) {
-                presenter.onActivate(dashboardProgramModel);
-            }
-        });
+            return false;
+        });// to implement on click event on items of menu
+        MenuInflater inflater = popup.getMenuInflater();
+        int menuId = 0;
+        if (dashboardProgramModel.getCurrentEnrollment().status() == EnrollmentStatus.ACTIVE) {
+            menuId = R.menu.tei_detail_options_active;
+        } else if (dashboardProgramModel.getCurrentEnrollment().status() == EnrollmentStatus.CANCELLED) {
+            menuId = R.menu.tei_detail_options_cancelled;
+        } else if (dashboardProgramModel.getCurrentEnrollment().status() == EnrollmentStatus.COMPLETED) {
+            menuId = R.menu.tei_detail_options_completed;
+        }
+        if (menuId != 0) {
+            inflater.inflate(menuId, popup.getMenu());
+            popup.show();
+        }
     }
+
 
     @Override
     public void init(String teiUid, String programUid, String enrollmentUid) {

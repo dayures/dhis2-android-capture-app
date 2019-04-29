@@ -1,5 +1,7 @@
 package org.dhis2.data.forms.dataentry;
 
+import androidx.annotation.NonNull;
+
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.FormRepository;
@@ -17,6 +19,7 @@ import org.hisp.dhis.android.core.program.ProgramRuleVariable;
 import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
+import org.hisp.dhis.rules.RuleEngine;
 import org.hisp.dhis.rules.models.Rule;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleAttributeValue;
@@ -29,7 +32,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import androidx.annotation.NonNull;
 import io.reactivex.Flowable;
 
 import static android.text.TextUtils.isEmpty;
@@ -77,7 +79,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
 
     @NonNull
     private final String enrollmentUid;
-    private final RuleEnrollment.Builder ruleEnrollmentBuilder;
+    private RuleEnrollment.Builder ruleEnrollmentBuilder;
     @NonNull
     private final D2 d2;
 
@@ -97,18 +99,37 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
         this.enrollmentUid = enrollmentUid;
         this.ruleAttributeValueMap = new HashMap<>();
 
+        initData();
+
+    }
+
+    public void initData() {
         Enrollment enrollment = d2.enrollmentModule().enrollments.uid(enrollmentUid).withAllChildren().get();
         OrganisationUnit ou = d2.organisationUnitModule().organisationUnits.uid(enrollment.organisationUnit()).get();
         Program program = d2.programModule().programs.uid(enrollment.program()).withAllChildren().get();
-        List<TrackedEntityAttributeValue> attributeValueList = d2.trackedEntityModule().trackedEntityAttributeValues
-                .byTrackedEntityInstance().eq(enrollment.trackedEntityInstance())
-                .withAllChildren().get();
 
         attrRuleVariableMap = new HashMap<>();
         for (ProgramRuleVariable ruleVariable : program.programRuleVariables()) {
             if (ruleVariable.trackedEntityAttribute() != null)
                 attrRuleVariableMap.put(ruleVariable.trackedEntityAttribute().uid(), ruleVariable);
         }
+
+        ruleEnrollmentBuilder = RuleEnrollment.builder()
+                .enrollment(enrollment.uid())
+                .incidentDate(enrollment.incidentDate() == null ? enrollment.enrollmentDate() : enrollment.incidentDate())
+                .enrollmentDate(enrollment.enrollmentDate())
+                .status(RuleEnrollment.Status.valueOf(enrollment.status().name()))
+                .organisationUnit(enrollment.organisationUnit())
+                .organisationUnitCode(ou.code())
+                .programName(program.displayName());
+
+        loadAttrRules(program.uid());
+    }
+
+    private Map<String, String> getAttributesValueMap(Enrollment enrollment, Program program) {
+        List<TrackedEntityAttributeValue> attributeValueList = d2.trackedEntityModule().trackedEntityAttributeValues
+                .byTrackedEntityInstance().eq(enrollment.trackedEntityInstance())
+                .withAllChildren().get();
 
         Map<String, String> attrValueMap = new HashMap<>();
         for (TrackedEntityAttributeValue attributeValue : attributeValueList) {
@@ -133,20 +154,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
             if (!attrValueMap.containsKey(prgAttr.uid()))
                 attrValueMap.put(prgAttr.uid(), "");
         }
-
-        initRuleAttributeMap(attrValueMap);
-
-        ruleEnrollmentBuilder = RuleEnrollment.builder()
-                .enrollment(enrollment.uid())
-                .incidentDate(enrollment.incidentDate() == null ? enrollment.enrollmentDate() : enrollment.incidentDate())
-                .enrollmentDate(enrollment.enrollmentDate())
-                .status(RuleEnrollment.Status.valueOf(enrollment.status().name()))
-                .organisationUnit(enrollment.organisationUnit())
-                .organisationUnitCode(ou.code())
-                .programName(program.displayName());
-
-        loadAttrRules(program.uid());
-
+        return attrValueMap;
     }
 
     private void loadAttrRules(String programUid) {
@@ -163,10 +171,14 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                         action.programRuleActionType() == ProgramRuleActionType.ASSIGN ||
                         action.programRuleActionType() == ProgramRuleActionType.SHOWWARNING ||
                         action.programRuleActionType() == ProgramRuleActionType.SHOWERROR ||
+                        action.programRuleActionType() == ProgramRuleActionType.DISPLAYKEYVALUEPAIR ||
+                        action.programRuleActionType() == ProgramRuleActionType.DISPLAYTEXT ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
-                        action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION)
-                        && (!mandatoryRules.contains(rule)))
-                    mandatoryRules.add(rule);
+                        action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION ||
+                        action.programRuleActionType() == ProgramRuleActionType.SETMANDATORYFIELD)) {
+                    if (!mandatoryRules.contains(rule))
+                        mandatoryRules.add(rule);
+                }
         }
 
         List<ProgramRuleVariable> variables = d2.programModule().programRuleVariables
@@ -244,11 +256,18 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
         return actionContainsDe;
     }
 
-    private void initRuleAttributeMap(Map<String, String> attrValueMap) {
+    private void setRuleAttributeMap(Map<String, String> attrValueMap) {
         for (Map.Entry<String, String> attrValueEntry : attrValueMap.entrySet()) {
             ruleAttributeValueMap.put(attrValueEntry.getKey(),
                     RuleAttributeValue.create(attrValueEntry.getKey(), attrValueEntry.getValue()));
         }
+    }
+
+    private List<RuleAttributeValue> getRuleAttributeValueMap() {
+        Enrollment enrollment = d2.enrollmentModule().enrollments.uid(enrollmentUid).withAllChildren().get();
+        Program program = d2.programModule().programs.uid(enrollment.program()).withAllChildren().get();
+        setRuleAttributeMap(getAttributesValueMap(enrollment, program));
+        return new ArrayList<>(ruleAttributeValueMap.values());
     }
 
     @Override
@@ -257,7 +276,8 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
         TrackedEntityAttribute attr = d2.trackedEntityModule().trackedEntityAttributes.uid(uid).withAllChildren().get();
         if (attr.optionSet() != null) {
             ProgramRuleVariable ruleVariable = attrRuleVariableMap.get(attr.uid());
-            if (ruleVariable != null && (ruleVariable.useCodeForOptionSet() == null || !ruleVariable.useCodeForOptionSet())) {
+            if ((ruleVariable != null && (ruleVariable.useCodeForOptionSet() == null || !ruleVariable.useCodeForOptionSet())) &&
+                    attr.optionSet().options() != null) {
                 for (Option option : attr.optionSet().options()) {
                     if (value.equals(option.code()))
                         value = option.displayName();
@@ -267,24 +287,35 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
         ruleAttributeValueMap.put(uid, RuleAttributeValue.create(uid, value));
     }
 
+    @Override
+    public Flowable<RuleEngine> updateRuleEngine() {
+        return this.formRepository.restartRuleEngine();
+    }
+
 
     @NonNull
     @Override
     public Flowable<Result<RuleEffect>> calculate() {
-        return Flowable.defer(() -> Flowable.just(new ArrayList<>(ruleAttributeValueMap.values())))
+        return Flowable.defer(() -> Flowable.just(getRuleAttributeValueMap()))
                 .map(attrs -> ruleEnrollmentBuilder.attributeValues(attrs).build())
                 .switchMap(enrollment -> formRepository.ruleEngine()
                         .switchMap(ruleEngine -> {
                             if (isEmpty(lastUpdatedAttr))
                                 return Flowable.fromCallable(ruleEngine.evaluate(enrollment));
                             else
-                                return Flowable.just(attributeRules.get(lastUpdatedAttr) != null ? attributeRules.get(lastUpdatedAttr) : new ArrayList<Rule>())
-                                        .map(rules -> rules.isEmpty() ? trasformToRule(mandatoryRules) : rules)
+                                return Flowable.just(attributeRules.get(lastUpdatedAttr) != null ? attributeRules.get(lastUpdatedAttr) : trasformToRule(mandatoryRules))
                                         .filter(rules -> !rules.isEmpty())
                                         .flatMap(rules -> Flowable.fromCallable(ruleEngine.evaluate(enrollment, rules)));
                         })
                         .map(Result::success)
                         .onErrorReturn(error -> Result.failure(new Exception(error)))
                 );
+    }
+
+    @NonNull
+    @Override
+    public Flowable<Result<RuleEffect>> reCalculate() {
+        initData();
+        return calculate();
     }
 }

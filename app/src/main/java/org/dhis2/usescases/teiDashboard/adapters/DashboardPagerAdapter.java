@@ -3,16 +3,16 @@ package org.dhis2.usescases.teiDashboard.adapters;
 import android.content.Context;
 import android.os.Parcelable;
 
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentStatePagerAdapter;
+
 import org.dhis2.R;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.indicators.IndicatorsFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.notes.NotesFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.relationships.RelationshipFragment;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.tei_data.TEIDataFragment;
 import org.jetbrains.annotations.NotNull;
-
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentStatePagerAdapter;
 
 
 /**
@@ -38,18 +38,35 @@ public class DashboardPagerAdapter extends FragmentStatePagerAdapter {
         return null;
     }
 
+    private IndicatorsFragment indicatorsFragment;
+    private RelationshipFragment relationshipFragment;
+    private NotesFragment notesFragment;
+    private TEIDataFragment teiDataFragment;
+
     @NotNull
     @Override
     public Fragment getItem(int position) {
         switch (position) {
             case 1:
-                return new IndicatorsFragment();
+                if (indicatorsFragment == null) {
+                    indicatorsFragment = new IndicatorsFragment();
+                }
+                return indicatorsFragment;
             case 2:
-                return new RelationshipFragment();
+                if (relationshipFragment == null) {
+                    relationshipFragment = new RelationshipFragment();
+                }
+                return relationshipFragment;
             case 3:
-                return new NotesFragment();
+                if (notesFragment == null) {
+                    notesFragment = new NotesFragment();
+                }
+                return notesFragment;
             default:
-                return new TEIDataFragment();
+                if (teiDataFragment == null) {
+                    teiDataFragment = new TEIDataFragment();
+                }
+                return teiDataFragment;
         }
     }
 

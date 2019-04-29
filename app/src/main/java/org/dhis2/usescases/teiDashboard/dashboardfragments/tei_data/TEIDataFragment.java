@@ -9,6 +9,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ObservableBoolean;
+import androidx.lifecycle.ViewModelProviders;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.LinearLayoutManager;
+
 import org.dhis2.App;
 import org.dhis2.R;
 import org.dhis2.databinding.FragmentTeiDataBinding;
@@ -34,13 +42,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ObservableBoolean;
-import androidx.lifecycle.ViewModelProviders;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.LinearLayoutManager;
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
 
@@ -289,16 +290,18 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements TEIDataCo
     }
 
     private void createEvent(EventCreationType eventCreationType, Integer scheduleIntervalDays) {
-        Bundle bundle = new Bundle();
-        bundle.putString(PROGRAM_UID, dashboardModel.getCurrentEnrollment().program());
-        bundle.putString(TRACKED_ENTITY_INSTANCE, dashboardModel.getTei().uid());
-        bundle.putString(ORG_UNIT, dashboardModel.getTei().organisationUnit()); //We take the OU of the TEI for the events
-        bundle.putString(ENROLLMENT_UID, dashboardModel.getCurrentEnrollment().uid());
-        bundle.putString(EVENT_CREATION_TYPE, eventCreationType.name());
-        bundle.putInt(EVENT_SCHEDULE_INTERVAL, scheduleIntervalDays);
-        Intent intent = new Intent(getContext(), ProgramStageSelectionActivity.class);
-        intent.putExtras(bundle);
-        startActivityForResult(intent, REQ_EVENT);
+        if (isAdded()) {
+            Bundle bundle = new Bundle();
+            bundle.putString(PROGRAM_UID, dashboardModel.getCurrentEnrollment().program());
+            bundle.putString(TRACKED_ENTITY_INSTANCE, dashboardModel.getTei().uid());
+            bundle.putString(ORG_UNIT, dashboardModel.getTei().organisationUnit()); //We take the OU of the TEI for the events
+            bundle.putString(ENROLLMENT_UID, dashboardModel.getCurrentEnrollment().uid());
+            bundle.putString(EVENT_CREATION_TYPE, eventCreationType.name());
+            bundle.putInt(EVENT_SCHEDULE_INTERVAL, scheduleIntervalDays);
+            Intent intent = new Intent(getContext(), ProgramStageSelectionActivity.class);
+            intent.putExtras(bundle);
+            startActivityForResult(intent, REQ_EVENT);
+        }
     }
 
     @Override
@@ -340,7 +343,6 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements TEIDataCo
 
     @Override
     public void showQR(Intent intent) {
-
         startActivity(intent);
     }
 
@@ -352,6 +354,10 @@ public class TEIDataFragment extends FragmentGlobalAbstract implements TEIDataCo
     @Override
     public void openEventInitial(Intent intent) {
         this.startActivityForResult(intent, REQ_EVENT, null);
+    }
 
+    @Override
+    public void openEventCapture(Intent intent) {
+        this.startActivity(intent);
     }
 }

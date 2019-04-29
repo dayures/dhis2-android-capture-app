@@ -4,6 +4,8 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 
+import androidx.annotation.NonNull;
+
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.R;
@@ -26,6 +28,8 @@ import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
+import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramRule;
 import org.hisp.dhis.android.core.program.ProgramRuleAction;
 import org.hisp.dhis.android.core.program.ProgramRuleActionType;
@@ -51,7 +55,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import androidx.annotation.NonNull;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
@@ -79,6 +82,7 @@ import static org.dhis2.utils.SqlConstants.TEI_LAST_UPDATED;
 import static org.dhis2.utils.SqlConstants.TEI_STATE;
 import static org.dhis2.utils.SqlConstants.TEI_TABLE;
 import static org.dhis2.utils.SqlConstants.TEI_UID;
+
 
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
@@ -216,7 +220,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                             action.programRuleActionType() == ProgramRuleActionType.SHOWWARNING ||
                             action.programRuleActionType() == ProgramRuleActionType.SHOWERROR ||
                             action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
-                            action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION)
+                            action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION ||
+                            action.programRuleActionType() == ProgramRuleActionType.SETMANDATORYFIELD)
                         if (!mandatoryRules.contains(rule))
                             mandatoryRules.add(rule);
         }
@@ -320,6 +325,15 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             return false;
         else
             return d2.enrollmentModule().enrollments.uid(d2.eventModule().events.uid(eventUid).get().enrollment()).get().status() == EnrollmentStatus.CANCELLED;
+    }
+
+    @Override
+    public boolean isEventExpired(String eventUid) {
+        Event event = d2.eventModule().events.uid(eventUid).withAllChildren().get();
+        Program program = d2.programModule().programs.uid(event.program()).withAllChildren().get();
+        boolean isExpired = DateUtils.getInstance().isEventExpired(event.eventDate(), event.completedDate(), event.status(), program.completeEventsExpiryDays(), program.expiryPeriodType(), program.expiryDays());
+        boolean editable = isEnrollmentOpen() && /*event.status() == EventStatus.ACTIVE*/!isExpired && accessDataWrite && inOrgUnitRange(eventUid);
+        return !editable;
     }
 
     @Override
@@ -548,7 +562,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         return fieldFactory.create(uid, formName == null ? displayName : formName,
                 ValueType.valueOf(valueTypeName), mandatory, optionSet, dataValue,
                 programStageSection, allowFurureDates,
-                isEnrollmentOpen() && eventStatus == EventStatus.ACTIVE && accessDataWrite && inOrgUnitRange(eventUid),
+                !isEventExpired(eventUid),
+//                isEnrollmentOpen() && eventStatus == EventStatus.ACTIVE && accessDataWrite && inOrgUnitRange(eventUid),
                 renderingType, description, fieldRendering, optionCount, objectStyle);
     }
 
@@ -747,5 +762,10 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             // This programstage has sections
             return FormSectionViewModel.createForSection(eventUid, cursor.getString(2), cursor.getString(3), cursor.getString(5));
         }
+    }
+
+    @Override
+    public Observable<List<OrganisationUnitLevel>> getOrgUnitLevels() {
+        return Observable.just(d2.organisationUnitModule().organisationUnitLevels.get());
     }
 }

@@ -1,5 +1,7 @@
 package org.dhis2.data.forms.dataentry;
 
+import androidx.annotation.NonNull;
+
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.FormRepository;
@@ -7,6 +9,7 @@ import org.dhis2.data.forms.RuleHelper;
 import org.dhis2.utils.Result;
 import org.dhis2.utils.SqlConstants;
 import org.hisp.dhis.android.core.common.State;
+import org.hisp.dhis.rules.RuleEngine;
 import org.hisp.dhis.rules.models.RuleDataValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEvent;
@@ -14,9 +17,9 @@ import org.hisp.dhis.rules.models.RuleEvent;
 import java.util.Arrays;
 import java.util.List;
 
-import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
+
 
 public final class EventsRuleEngineRepository implements RuleEngineRepository {
     private static final String QUERY_EVENT = "SELECT Event.uid,\n" +
@@ -68,6 +71,11 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
         // unused
     }
 
+    @Override
+    public Flowable<RuleEngine> updateRuleEngine() {
+        return formRepository.restartRuleEngine();
+    }
+
     @NonNull
     @Override
     public Flowable<Result<RuleEffect>> calculate() {
@@ -79,6 +87,12 @@ public final class EventsRuleEngineRepository implements RuleEngineRepository {
                                 .onErrorReturn(error -> Result.failure(new Exception(error)))
                         )
                 );
+    }
+
+    @NonNull
+    @Override
+    public Flowable<Result<RuleEffect>> reCalculate() {
+        return calculate();
     }
 
     @NonNull

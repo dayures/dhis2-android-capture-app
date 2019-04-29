@@ -5,6 +5,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteStatement;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.R;
@@ -19,20 +22,20 @@ import org.hisp.dhis.android.core.common.ValueTypeDeviceRendering;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.maintenance.D2Error;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import io.reactivex.Observable;
 import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
 import static org.dhis2.utils.SqlConstants.SELECT_ALL_FROM;
 import static org.hisp.dhis.android.core.utils.StoreUtils.sqLiteBind;
+
 
 final class EnrollmentRepository implements DataEntryRepository {
     private static final String QUERY = "SELECT \n" +
@@ -48,7 +51,8 @@ final class EnrollmentRepository implements DataEntryRepository {
             "  Enrollment.organisationUnit,\n" +
             "  Enrollment.status,\n" +
             "  Field.displayDescription,\n" +
-            "  Field.pattern\n" +
+            "  Field.pattern, \n" +
+            "  Field.formName \n" +
             "FROM (Enrollment INNER JOIN Program ON Program.uid = Enrollment.program)\n" +
             "  LEFT OUTER JOIN (\n" +
             "      SELECT\n" +
@@ -61,7 +65,8 @@ final class EnrollmentRepository implements DataEntryRepository {
             "        ProgramTrackedEntityAttribute.mandatory AS mandatory,\n" +
             "        ProgramTrackedEntityAttribute.allowFutureDate AS allowFutureDate,\n" +
             "        TrackedEntityAttribute.generated AS generated,\n" +
-            "        TrackedEntityAttribute.displayDescription AS displayDescription\n" +
+            "        TrackedEntityAttribute.displayDescription AS displayDescription, \n" +
+            "        TrackedEntityAttribute.formName AS formName \n" +
             "      FROM ProgramTrackedEntityAttribute INNER JOIN TrackedEntityAttribute\n" +
             "          ON TrackedEntityAttribute.uid = ProgramTrackedEntityAttribute.trackedEntityAttribute\n" +
             "    ) AS Field ON Field.program = Program.uid\n" +
@@ -102,6 +107,11 @@ final class EnrollmentRepository implements DataEntryRepository {
         return briteDatabase
                 .createQuery(SqlConstants.TE_ATTR_VALUE_TABLE, QUERY, enrollment)
                 .mapToList(this::transform);
+    }
+
+    @Override
+    public Observable<List<OrganisationUnitLevel>> getOrgUnitLevels() {
+        return Observable.just(d2.organisationUnitModule().organisationUnitLevels.get());
     }
 
     public List<FieldViewModel> fieldList() {
@@ -217,6 +227,11 @@ final class EnrollmentRepository implements DataEntryRepository {
         EnrollmentStatus enrollmentStatus = EnrollmentStatus.valueOf(cursor.getString(10));
         String description = cursor.getString(11);
         String pattern = cursor.getString(12);
+        String formName = cursor.getString(13);
+
+        if (!isEmpty(optionCodeName)) {
+            dataValue = optionCodeName;
+        }
 
         int optionCount = getOptionCount(optionSet);
 
@@ -246,7 +261,6 @@ final class EnrollmentRepository implements DataEntryRepository {
                     updateStatement.clearBindings();
                 }
             } catch (D2Error e) {
-                Timber.e(e);
                 warning = context.getString(R.string.no_reserved_values);
             }
         }
@@ -255,25 +269,29 @@ final class EnrollmentRepository implements DataEntryRepository {
 
         ObjectStyle objectStyle = getObjectStyle(uid);
 
-        return createFieldViewModel(warning, uid, label, valueType, mandatory, optionSet,
+        return createFieldViewModel(warning, uid, label, formName, valueType, mandatory, optionSet,
                 dataValue, allowFutureDates, generated,
                 enrollmentStatus, description,
                 fieldRendering, optionCount, objectStyle);
     }
 
+    private String getFormName(String formName, String label) {
+        return formName != null && !formName.isEmpty() ? formName : label;
+    }
+
     @SuppressWarnings("squid:S00107")
-    private FieldViewModel createFieldViewModel(String warning, String uid, String label, ValueType valueType, boolean mandatory, String optionSet,
+    private FieldViewModel createFieldViewModel(String warning, String uid, String label, String formName, ValueType valueType, boolean mandatory, String optionSet,
                                                 String dataValue, boolean allowFutureDates, boolean generated,
                                                 EnrollmentStatus enrollmentStatus, String description,
                                                 ValueTypeDeviceRendering fieldRendering, int optionCount, ObjectStyle objectStyle) {
         if (warning != null) {
             return fieldFactory.create(uid,
-                    label, valueType, mandatory, optionSet, dataValue, null, allowFutureDates,
+                    getFormName(formName, label), valueType, mandatory, optionSet, dataValue, null, allowFutureDates,
                     false, null, description, fieldRendering, optionCount, objectStyle)
                     .withWarning(warning);
         } else {
             return fieldFactory.create(uid,
-                    label, valueType, mandatory, optionSet, dataValue, null, allowFutureDates,
+                    getFormName(formName, label), valueType, mandatory, optionSet, dataValue, null, allowFutureDates,
                     !generated && enrollmentStatus == EnrollmentStatus.ACTIVE, null, description, fieldRendering, optionCount, objectStyle);
         }
     }

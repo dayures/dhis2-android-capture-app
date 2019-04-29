@@ -52,9 +52,19 @@ import static org.dhis2.utils.SqlConstants.AND;
 import static org.dhis2.utils.SqlConstants.EVENT_ATTR_OPTION_COMBO;
 import static org.dhis2.utils.SqlConstants.EVENT_STATE;
 import static org.dhis2.utils.SqlConstants.JOIN_TABLE_ON;
+import static org.dhis2.utils.SqlConstants.PROGRAM_TE_ATTR_DISPLAY_IN_LIST;
+import static org.dhis2.utils.SqlConstants.PROGRAM_TE_ATTR_PROGRAM;
+import static org.dhis2.utils.SqlConstants.PROGRAM_TE_ATTR_SORT_ORDER;
+import static org.dhis2.utils.SqlConstants.PROGRAM_TE_ATTR_TABLE;
+import static org.dhis2.utils.SqlConstants.PROGRAM_TE_ATTR_TE_ATTR;
 import static org.dhis2.utils.SqlConstants.QUESTION_MARK;
 import static org.dhis2.utils.SqlConstants.SELECT;
 import static org.dhis2.utils.SqlConstants.TABLE_FIELD_EQUALS;
+import static org.dhis2.utils.SqlConstants.TE_ATTR_TABLE;
+import static org.dhis2.utils.SqlConstants.TE_ATTR_UID;
+import static org.dhis2.utils.SqlConstants.TE_ATTR_VALUE_TABLE;
+import static org.dhis2.utils.SqlConstants.TE_ATTR_VALUE_TEI;
+import static org.dhis2.utils.SqlConstants.TE_ATTR_VALUE_TE_ATTR;
 import static org.dhis2.utils.SqlConstants.WHERE;
 import static org.hisp.dhis.android.core.utils.StoreUtils.sqLiteBind;
 
@@ -144,24 +154,29 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                     WHERE + TABLE_FIELD_EQUALS + QUESTION_MARK +
                     AND + TABLE_FIELD_EQUALS + QUESTION_MARK +
                     "ORDER BY %s.%s",
-            SqlConstants.TE_ATTR_VALUE_TABLE,
-            SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_TE_ATTR, SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.TE_ATTR_VALUE_TE_ATTR,
-            SqlConstants.TE_ATTR_TABLE, SqlConstants.TE_ATTR_TABLE, SqlConstants.TE_ATTR_UID, SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.TE_ATTR_VALUE_TE_ATTR,
-            SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_PROGRAM,
-            SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.TE_ATTR_VALUE_TEI,
-            SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_SORT_ORDER);
+            TE_ATTR_VALUE_TABLE,
+            PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_TE_ATTR, TE_ATTR_VALUE_TABLE, TE_ATTR_VALUE_TE_ATTR,
+            TE_ATTR_TABLE, TE_ATTR_TABLE, TE_ATTR_UID, TE_ATTR_VALUE_TABLE, TE_ATTR_VALUE_TE_ATTR,
+            PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_PROGRAM,
+            TE_ATTR_VALUE_TABLE, TE_ATTR_VALUE_TEI,
+            PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_SORT_ORDER);
 
     private static final String ATTRIBUTE_VALUES_NO_PROGRAM_QUERY = String.format(
-            "SELECT %s.*, TrackedEntityAttribute.valueType, TrackedEntityAttribute.optionSet FROM %s " +
-                    JOIN_TABLE_ON +
-                    JOIN_TABLE_ON +
-                    "WHERE %s.%s = ? GROUP BY %s.%s",
-            SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.TE_ATTR_VALUE_TABLE,
-            SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_TABLE, SqlConstants.PROGRAM_TE_ATTR_TE_ATTR, SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.TE_ATTR_VALUE_TE_ATTR,
-            SqlConstants.TE_ATTR_TABLE, SqlConstants.TE_ATTR_TABLE, SqlConstants.TE_ATTR_UID, SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.TE_ATTR_VALUE_TE_ATTR,
-            SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.TE_ATTR_VALUE_TEI, SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.TE_ATTR_VALUE_TE_ATTR);
-
-    private static final Set<String> ATTRIBUTE_VALUES_TABLE = new HashSet<>(Arrays.asList(SqlConstants.TE_ATTR_VALUE_TABLE, SqlConstants.PROGRAM_TE_ATTR_TABLE));
+                    "JOIN %s ON %s.%s = %s.%s " +
+                    "JOIN %s ON %s.%s = %s.%s " +
+                    "WHERE %s.%s = ? " +
+                    "AND %s.%s = ? " +
+                    "AND %s.%s = 1 " +
+                    "ORDER BY %s.%s",
+            TE_ATTR_VALUE_TABLE,
+            PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_TE_ATTR, TE_ATTR_VALUE_TABLE, TE_ATTR_VALUE_TE_ATTR,
+            TE_ATTR_TABLE, TE_ATTR_TABLE, TE_ATTR_UID, TE_ATTR_VALUE_TABLE, TE_ATTR_VALUE_TE_ATTR,
+            PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_PROGRAM,
+            TE_ATTR_VALUE_TABLE, TE_ATTR_VALUE_TEI,
+            PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_DISPLAY_IN_LIST,
+            PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_SORT_ORDER);
+   
+    private static final Set<String> ATTRIBUTE_VALUES_TABLE = new HashSet<>(Arrays.asList(TE_ATTR_VALUE_TABLE, PROGRAM_TE_ATTR_TABLE));
 
     private final BriteDatabase briteDatabase;
     private final CodeGenerator codeGenerator;
@@ -212,7 +227,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
     @Override
     public Observable<List<TrackedEntityAttributeValue>> mainTrackedEntityAttributes(String teiUid) {
-        return briteDatabase.createQuery(SqlConstants.TE_ATTR_VALUE_TABLE, SELECT_TEI_MAIN_ATTR, teiUid)
+        return briteDatabase.createQuery(TE_ATTR_VALUE_TABLE, SELECT_TEI_MAIN_ATTR, teiUid)
                 .mapToList(TrackedEntityAttributeValue::create);
     }
 
@@ -614,7 +629,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
         sqLiteBind(updateStatement, 3, enrollmentUid == null ? "" : enrollmentUid);
 
         long updated = briteDatabase.executeUpdateDelete(
-                SqlConstants.TE_ATTR_VALUE_TABLE, updateStatement);
+                TE_ATTR_VALUE_TABLE, updateStatement);
         updateStatement.clearBindings();
 
         updateTeiState();

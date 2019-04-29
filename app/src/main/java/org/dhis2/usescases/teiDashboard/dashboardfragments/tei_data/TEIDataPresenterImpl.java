@@ -5,8 +5,12 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.View;
 
+import androidx.appcompat.widget.PopupMenu;
+import androidx.core.app.ActivityOptionsCompat;
+
 import org.dhis2.R;
 import org.dhis2.data.metadata.MetadataRepository;
+import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureActivity;
 import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity;
 import org.dhis2.usescases.qrCodes.QrActivity;
 import org.dhis2.usescases.teiDashboard.DashboardProgramModel;
@@ -22,8 +26,6 @@ import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStage;
 
-import androidx.appcompat.widget.PopupMenu;
-import androidx.core.app.ActivityOptionsCompat;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.android.schedulers.AndroidSchedulers;
@@ -224,12 +226,18 @@ class TEIDataPresenterImpl implements TEIDataContracts.Presenter {
     }
 
     @Override
-    public void onEventSelected(String uid, View sharedView) {
-        Intent intent = new Intent(view.getContext(), EventInitialActivity.class);
-        intent.putExtras(EventInitialActivity.getBundle(
-                programUid, uid, EventCreationType.DEFAULT.name(), teiUid, null, null, null, dashboardModel.getCurrentEnrollment().uid(), 0, dashboardModel.getCurrentEnrollment().status()
-        ));
-        view.openEventInitial(intent);
+    public void onEventSelected(String uid, EventStatus eventStatus, View sharedView) {
+        if (eventStatus == EventStatus.ACTIVE || eventStatus == EventStatus.COMPLETED) {
+            Intent intent = new Intent(view.getContext(), EventCaptureActivity.class);
+            intent.putExtras(EventCaptureActivity.getActivityBundle(uid, programUid));
+            view.openEventCapture(intent);
+        } else {
+            Intent intent = new Intent(view.getContext(), EventInitialActivity.class);
+            intent.putExtras(EventInitialActivity.getBundle(
+                    programUid, uid, EventCreationType.DEFAULT.name(), teiUid, null, null, null, dashboardModel.getCurrentEnrollment().uid(), 0, dashboardModel.getCurrentEnrollment().status()
+            ));
+            view.openEventInitial(intent);
+        }
     }
 
     @Override

@@ -1,5 +1,7 @@
 package org.dhis2.data.forms.dataentry;
 
+import androidx.annotation.NonNull;
+
 import org.dhis2.R;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.RowAction;
@@ -11,6 +13,7 @@ import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.common.ObjectStyle;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionAssign;
 import org.hisp.dhis.rules.models.RuleActionCreateEvent;
@@ -32,7 +35,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -42,6 +44,7 @@ import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
 import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
+
 
 @SuppressWarnings("PMD")
 final class DataEntryPresenterImpl implements DataEntryPresenter {
@@ -68,6 +71,8 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
     private Map<String, FieldViewModel> currentFieldViewModels;
     private FlowableProcessor<RowAction> assignProcessor;
     private FlowableProcessor<Boolean> requestListProcessor;
+
+    private List<OrganisationUnitLevel> levels;
 
     DataEntryPresenterImpl(@NonNull DataEntryStore dataEntryStore,
                            @NonNull DataEntryRepository dataEntryRepository,
@@ -115,6 +120,8 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
                                     map(result -> {
                                         if (result == 5)
                                             dataEntryStore.save(action.id(), null);
+
+                                        dataEntryView.updateAdapter(action);
                                         return Trio.create(result, action.id(), action.value());
                                     });
                         }
@@ -156,6 +163,14 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
                                 dataEntryView::setListOptions,
                                 Timber::e
                         ));
+
+        disposable.add(dataEntryRepository.getOrgUnitLevels()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        data -> levels = data,
+                        Timber::e
+                ));
     }
 
     private void save(String uid, String value) {
@@ -171,6 +186,11 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
     @Override
     public Observable<List<OrganisationUnit>> getOrgUnits() {
         return dataEntryRepository.getOrgUnits();
+    }
+
+    @Override
+    public Observable<List<OrganisationUnitLevel>> getLevels() {
+        return dataEntryRepository.getOrgUnitLevels();
     }
 
     @NonNull

@@ -8,6 +8,7 @@ import org.dhis2.usescases.teiDashboard.DashboardProgramModel;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramStage;
 
@@ -15,6 +16,7 @@ import java.util.List;
 
 import io.reactivex.Single;
 import io.reactivex.functions.Consumer;
+
 
 /**
  * QUADRAM. Created by ppajuelo on 09/04/2019.
@@ -46,6 +48,8 @@ public class TEIDataContracts {
         void openEventDetails(Intent intent, Bundle bundle);
 
         void openEventInitial(Intent intent);
+
+        void openEventCapture(Intent intent);
     }
 
     public interface Presenter extends AbstractActivityContracts.Presenter {
@@ -74,7 +78,7 @@ public class TEIDataContracts {
 
         void onScheduleSelected(String uid, android.view.View sharedView);
 
-        void onEventSelected(String uid, android.view.View sharedView);
+        void onEventSelected(String uid, EventStatus eventStatus, android.view.View sharedView);
 
         void setDashboardProgram(DashboardProgramModel dashboardModel);
 

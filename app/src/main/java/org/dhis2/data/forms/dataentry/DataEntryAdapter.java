@@ -3,6 +3,14 @@ package org.dhis2.data.forms.dataentry;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+import androidx.databinding.ObservableBoolean;
+import androidx.databinding.ObservableField;
+import androidx.fragment.app.FragmentManager;
+import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.RecyclerView.Adapter;
+import androidx.recyclerview.widget.RecyclerView.ViewHolder;
+
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.Row;
 import org.dhis2.data.forms.dataentry.fields.RowAction;
@@ -30,17 +38,11 @@ import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.searchTrackEntity.adapters.FormAdapter;
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.databinding.ObservableBoolean;
-import androidx.databinding.ObservableField;
-import androidx.fragment.app.FragmentManager;
-import androidx.recyclerview.widget.DiffUtil;
-import androidx.recyclerview.widget.RecyclerView.Adapter;
-import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 import io.reactivex.Observable;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
@@ -65,11 +67,14 @@ public final class DataEntryAdapter extends Adapter {
 
     private final FlowableProcessor<Trio<String, String, Integer>> processorOptionSet;
 
+    private final Observable<List<OrganisationUnitLevel>> levels;
+
     public DataEntryAdapter(@NonNull LayoutInflater layoutInflater,
                             @NonNull FragmentManager fragmentManager,
                             @NonNull DataEntryArguments dataEntryArguments,
                             @NonNull Observable<List<OrganisationUnit>> orgUnits,
-                            ObservableBoolean isEditable) { //TODO: Add isEditable to all fields and test if can be changed on the fly
+                            ObservableBoolean isEditable,
+                            Observable<List<OrganisationUnitLevel>> levels) { //TODO: Add isEditable to all fields and test if can be changed on the fly
         setHasStableIds(true);
         rows = new ArrayList<>();
         viewModels = new ArrayList<>();
@@ -77,6 +82,21 @@ public final class DataEntryAdapter extends Adapter {
         imageSelector = new ObservableField<>("");
         currentPosition = PublishProcessor.create();
         this.processorOptionSet = PublishProcessor.create();
+        this.levels = levels;
+
+        rows.add(FormAdapter.EDITTEXT, new EditTextRow(layoutInflater, processor, true, dataEntryArguments.renderType(), isEditable));
+        rows.add(FormAdapter.BUTTON, new FileRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.CHECKBOX, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.SPINNER, new SpinnerRow(layoutInflater, processor, processorOptionSet, true, dataEntryArguments.renderType()));
+        rows.add(FormAdapter.COORDINATES, new CoordinateRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.TIME, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.TIME, true));
+        rows.add(FormAdapter.DATE, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.DATE, true));
+        rows.add(FormAdapter.DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.DATETIME, true));
+        rows.add(FormAdapter.AGEVIEW, new AgeRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.YES_NO, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType(), levels));
+        rows.add(FormAdapter.IMAGE, new ImageRow(layoutInflater, processor, dataEntryArguments.renderType()));
+        rows.add(FormAdapter.UNSUPPORTED, new UnsupportedRow(layoutInflater));
 
         addRows(layoutInflater, fragmentManager, dataEntryArguments, orgUnits, isEditable);
     }
@@ -97,7 +117,7 @@ public final class DataEntryAdapter extends Adapter {
         rows.add(FormAdapter.DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.DATETIME, true));
         rows.add(FormAdapter.AGEVIEW, new AgeRow(layoutInflater, processor, true));
         rows.add(FormAdapter.YES_NO, new RadioButtonRow(layoutInflater, processor, true));
-        rows.add(FormAdapter.ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, true, orgUnits, dataEntryArguments.renderType()));
+        rows.add(FormAdapter.ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, true, orgUnits));
         rows.add(FormAdapter.IMAGE, new ImageRow(layoutInflater, processor, dataEntryArguments.renderType()));
         rows.add(FormAdapter.UNSUPPORTED, new UnsupportedRow(layoutInflater));
     }
@@ -106,9 +126,10 @@ public final class DataEntryAdapter extends Adapter {
                             @NonNull FragmentManager fragmentManager,
                             @NonNull DataEntryArguments dataEntryArguments,
                             @NonNull Observable<List<OrganisationUnit>> orgUnits,
-                            ObservableBoolean isEditable,
+                            ObservableBoolean isEditable,//TODO: Add isEditable to all fields and test if can be changed on the fly
                             @NonNull FlowableProcessor<RowAction> processor,
-                            @NonNull FlowableProcessor<Trio<String, String, Integer>> processorOptSet) { //TODO: Add isEditable to all fields and test if can be changed on the fly
+                            @NonNull FlowableProcessor<Trio<String, String, Integer>> processorOptSet,
+                            Observable<List<OrganisationUnitLevel>> levels) {
         setHasStableIds(true);
         rows = new ArrayList<>();
         viewModels = new ArrayList<>();
@@ -116,6 +137,21 @@ public final class DataEntryAdapter extends Adapter {
         imageSelector = new ObservableField<>("");
         currentPosition = PublishProcessor.create();
         this.processorOptionSet = processorOptSet;
+        this.levels = levels;
+
+        rows.add(FormAdapter.EDITTEXT, new EditTextRow(layoutInflater, processor, true, dataEntryArguments.renderType(), isEditable));
+        rows.add(FormAdapter.BUTTON, new FileRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.CHECKBOX, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.SPINNER, new SpinnerRow(layoutInflater, processor, processorOptionSet, true, dataEntryArguments.renderType()));
+        rows.add(FormAdapter.COORDINATES, new CoordinateRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.TIME, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.TIME, true));
+        rows.add(FormAdapter.DATE, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.DATE, true));
+        rows.add(FormAdapter.DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.DATETIME, true));
+        rows.add(FormAdapter.AGEVIEW, new AgeRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.YES_NO, new RadioButtonRow(layoutInflater, processor, true));
+        rows.add(FormAdapter.ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType(), levels));
+        rows.add(FormAdapter.IMAGE, new ImageRow(layoutInflater, processor, dataEntryArguments.renderType()));
+        rows.add(FormAdapter.UNSUPPORTED, new UnsupportedRow(layoutInflater));
 
         addRows(layoutInflater, fragmentManager, dataEntryArguments, orgUnits, isEditable);
     }
@@ -228,5 +264,19 @@ public final class DataEntryAdapter extends Adapter {
         }
 
         return hasError;
+    }
+
+    public void notifyChanges(RowAction rowAction) {
+        List<FieldViewModel> helperModels = new ArrayList<>();
+        for (FieldViewModel field : viewModels) {
+            FieldViewModel toAdd = field;
+            if (field.uid().equals(rowAction.id()))
+                toAdd = field.withValue(rowAction.value()).withEditMode(toAdd.editable());
+
+            helperModels.add(toAdd);
+        }
+
+        viewModels.clear();
+        viewModels.addAll(helperModels);
     }
 }

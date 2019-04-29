@@ -3,7 +3,7 @@ package org.dhis2.data.forms;
 import android.content.ContentValues;
 import android.database.Cursor;
 
-import com.google.android.gms.maps.model.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
@@ -168,11 +168,13 @@ public class EventRepository implements FormRepository {
     private final BriteDatabase briteDatabase;
 
     @NonNull
-    private final Flowable<RuleEngine> cachedRuleEngineFlowable;
+    private Flowable<RuleEngine> cachedRuleEngineFlowable;
 
     @Nullable
     private final String eventUid;
     private final D2 d2;
+    private final RulesRepository rulesRepository;
+    private final RuleExpressionEvaluator evaluator;
     private String programUid;
 
     public EventRepository(@NonNull BriteDatabase briteDatabase,
@@ -183,10 +185,39 @@ public class EventRepository implements FormRepository {
         this.d2 = d2;
         this.briteDatabase = briteDatabase;
         this.eventUid = eventUid;
-
+        this.rulesRepository = rulesRepository;
+        this.evaluator = evaluator;
         // We don't want to rebuild RuleEngine on each request, since metadata of
         // the event is not changing throughout lifecycle of FormComponent.
         this.cachedRuleEngineFlowable = eventProgram()
+                .switchMap(program -> Flowable.zip(
+                        rulesRepository.rulesNew(program),
+                        rulesRepository.ruleVariables(program),
+                        rulesRepository.otherEvents(eventUid),
+                        rulesRepository.enrollment(eventUid),
+                        rulesRepository.queryConstants(),
+                        (rules, variables, events, enrollment, constants) -> {
+
+                            RuleEngine.Builder builder = RuleEngineContext.builder(evaluator)
+                                    .rules(rules)
+                                    .ruleVariables(variables)
+                                    .constantsValue(constants)
+                                    .calculatedValueMap(new HashMap<>())
+                                    .supplementaryData(new HashMap<>())
+                                    .build().toEngineBuilder();
+                            builder.triggerEnvironment(TriggerEnvironment.ANDROIDCLIENT);
+                            builder.events(events);
+                            if (!isEmpty(enrollment.enrollment()))
+                                builder.enrollment(enrollment);
+                            return builder.build();
+                        }))
+                .cacheWithInitialCapacity(1);
+    }
+
+
+    @Override
+    public Flowable<RuleEngine> restartRuleEngine() {
+        return this.cachedRuleEngineFlowable = eventProgram()
                 .switchMap(program -> Flowable.zip(
                         rulesRepository.rulesNew(program),
                         rulesRepository.ruleVariables(program),
@@ -252,6 +283,7 @@ public class EventRepository implements FormRepository {
                 .mapToOne(Program::create)
                 .toFlowable(BackpressureStrategy.LATEST);
     }
+
 
     @NonNull
     @Override

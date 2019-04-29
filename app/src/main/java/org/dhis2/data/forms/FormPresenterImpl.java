@@ -191,7 +191,8 @@ class FormPresenterImpl implements FormPresenter {
         compositeDisposable.add(enrollmentDoneStream
                 .flatMap(formRepository::autoGenerateEvents) //Autogeneration of events
                 .flatMap(data -> formRepository.useFirstStageDuringRegistration()) //Checks if first Stage Should be used
-                .subscribeOn(schedulerProvider.io())
+                .subscribeOn(schedulerProvider.ui())
+                .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
                         view.finishEnrollment(),
                         throwable -> {

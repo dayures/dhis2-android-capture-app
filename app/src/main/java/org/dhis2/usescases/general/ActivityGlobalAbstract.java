@@ -17,6 +17,15 @@ import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityOptionsCompat;
+import androidx.core.content.ContextCompat;
+import androidx.core.widget.ContentLoadingProgressBar;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import com.crashlytics.android.Crashlytics;
 import com.google.firebase.analytics.FirebaseAnalytics;
 import com.google.gson.Gson;
@@ -41,14 +50,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.List;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityOptionsCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.widget.ContentLoadingProgressBar;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
 import timber.log.Timber;
@@ -329,8 +330,8 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
             //BODY
             final View msgView = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_body, null);
             ((TextView) msgView.findViewById(R.id.dialogBody)).setText(message);
-            ((Button)msgView.findViewById(R.id.dialogAccept)).setText(positiveButtonText);
-            ((Button)msgView.findViewById(R.id.dialogCancel)).setText(negativeButtonText);
+            ((Button) msgView.findViewById(R.id.dialogAccept)).setText(positiveButtonText);
+            ((Button) msgView.findViewById(R.id.dialogCancel)).setText(negativeButtonText);
             msgView.findViewById(R.id.dialogAccept).setOnClickListener(view -> {
                 clickListener.onPossitiveClick(alertDialog);
                 alertDialog.dismiss();

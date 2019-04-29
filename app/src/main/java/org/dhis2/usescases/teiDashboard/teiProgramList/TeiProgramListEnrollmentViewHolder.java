@@ -5,6 +5,10 @@ import android.graphics.drawable.Drawable;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
+import androidx.core.content.ContextCompat;
+import androidx.databinding.ViewDataBinding;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.dhis2.BR;
 import org.dhis2.R;
 import org.dhis2.databinding.ItemTeiProgramsEnrollmentBinding;
@@ -12,10 +16,6 @@ import org.dhis2.databinding.ItemTeiProgramsEnrollmentInactiveBinding;
 import org.dhis2.databinding.ItemTeiProgramsProgramsBinding;
 import org.dhis2.usescases.main.program.ProgramViewModel;
 import org.dhis2.utils.ColorUtils;
-
-import androidx.core.content.ContextCompat;
-import androidx.databinding.ViewDataBinding;
-import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * QUADRAM. Created by Cristian on 13/02/2018.
@@ -30,7 +30,7 @@ public class TeiProgramListEnrollmentViewHolder extends RecyclerView.ViewHolder 
         this.binding = binding;
     }
 
-    private int getEnrollmentIcon(EnrollmentViewModel enrollment){
+    private int getEnrollmentIcon(EnrollmentViewModel enrollment) {
         int icon;
         if (enrollment.icon() != null) {
             Resources resources = itemView.getContext().getResources();
@@ -44,7 +44,7 @@ public class TeiProgramListEnrollmentViewHolder extends RecyclerView.ViewHolder 
         return icon;
     }
 
-    private int getProgramIcon(ProgramViewModel programModel){
+    private int getProgramIcon(ProgramViewModel programModel) {
         int icon;
         if (programModel.icon() != null) {
             Resources resources = itemView.getContext().getResources();
@@ -77,7 +77,6 @@ public class TeiProgramListEnrollmentViewHolder extends RecyclerView.ViewHolder 
             int color = ColorUtils.getColorFrom(enrollment.color(),
                     ColorUtils.getPrimaryColor(itemView.getContext(), ColorUtils.ColorType.PRIMARY));
 
-
             Drawable iconImage = ContextCompat.getDrawable(itemView.getContext(), getEnrollmentIcon(enrollment));
             setIconImage(programImage, iconImage, color);
 
@@ -99,7 +98,6 @@ public class TeiProgramListEnrollmentViewHolder extends RecyclerView.ViewHolder 
             int color = ColorUtils.getColorFrom(programModel.color(),
                     ColorUtils.getPrimaryColor(itemView.getContext(), ColorUtils.ColorType.PRIMARY));
 
-
             Drawable iconImage = ContextCompat.getDrawable(itemView.getContext(), getProgramIcon(programModel));
             setIconImage(programImage, iconImage, color);
 
@@ -109,13 +107,13 @@ public class TeiProgramListEnrollmentViewHolder extends RecyclerView.ViewHolder 
         binding.executePendingBindings();
     }
 
-    private void setIconImage(ImageView programImage, Drawable iconImage, int color){
+    private void setIconImage(ImageView programImage, Drawable iconImage, int color) {
         if (iconImage != null) {
             programImage.setImageDrawable(ColorUtils.tintDrawableReosurce(iconImage, color));
         }
     }
 
-    private void setBgImage(RelativeLayout iconBg, int color){
+    private void setBgImage(RelativeLayout iconBg, int color) {
         Drawable bgImage = ContextCompat.getDrawable(itemView.getContext(), R.drawable.photo_temp_gray);
         if (bgImage != null) {
             iconBg.setBackground(ColorUtils.tintDrawableWithColor(bgImage, color));

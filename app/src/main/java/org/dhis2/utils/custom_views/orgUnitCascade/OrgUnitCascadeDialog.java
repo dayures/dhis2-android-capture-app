@@ -8,6 +8,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.DialogFragment;
+
 import com.google.android.material.chip.Chip;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 
@@ -15,6 +20,7 @@ import org.dhis2.R;
 import org.dhis2.data.tuples.Quintet;
 import org.dhis2.databinding.DialogCascadeOrgunitBinding;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -22,10 +28,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.databinding.DataBindingUtil;
-import androidx.fragment.app.DialogFragment;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.schedulers.Schedulers;
@@ -45,6 +47,7 @@ public class OrgUnitCascadeDialog extends DialogFragment {
     private OrgUnitCascadeAdapter adapter;
     private String selectedOrgUnit;
     private HashMap<String, String> paths;
+    private List<OrganisationUnitLevel> levels;
 
     public OrgUnitCascadeDialog setTitle(String title) {
         this.title = title;
@@ -58,6 +61,12 @@ public class OrgUnitCascadeDialog extends DialogFragment {
 
     public OrgUnitCascadeDialog setSelectedOrgUnit(String orgUnitUid) {
         this.selectedOrgUnit = orgUnitUid;
+        return this;
+    }
+
+
+    public OrgUnitCascadeDialog setLevels(List<OrganisationUnitLevel> levels) {
+        this.levels = levels;
         return this;
     }
 
@@ -140,7 +149,7 @@ public class OrgUnitCascadeDialog extends DialogFragment {
                 } else {
                     binding.acceptButton.setVisibility(View.INVISIBLE);
                 }
-            });
+            }, levels);
             binding.recycler.setAdapter(adapter);
             binding.acceptButton.setVisibility(View.INVISIBLE);
         });
@@ -148,7 +157,8 @@ public class OrgUnitCascadeDialog extends DialogFragment {
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup
+            container, Bundle savedInstanceState) {
         binding = DataBindingUtil.inflate(inflater, R.layout.dialog_cascade_orgunit, container, false);
         binding.orgUnitEditText.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_search, 0, 0, 0);
         binding.orgUnitEditText.setHint(title);
@@ -178,7 +188,8 @@ public class OrgUnitCascadeDialog extends DialogFragment {
         return binding.getRoot();
     }
 
-    private ArrayList<Quintet<String, String, String, Integer, Boolean>> getMatches(CharSequence textTofind) {
+    private ArrayList<Quintet<String, String, String, Integer, Boolean>> getMatches
+            (CharSequence textTofind) {
         ArrayList<Quintet<String, String, String, Integer, Boolean>> matches = new ArrayList<>();
         for (Quintet<String, String, String, Integer, Boolean> quartet : orgUnits)
             if (quartet.val1().toLowerCase().contains(textTofind.toString()))
@@ -193,7 +204,7 @@ public class OrgUnitCascadeDialog extends DialogFragment {
             } else {
                 binding.acceptButton.setVisibility(View.INVISIBLE);
             }
-        });
+        }, levels);
 
         if (selectedOrgUnit != null) {
             for (Quintet<String, String, String, Integer, Boolean> orgUnit : orgUnits) {
@@ -207,7 +218,8 @@ public class OrgUnitCascadeDialog extends DialogFragment {
         binding.recycler.setAdapter(adapter);
     }
 
-    private void showChips(ArrayList<Quintet<String, String, String, Integer, Boolean>> data) {
+    private void showChips
+            (ArrayList<Quintet<String, String, String, Integer, Boolean>> data) {
         binding.results.removeAllViews();
         for (Quintet<String, String, String, Integer, Boolean> trio : data) {
             if (trio.val4() && getContext() != null) { //Only shows selectable orgUnits

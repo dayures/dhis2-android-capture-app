@@ -2,6 +2,10 @@ package org.dhis2.usescases.eventsWithoutRegistration.eventCapture;
 
 import android.os.Handler;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.ObservableField;
+
 import com.google.android.material.snackbar.Snackbar;
 
 import org.dhis2.R;
@@ -21,6 +25,7 @@ import org.dhis2.utils.custom_views.OptionSetPopUp;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.option.Option;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 import org.hisp.dhis.rules.models.RuleActionShowError;
 import org.hisp.dhis.rules.models.RuleEffect;
 
@@ -31,9 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.databinding.ObservableField;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -45,6 +47,7 @@ import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
+
 
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
@@ -77,6 +80,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
     private final FlowableProcessor<String> sectionProcessor;
     private boolean isSubscribed;
     private long ruleInitTime;
+    private List<OrganisationUnitLevel> levels;
 
     public EventCapturePresenterImpl(String eventUid, EventCaptureContract.EventCaptureRepository eventCaptureRepository, MetadataRepository metadataRepository, RulesUtilsProvider rulesUtils, DataEntryStore dataEntryStore) {
         this.eventUid = eventUid;
@@ -135,8 +139,8 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
                         .subscribe(
                                 data -> {
                                     this.eventStatus = data;
-                                    if (eventStatus == EventStatus.COMPLETED)
-                                        checkExpiration();
+//                                    if (eventStatus == EventStatus.COMPLETED)
+                                    checkExpiration();
                                 },
                                 Timber::e
                         )
@@ -154,7 +158,6 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
                                 Timber::e
                         )
         );
-
 
         subscribeGetFieldFlowable();
         subscribeSectionProcessor();
@@ -201,6 +204,14 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
     }
 
     private void subscribeGetFieldFlowable() {
+        compositeDisposable.add(eventCaptureRepository.getOrgUnitLevels()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        data -> levels = data,
+                        Timber::e
+                ));
+
         compositeDisposable.add(
                 getFieldFlowable(null)
                         .map(fields -> {
@@ -314,15 +325,18 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
     }
 
     private void checkExpiration() {
-        compositeDisposable.add(
-                metadataRepository.isCompletedEventExpired(eventUid)
-                        .subscribeOn(Schedulers.io())
-                        .observeOn(AndroidSchedulers.mainThread())
-                        .subscribe(
-                                hasExpiredResult -> this.hasExpired = hasExpiredResult,
-                                Timber::e
-                        )
-        );
+        if (eventStatus == EventStatus.COMPLETED)
+            compositeDisposable.add(
+                    metadataRepository.isCompletedEventExpired(eventUid)
+                            .subscribeOn(Schedulers.io())
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(
+                                    hasExpiredResult -> this.hasExpired = hasExpiredResult && eventCaptureRepository.isEventExpired(eventUid),
+                                    Timber::e
+                            )
+            );
+        else
+            this.hasExpired = eventCaptureRepository.isEventExpired(eventUid);
     }
 
     @Override
@@ -398,6 +412,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
                     .switchMap(action -> {
                                 eventCaptureRepository.setLastUpdated(action.id());
                                 ruleInitTime = System.currentTimeMillis();
+                                EventCaptureFormFragment.getInstance().updateAdapter(action);
                                 return dataEntryStore.save(action.id(), action.value());
                             }
                     ).subscribe(result -> Timber.d(result.toString()),
@@ -680,6 +695,11 @@ public class EventCapturePresenterImpl implements EventCaptureContract.EventCapt
     @Override
     public void displayMessage(String message) {
         view.displayMessage(message);
+    }
+
+    @Override
+    public Observable<List<OrganisationUnitLevel>> getLevels() {
+        return eventCaptureRepository.getOrgUnitLevels();
     }
 
     //region ruleActions
