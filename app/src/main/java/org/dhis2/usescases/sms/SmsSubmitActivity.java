@@ -23,20 +23,14 @@ import androidx.fragment.app.DialogFragment;
 import org.dhis2.App;
 import org.dhis2.R;
 import org.hisp.dhis.android.core.D2;
-import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
 import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
 import org.hisp.dhis.android.core.sms.domain.repository.WebApiRepository;
-import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.jetbrains.annotations.NotNull;
-
-import java.util.Collections;
-import java.util.List;
 
 import javax.inject.Inject;
 
 import io.reactivex.Observable;
-import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
@@ -146,35 +140,6 @@ public class SmsSubmitActivity extends AppCompatActivity {
         return true;
     }
 
-    private Observable<SmsRepository.SmsSendingState> sendEventSMS() {
-        return Single.fromCallable(() ->
-                d2.trackedEntityModule().trackedEntityDataValues.byEvent().eq(eventId).get()
-        ).map(values ->
-                d2.eventModule().events.byUid().eq(eventId).one().get().toBuilder()
-                        .trackedEntityInstance(teiId)
-                        .trackedEntityDataValues(values)
-                        .build()
-        ).flatMapObservable(
-                smsSender::submit
-        );
-    }
-
-    private Observable<SmsRepository.SmsSendingState> sendTeiEnrollmentSMS() {
-        return Single.fromCallable(() ->
-                d2.trackedEntityModule().trackedEntityInstances.byUid().eq(teiId).one().get()
-        ).map(tei -> {
-            Enrollment enrollment = d2.enrollmentModule().enrollments.byUid().eq(enrollmentId).one().get();
-            List<TrackedEntityAttributeValue> attributes =
-                    d2.trackedEntityModule().trackedEntityAttributeValues.byTrackedEntityInstance().eq(teiId).get();
-            return tei.toBuilder()
-                    .trackedEntityAttributeValues(attributes)
-                    .enrollments(Collections.singletonList(enrollment))
-                    .build();
-        }).flatMapObservable(tei ->
-                smsSender.submit(tei.enrollments().get(0), tei.trackedEntityType(), tei.trackedEntityAttributeValues())
-        );
-    }
-
     private void addText(int text) {
         addText(getString(text));
     }
@@ -208,10 +173,10 @@ public class SmsSubmitActivity extends AppCompatActivity {
     private void sendSMS(boolean skipPermissionCheck) {
         if (!initialCheck(skipPermissionCheck)) return;
         Observable<SmsRepository.SmsSendingState> sendingTask;
-        if (enrollmentId != null) {
-            sendingTask = sendTeiEnrollmentSMS();
-        } else if (eventId != null) {
-            sendingTask = sendEventSMS();
+        if (enrollmentId != null && teiId != null) {
+            sendingTask = smsSender.submitEnrollment(enrollmentId, teiId);
+        } else if (eventId != null && teiId != null) {
+            sendingTask = smsSender.submitEvent(eventId, teiId);
         } else {
             addText(R.string.sms_general_error);
             return;
