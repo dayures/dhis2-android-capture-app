@@ -11,10 +11,10 @@ import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.ObjectStyleModel;
-import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.ProgramModel;
-import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.program.ProgramStage;
 
 import java.util.Date;
 import java.util.List;
@@ -45,7 +45,7 @@ public class EventInitialContract {
 
         void addTree(TreeNode treeNode);
 
-        void setEvent(EventModel event);
+        void setEvent(Event event);
 
         void setLocation(double latitude, double longitude);
 
@@ -53,7 +53,7 @@ public class EventInitialContract {
 
         void onEventUpdated(String eventUid);
 
-        void setProgramStage(ProgramStageModel programStage);
+        void setProgramStage(ProgramStage programStage);
 
         void onEventSections(List<FormSectionViewModel> formSectionViewModels);
 
@@ -68,7 +68,7 @@ public class EventInitialContract {
 
         void setAccessDataWrite(Boolean canWrite);
 
-        void showOrgUnitSelector(List<OrganisationUnitModel> orgUnits);
+        void showOrgUnitSelector(List<OrganisationUnit> orgUnits);
 
         void showQR();
 
@@ -123,7 +123,7 @@ public class EventInitialContract {
 
         void getEventSections(@NonNull String eventId);
 
-        List<OrganisationUnitModel> getOrgUnits();
+        List<OrganisationUnit> getOrgUnits();
 
         void onShareClick(android.view.View mView);
 

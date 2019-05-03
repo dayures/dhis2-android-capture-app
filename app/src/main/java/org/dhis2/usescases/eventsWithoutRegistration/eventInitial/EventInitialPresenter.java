@@ -28,7 +28,7 @@ import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionHideField;
@@ -74,7 +74,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
     private CategoryCombo catCombo;
     private String programId;
     private String programStageId;
-    private List<OrganisationUnitModel> orgUnits;
+    private List<OrganisationUnit> orgUnits;
 
     public EventInitialPresenter(@NonNull EventSummaryRepository eventSummaryRepository,
                                  @NonNull EventInitialRepository eventInitialRepository,
@@ -175,7 +175,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribe(
                         orgUnits -> {
                             this.orgUnits = orgUnits;
-                            view.addTree(OrgUnitUtils.renderTree(view.getContext(), orgUnits, false));
+                            view.addTree(OrgUnitUtils.renderTree_2(view.getContext(), orgUnits, false));
                         },
                         throwable -> view.renderError(throwable.getMessage())
                 ));
@@ -194,7 +194,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
     }
 
     @Override
-    public List<OrganisationUnitModel> getOrgUnits() {
+    public List<OrganisationUnit> getOrgUnits() {
         return orgUnits;
     }
 
@@ -235,7 +235,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        programStageModel -> view.setProgramStage(programStageModel),
+                        programStage -> view.setProgramStage(programStage),
                         throwable -> view.showProgramStageSelection()
                 ));
     }
@@ -246,7 +246,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(
-                        programStageModel -> view.setProgramStage(programStageModel),
+                        programStage -> view.setProgramStage(programStage),
                         throwable -> view.showProgramStageSelection()
                 ));
     }
@@ -386,7 +386,7 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                 .subscribe(
                         orgUnits -> {
                             this.orgUnits = orgUnits;
-                            view.addTree(OrgUnitUtils.renderTree(view.getContext(), orgUnits, true));
+                            view.addTree(OrgUnitUtils.renderTree_2(view.getContext(), orgUnits, true));
                         },
                         throwable -> view.showNoOrgUnits()
                 ));

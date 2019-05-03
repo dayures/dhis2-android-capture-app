@@ -21,8 +21,9 @@ import org.hisp.dhis.android.core.maintenance.D2Error;
 import org.hisp.dhis.android.core.option.OptionModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
+import org.hisp.dhis.android.core.program.ProgramStage;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
-import org.hisp.dhis.android.core.program.ProgramStageSectionModel;
+import org.hisp.dhis.android.core.program.ProgramStageSectionTableInfo;
 import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttributeModel;
 import org.hisp.dhis.android.core.resource.ResourceModel;
 import org.hisp.dhis.android.core.settings.SystemSettingModel;
@@ -314,9 +315,9 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     }
 
     @Override
-    public Flowable<ProgramStageModel> programStageForEvent(String eventId) {
-        return briteDatabase.createQuery(ProgramStageSectionModel.TABLE, "SELECT ProgramStage.* FROM ProgramStage JOIN Event ON Event.programStage = ProgramStage.uid WHERE Event.uid = ? LIMIT 1", eventId)
-                .mapToOne(ProgramStageModel::create).toFlowable(BackpressureStrategy.LATEST);
+    public Flowable<ProgramStage> programStageForEvent(String eventId) {
+        return briteDatabase.createQuery(ProgramStageSectionTableInfo.TABLE_INFO.name(), "SELECT ProgramStage.* FROM ProgramStage JOIN Event ON Event.programStage = ProgramStage.uid WHERE Event.uid = ? LIMIT 1", eventId)
+                .mapToOne(ProgramStage::create).toFlowable(BackpressureStrategy.LATEST);
     }
 
 
