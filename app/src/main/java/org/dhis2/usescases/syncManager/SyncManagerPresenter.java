@@ -3,6 +3,15 @@ package org.dhis2.usescases.syncManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import androidx.core.util.Pair;
+import androidx.work.Constraints;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.ExistingWorkPolicy;
+import androidx.work.NetworkType;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.service.SyncDataWorker;
 import org.dhis2.data.service.SyncMetadataWorker;
@@ -11,19 +20,16 @@ import org.dhis2.usescases.reservedValue.ReservedValueActivity;
 import org.dhis2.utils.Constants;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.maintenance.D2Error;
+import org.hisp.dhis.android.core.sms.domain.interactor.ConfigCase;
 
 import java.io.File;
 import java.util.concurrent.TimeUnit;
 
-import androidx.work.Constraints;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.ExistingWorkPolicy;
-import androidx.work.NetworkType;
-import androidx.work.OneTimeWorkRequest;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
+import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
+import io.reactivex.observers.DisposableCompletableObserver;
+import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
 import io.reactivex.schedulers.Schedulers;
@@ -65,6 +71,25 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
                                 Timber::e
                         )
         );
+
+        ConfigCase smsConfig = d2.smsModule().configCase();
+        compositeDisposable.add(Single.zip(
+                smsConfig.getGatewayNumber(),
+                smsConfig.isModuleEnabled(),
+                Pair::create
+        ).subscribeOn(Schedulers.io()
+        ).observeOn(AndroidSchedulers.mainThread()
+        ).subscribeWith(new DisposableSingleObserver<Pair<String, Boolean>>() {
+            @Override
+            public void onSuccess(Pair<String, Boolean> config) {
+                view.showSmsSettings(config.second, config.first);
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                Timber.e(e);
+            }
+        }));
     }
 
     /**
@@ -139,6 +164,38 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
     @Override
     public void cancelPendingWork(String tag) {
         WorkManager.getInstance().cancelAllWorkByTag(tag);
+    }
+
+    @Override
+    public void smsNumberSet(String number) {
+        compositeDisposable.add(d2.smsModule().configCase().setGatewayNumber(number)
+                .subscribeWith(new DisposableCompletableObserver() {
+                    @Override
+                    public void onComplete() {
+                        Timber.d("SMS gateway set to %s", number);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Timber.e(e);
+                    }
+                }));
+    }
+
+    @Override
+    public void smsSwitch(boolean isChecked) {
+        compositeDisposable.add(d2.smsModule().configCase().setModuleEnabled(isChecked)
+                .subscribeWith(new DisposableCompletableObserver() {
+                    @Override
+                    public void onComplete() {
+                        Timber.d("SMS module enabled: %s", isChecked);
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Timber.e(e);
+                    }
+                }));
     }
 
     @Override

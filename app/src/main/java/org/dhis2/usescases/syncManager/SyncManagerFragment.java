@@ -15,8 +15,11 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.CompoundButton;
+import android.widget.TextView;
 
 import com.google.android.material.snackbar.Snackbar;
+import com.jakewharton.rxbinding2.widget.RxCompoundButton;
 import com.jakewharton.rxbinding2.widget.RxTextView;
 
 import org.dhis2.BuildConfig;
@@ -44,6 +47,7 @@ import androidx.core.widget.NestedScrollView;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.functions.Consumer;
@@ -174,6 +178,22 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
                         Timber::d
                 ));
 
+        listenerDisposable.add(RxTextView.textChanges(binding.settingsSms.findViewById(R.id.settings_sms_receiver))
+                .debounce(1000, TimeUnit.MILLISECONDS, Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        data -> presenter.smsNumberSet(data.toString()),
+                        Timber::d
+                ));
+
+        listenerDisposable.add(RxCompoundButton.checkedChanges(binding.settingsSms.findViewById(R.id.settings_sms_switch))
+                .debounce(1000, TimeUnit.MILLISECONDS, Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        isChecked -> presenter.smsSwitch(isChecked),
+                        Timber::d
+                ));
+
         binding.limitByOrgUnit.setOnCheckedChangeListener((buttonView, isChecked) -> prefs.edit().putBoolean(Constants.LIMIT_BY_ORG_UNIT, isChecked).apply());
 
         setLastSyncDate();
@@ -203,6 +223,14 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
             binding.teiCurrentData.setText(String.valueOf(syncParameters.val1()));
             binding.limitByOrgUnit.setChecked(prefs.getBoolean(Constants.LIMIT_BY_ORG_UNIT, false));
         };
+    }
+
+    @Override
+    public void showSmsSettings(boolean enabled, String number) {
+        ((CompoundButton) binding.settingsSms.findViewById(R.id.settings_sms_switch))
+                .setChecked(enabled);
+        ((TextView) binding.settingsSms.findViewById(R.id.settings_sms_receiver))
+                .setText(number);
     }
 
     private void setLastSyncDate() {
@@ -446,7 +474,7 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
     @Override
     public void showLocalDataDeleted(boolean error) {
 
-        if(!error) {
+        if (!error) {
             binding.eventCurrentData.setText(String.valueOf(0));
             binding.teiCurrentData.setText(String.valueOf(0));
         }

@@ -2,13 +2,10 @@ package org.dhis2.usescases.sms;
 
 import android.Manifest;
 import android.app.Dialog;
-import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.text.InputType;
-import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
@@ -25,7 +22,6 @@ import org.dhis2.R;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
 import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
-import org.hisp.dhis.android.core.sms.domain.repository.WebApiRepository;
 import org.jetbrains.annotations.NotNull;
 
 import javax.inject.Inject;
@@ -45,7 +41,6 @@ public class SmsSubmitActivity extends AppCompatActivity {
     private String enrollmentId;
     private String eventId;
     private String teiId;
-    private String gatewayNumber = null;
     private SmsSubmitCase smsSender;
     private LinearLayout layout;
     @Inject
@@ -85,6 +80,7 @@ public class SmsSubmitActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         disposables.dispose();
+        finish();
         super.onStop();
     }
 
@@ -105,27 +101,8 @@ public class SmsSubmitActivity extends AppCompatActivity {
         sendSMS(true);
     }
 
-    private WebApiRepository.GetMetadataIdsConfig getMetadataConfig() {
-        WebApiRepository.GetMetadataIdsConfig config = new WebApiRepository.GetMetadataIdsConfig();
-        config.categoryOptionCombos = true;
-        config.dataElements = true;
-        config.organisationUnits = true;
-        config.programs = true;
-        config.trackedEntityAttributes = true;
-        config.trackedEntityTypes = true;
-        config.users = true;
-        return config;
-    }
-
     private boolean initialCheck(boolean skipPermissionCheck) {
         addText(R.string.sms_state_started);
-        // check number
-        String number = gatewayNumber;
-        if (number == null || number.length() < 2) {
-            addText(R.string.sms_state_asking_number);
-            askForNumber();
-            return false;
-        }
         // check permissions
         String[] smsPermissions = new String[]{Manifest.permission.ACCESS_NETWORK_STATE,
                 Manifest.permission.READ_PHONE_STATE,
@@ -158,18 +135,6 @@ public class SmsSubmitActivity extends AppCompatActivity {
         dialog.show(getSupportFragmentManager(), null);
     }
 
-    private void askForNumber() {
-        ReceiverDialog dialog = new ReceiverDialog();
-        dialog.show(getSupportFragmentManager(), null);
-    }
-
-    private void numberSet(String number) {
-        if (number.length() > 1) {
-            gatewayNumber = number;
-            sendSMS(false);
-        }
-    }
-
     private void sendSMS(boolean skipPermissionCheck) {
         if (!initialCheck(skipPermissionCheck)) return;
         Observable<SmsRepository.SmsSendingState> sendingTask;
@@ -182,10 +147,7 @@ public class SmsSubmitActivity extends AppCompatActivity {
             return;
         }
 
-        disposables.add(d2.smsModule(
-        ).initCase().initSMSModule(gatewayNumber, getMetadataConfig()
-        ).andThen(sendingTask
-        ).subscribeOn(Schedulers.newThread()
+        disposables.add(sendingTask.subscribeOn(Schedulers.newThread()
         ).observeOn(AndroidSchedulers.mainThread()
         ).subscribeWith(observer()));
     }
@@ -232,6 +194,12 @@ public class SmsSubmitActivity extends AppCompatActivity {
                         case NO_USER_LOGGED_IN:
                             addText(R.string.sms_error_no_user_login);
                             break;
+                        case NO_METADATA_DOWNLOADED:
+                            addText(R.string.sms_metadata_empty);
+                            break;
+                        case SMS_MODULE_DISABLED:
+                            addText(R.string.sms_error_module_disabled);
+                            break;
                     }
                 } else if (e instanceof SmsRepository.SMSCountException) {
                     addText(getString(R.string.sms_count_error, ((SmsRepository.SMSCountException) e).getCount()));
@@ -273,33 +241,6 @@ public class SmsSubmitActivity extends AppCompatActivity {
         public void onPause() {
             dismiss();
             super.onPause();
-        }
-    }
-
-    public static class ReceiverDialog extends DialogFragment {
-        public ReceiverDialog() {
-        }
-
-        @NotNull
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            builder.setTitle(R.string.sms_receiver_number);
-            final EditText input = new EditText(getActivity());
-            input.setInputType(InputType.TYPE_CLASS_PHONE);
-            input.setText("+");
-            builder.setView(input);
-
-            builder.setPositiveButton(android.R.string.ok, (dialog, which) ->
-                    ((SmsSubmitActivity) getActivity()).numberSet(input.getText().toString())
-            );
-            builder.setNegativeButton(android.R.string.cancel, (dialog, which) -> dialog.cancel());
-            return builder.create();
-        }
-
-        @Override
-        public void onCancel(@NonNull DialogInterface dialog) {
-            ((SmsSubmitActivity) getActivity()).addText(R.string.sms_error_no_gateway_set);
         }
     }
 }

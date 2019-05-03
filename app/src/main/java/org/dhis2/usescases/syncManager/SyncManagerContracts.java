@@ -27,6 +27,8 @@ public class SyncManagerContracts {
         void showSyncErrors(List<D2Error> data);
 
         void showLocalDataDeleted(boolean error);
+
+        void showSmsSettings(boolean enabled, String number);
     }
 
     public interface Presenter {
@@ -60,5 +62,9 @@ public class SyncManagerContracts {
         void checkData();
 
         void cancelPendingWork(String meta);
+
+        void smsNumberSet(String number);
+
+        void smsSwitch(boolean isChecked);
     }
 }
