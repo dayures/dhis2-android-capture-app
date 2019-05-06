@@ -6,6 +6,8 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteStatement;
 
+import androidx.annotation.NonNull;
+
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.R;
@@ -23,12 +25,16 @@ import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.data.database.DbDateColumnAdapter;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
+import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.enrollment.note.Note;
 import org.hisp.dhis.android.core.event.Event;
+import org.hisp.dhis.android.core.event.EventModel;
 import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.program.ProgramIndicator;
+import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramStage;
+import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.relationship.RelationshipType;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
@@ -42,7 +48,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
-import androidx.annotation.NonNull;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -88,9 +93,9 @@ public class DashboardRepositoryImpl implements DashboardRepository {
     private static final String PROGRAM_INDICATORS_QUERY = String.format("SELECT %s.* FROM %s WHERE %s.%s = ",
             SqlConstants.PROGRAM_INDICATOR_TABLE, SqlConstants.PROGRAM_INDICATOR_TABLE, SqlConstants.PROGRAM_INDICATOR_TABLE, SqlConstants.PROGRAM_INDICATOR_PROGRAM);
 
-    private static final String ENROLLMENT_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ? AND %s.%s = ? LIMIT 1",
+    private final String ENROLLMENT_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ? AND %s.%s = ? ORDER BY %s DESC LIMIT 1",
             SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_PROGRAM,
-            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI);
+            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI, SqlConstants.ENROLLMENT_CREATED);
 
     private static final String PROGRAM_STAGE_QUERY = String.format("SELECT * FROM %s WHERE %s.%s = ",
             SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_PROGRAM);
@@ -110,26 +115,28 @@ public class DashboardRepositoryImpl implements DashboardRepository {
 
     private static final String EVENTS_QUERY = String.format(
             "SELECT DISTINCT %s.* FROM %s " +
-                    JOIN_TABLE_ON +
-                    JOIN_TABLE_ON +
-                    WHERE + TABLE_FIELD_EQUALS + QUESTION_MARK + //ProgramUid
-                    AND + TABLE_FIELD_EQUALS + QUESTION_MARK + //TeiUid
+                    "JOIN %s ON %s.%s = %s.%s " +
+                    "WHERE %s.%s = " +
+                    "(SELECT %s.%s FROM %s " +
+                    "WHERE %s.%s = ? " +
+                    "AND %s.%s = ? ORDER BY %s DESC LIMIT 1)" + //ProgramUid
                     "AND %s.%s != '%s' " +
                     "AND %s.%s IN (SELECT %s FROM %s WHERE %s = ?) " +
                     "ORDER BY CASE WHEN ( Event.status IN ('SCHEDULE','SKIPPED','OVERDUE')) " +
                     "THEN %s.%s " +
                     "ELSE %s.%s END DESC, %s.%s ASC",
-            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_TABLE,
-            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_ENROLLMENT,
-            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_UID, SqlConstants.EVENT_TABLE, SqlConstants.EVENT_PROGRAM_STAGE,
-            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_PROGRAM,
-            SqlConstants.ENROLLMENT_TABLE, SqlConstants.ENROLLMENT_TEI,
-            SqlConstants.EVENT_TABLE, EVENT_STATE, State.TO_DELETE,
-            SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_UID, SqlConstants.PROGRAM_STAGE_UID, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_PROGRAM,
-            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DUE_DATE,
-            SqlConstants.EVENT_TABLE, SqlConstants.EVENT_DATE, SqlConstants.PROGRAM_STAGE_TABLE, SqlConstants.PROGRAM_STAGE_SORT_ORDER);
+            EventModel.TABLE, EventModel.TABLE,
+            ProgramStageModel.TABLE, ProgramStageModel.TABLE, ProgramStageModel.Columns.UID, EventModel.TABLE, EventModel.Columns.PROGRAM_STAGE,
+            EventModel.TABLE, EventModel.Columns.ENROLLMENT,
+            EnrollmentModel.TABLE, EnrollmentModel.Columns.UID, EnrollmentModel.TABLE,
+            EnrollmentModel.TABLE, EnrollmentModel.Columns.PROGRAM,
+            EnrollmentModel.TABLE, EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE, EnrollmentModel.Columns.CREATED,
+            EventModel.TABLE, EventModel.Columns.STATE, State.TO_DELETE,
+            ProgramStageModel.TABLE, ProgramModel.Columns.UID, ProgramStageModel.Columns.UID, ProgramStageModel.TABLE, ProgramStageModel.Columns.PROGRAM,
+            EventModel.TABLE, EventModel.Columns.DUE_DATE,
+            EventModel.TABLE, EventModel.Columns.EVENT_DATE, ProgramStageModel.TABLE, ProgramStageModel.Columns.SORT_ORDER);
 
-    private static final String EVENTS_DISPLAY_BOX = String.format(
+    private final String EVENTS_DISPLAY_BOX = String.format(
             "SELECT Event.* FROM %s " +
                     JOIN_TABLE_ON +
                     JOIN_TABLE_ON +
@@ -162,7 +169,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_SORT_ORDER);
 
     private static final String ATTRIBUTE_VALUES_NO_PROGRAM_QUERY = String.format(
-                    "JOIN %s ON %s.%s = %s.%s " +
+            "JOIN %s ON %s.%s = %s.%s " +
                     "JOIN %s ON %s.%s = %s.%s " +
                     "WHERE %s.%s = ? " +
                     "AND %s.%s = ? " +
@@ -175,7 +182,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
             TE_ATTR_VALUE_TABLE, TE_ATTR_VALUE_TEI,
             PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_DISPLAY_IN_LIST,
             PROGRAM_TE_ATTR_TABLE, PROGRAM_TE_ATTR_SORT_ORDER);
-   
+
     private static final Set<String> ATTRIBUTE_VALUES_TABLE = new HashSet<>(Arrays.asList(TE_ATTR_VALUE_TABLE, PROGRAM_TE_ATTR_TABLE));
 
     private final BriteDatabase briteDatabase;

@@ -108,6 +108,10 @@ public class TeiDataDetailPresenterImpl implements TeiDataDetailContracts.TeiDat
         view.getAbstracContext().onBackPressed();
     }
 
+    @Override
+    public void onSaveClick() {
+        view.getAbstracContext().onBackPressed();
+    }
 
     @Override
     public void onDeactivate(DashboardProgramModel dashboardProgramModel) {

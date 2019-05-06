@@ -149,7 +149,7 @@ public class OrgUnitCascadeDialog extends DialogFragment {
                 } else {
                     binding.acceptButton.setVisibility(View.INVISIBLE);
                 }
-            }, levels);
+            }, levels, paths.size() == 1 );
             binding.recycler.setAdapter(adapter);
             binding.acceptButton.setVisibility(View.INVISIBLE);
         });
@@ -204,7 +204,7 @@ public class OrgUnitCascadeDialog extends DialogFragment {
             } else {
                 binding.acceptButton.setVisibility(View.INVISIBLE);
             }
-        }, levels);
+        }, levels, paths.size() == 1 );
 
         if (selectedOrgUnit != null) {
             for (Quintet<String, String, String, Integer, Boolean> orgUnit : orgUnits) {

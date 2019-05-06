@@ -47,6 +47,7 @@
             </intent-filter>
         </activity>
         <activity android:name=".usescases.main.MainActivity" />
+        <activity android:name=".usescases.login.LoginActivity" />
         <activity android:name=".usescases.programEventDetail.ProgramEventDetailActivity" />
         <activity
             android:name=".usescases.searchTrackEntity.SearchTEActivity"

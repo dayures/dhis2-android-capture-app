@@ -73,6 +73,7 @@ public class SqlConstants {
     public static final String ENROLLMENT_INCIDENT_DATE = EnrollmentModel.Columns.INCIDENT_DATE;
     public static final String ENROLLMENT_STATUS = EnrollmentModel.Columns.ENROLLMENT_STATUS;
     public static final String ENROLLMENT_TEI = EnrollmentModel.Columns.TRACKED_ENTITY_INSTANCE;
+    public static final String ENROLLMENT_CREATED = EnrollmentModel.Columns.CREATED;
     public static final String ENROLLMENT_PROGRAM = EnrollmentModel.Columns.PROGRAM;
     public static final String ENROLLMENT_LAST_UPDATED = EnrollmentModel.Columns.LAST_UPDATED;
     public static final String ENROLLMENT_FOLLOW_UP = EnrollmentModel.Columns.FOLLOW_UP;

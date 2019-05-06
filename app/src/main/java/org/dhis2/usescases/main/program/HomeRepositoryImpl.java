@@ -1,5 +1,7 @@
 package org.dhis2.usescases.main.program;
 
+import androidx.annotation.NonNull;
+
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.hisp.dhis.android.core.D2;
@@ -8,10 +10,8 @@ import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.period.DatePeriod;
 import org.hisp.dhis.android.core.program.Program;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import androidx.annotation.NonNull;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
@@ -43,21 +43,56 @@ class HomeRepositoryImpl implements HomeRepository {
         return typeName;
     }
 
-    private int getCount(Program program, List<DatePeriod> dateFilter) {
-        if (dateFilter == null) {
-            dateFilter = new ArrayList<>();
-        }
-        int count = 0;
-        if (program.programType() == WITHOUT_REGISTRATION)
-            if (!dateFilter.isEmpty())
-                count = d2.eventModule().events.byProgramUid().eq(program.uid()).byEventDate().inDatePeriods(dateFilter).count();
-            else
-                count = d2.eventModule().events.byProgramUid().eq(program.uid()).count();
-        else {
+    private int getCount(Program program, List<DatePeriod> dateFilter, List<String> orgUnitFilter) {
+        int count;
+        if (program.programType() == WITHOUT_REGISTRATION) {
             if (!dateFilter.isEmpty()) {
-                count = d2.eventModule().events.byProgramUid().eq(program.uid()).byEventDate().inDatePeriods(dateFilter).countTrackedEntityInstances();
-            } else
-                count = d2.eventModule().events.byProgramUid().eq(program.uid()).countTrackedEntityInstances();
+                if (!orgUnitFilter.isEmpty()) {
+                    count = d2.eventModule().events
+                            .byProgramUid().eq(program.uid())
+                            .byEventDate().inDatePeriods(dateFilter)
+                            .byOrganisationUnitUid().in(orgUnitFilter)
+                            .count();
+                } else {
+                    count = d2.eventModule().events
+                            .byProgramUid().eq(program.uid())
+                            .byEventDate().inDatePeriods(dateFilter)
+                            .count();
+                }
+            } else if (!orgUnitFilter.isEmpty()) {
+                count = d2.eventModule().events
+                        .byProgramUid().eq(program.uid())
+                        .byOrganisationUnitUid().in(orgUnitFilter)
+                        .count();
+            } else {
+                count = d2.eventModule().events
+                        .byProgramUid().eq(program.uid())
+                        .count();
+            }
+        } else {
+            if (!dateFilter.isEmpty()) {
+                if (!orgUnitFilter.isEmpty()) {
+                    count = d2.eventModule().events
+                            .byProgramUid().eq(program.uid())
+                            .byEventDate().inDatePeriods(dateFilter)
+                            .byOrganisationUnitUid().in(orgUnitFilter)
+                            .countTrackedEntityInstances();
+                } else {
+                    count = d2.eventModule().events
+                            .byProgramUid().eq(program.uid())
+                            .byEventDate().inDatePeriods(dateFilter)
+                            .countTrackedEntityInstances();
+                }
+            } else if (!orgUnitFilter.isEmpty()) {
+                count = d2.eventModule().events
+                        .byProgramUid().eq(program.uid())
+                        .byOrganisationUnitUid().in(orgUnitFilter)
+                        .countTrackedEntityInstances();
+            } else {
+                count = d2.eventModule().events
+                        .byProgramUid().eq(program.uid())
+                        .countTrackedEntityInstances();
+            }
         }
         return count;
     }
@@ -74,8 +109,10 @@ class HomeRepositoryImpl implements HomeRepository {
                         return Flowable.fromIterable(programRepo.withStyle().withAllChildren().get());
                 })
                 .map(program -> {
+
                     String typeName = getTypeName(program);
-                    int count = getCount(program, dateFilter);
+                    int count = getCount(program, dateFilter, orgUnitFilter);
+
 
                     return ProgramViewModel.create(
                             program.uid(),

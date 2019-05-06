@@ -2,6 +2,10 @@ package org.dhis2.usescases.teiDashboard.dashboardfragments.indicators;
 
 import android.graphics.Color;
 
+import androidx.annotation.NonNull;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.dhis2.BR;
 import org.dhis2.R;
 import org.dhis2.data.tuples.Trio;
@@ -9,9 +13,6 @@ import org.dhis2.databinding.ItemIndicatorBinding;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.custom_views.CustomDialog;
 import org.hisp.dhis.android.core.program.ProgramIndicator;
-
-import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 
 /**
  * QUADRAM. Created by ppajuelo on 29/11/2017.
@@ -25,8 +26,15 @@ public class IndicatorViewHolder extends RecyclerView.ViewHolder {
         this.binding = binding;
     }
 
+
     public void bind(Trio<ProgramIndicator, String, String> programIndicatorModel) {
-        binding.setVariable(BR.indicator, programIndicatorModel.val0());
+        if (programIndicatorModel.val0() == null) {
+            ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) binding.guideline.getLayoutParams();
+            params.guidePercent = 0;
+            binding.guideline.setLayoutParams(params);
+        } else
+            binding.setVariable(BR.indicator, programIndicatorModel.val0());
+
         binding.setVariable(BR.value, programIndicatorModel.val1());
         binding.setVariable(BR.colorBg, programIndicatorModel.val2().isEmpty() ? -1 : Color.parseColor(programIndicatorModel.val2()));
         binding.executePendingBindings();

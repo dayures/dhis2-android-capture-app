@@ -43,7 +43,8 @@ class OrgUnitCascadeHolder extends RecyclerView.ViewHolder {
                      String currentUid,
                      OrgUnitCascadeAdapter adapter,
                      List<OrganisationUnitLevel> levels,
-                     int lastLevelSelected) {
+                     int lastLevelSelected,
+                     boolean oneOption) {
 
         this.levelOrgUnit = organisationUnitModels;
         if (selectedOrgUnit != null) {
@@ -71,16 +72,27 @@ class OrgUnitCascadeHolder extends RecyclerView.ViewHolder {
             if (parent.isEmpty() || trio.val2().equals(parent)) //Only if ou is child of parent or is root
                 data.add(trio.val1());
 
-        if (data.size() > 1 && lastLevelSelected >= getAdapterPosition()) {
+        if (oneOption) {
             itemView.setEnabled(true);
-            setMenu(data, adapter);
-            binding.levelText.setOnClickListener(view -> menu.show());
+            selectedUid = levelOrgUnit.get(0).val0();
+            binding.levelText.setText(data.get(1));
+            adapter.setSelectedParent(
+                    getAdapterPosition() + 1,
+                    selectedUid,
+                    levelOrgUnit.get(0).val3());
+            binding.levelText.setText(levelOrgUnit.get(0).val1());
 
-        } else if (lastLevelSelected < getAdapterPosition() + 1)
-            itemView.setEnabled(false);
+        } else {
+            if (data.size() > 1 && lastLevelSelected >= getAdapterPosition()) {
+                itemView.setEnabled(true);
+                setMenu(data, adapter);
+                binding.levelText.setOnClickListener(view -> menu.show());
+            } else if (lastLevelSelected < getAdapterPosition() + 1)
+                itemView.setEnabled(false);
 
-        binding.levelText.setText(isEmpty(selectedOrgUnitName) ? (isEmpty(levelName) ?
-                String.format(context.getString(R.string.org_unit_select_level), getAdapterPosition() + 1) : levelName) : selectedOrgUnitName);
+            binding.levelText.setText(isEmpty(selectedOrgUnitName) ? (isEmpty(levelName) ?
+                    String.format(context.getString(R.string.org_unit_select_level), getAdapterPosition() + 1) : levelName) : selectedOrgUnitName);
+        }
     }
 
     private String getSelectedOrgUnitName(String currentUid) {
@@ -114,4 +126,5 @@ class OrgUnitCascadeHolder extends RecyclerView.ViewHolder {
             return false;
         });
     }
+
 }
