@@ -450,4 +450,10 @@
     <string name="sms_state_asking_number">Asking for gateway number</string>
     <string name="sms_state_asking_permissions">Asking for permissions</string>
     <string name="sms_general_error">Error sending sms submission</string>
+    <string name="sms_title_enrollment">SMS TEI registration and enrollment</string>
+    <string name="sms_title_event">SMS event submission</string>
+    <string name="sms_bar_state_sending">In progress</string>
+    <string name="sms_bar_state_sent">Sent</string>
+    <string name="sms_bar_state_failed">Failed</string>
+
 </resources>
