@@ -433,7 +433,7 @@
     <string name="sms_receiver_number">Receiver number</string>
     <string name="sms_amount_question">Do you accept to send %d messages?</string>
     <string name="sms_sending">Sending %1$d/%2$d</string>
-    <string name="sms_waiting_amount_confirm">Waiting amount confirmation</string>
+    <string name="sms_waiting_amount_confirm">Waiting amount confirmation - %d</string>
     <string name="sms_all_sent">All sent</string>
     <string name="sms_error">Error sending</string>
     <string name="sms_error_no_network">No network</string>
@@ -445,10 +445,9 @@
     <string name="sms_error_module_disabled">SMS module is disabled</string>
     <string name="sms_metadata_empty">SMS module not initiated, not found required metadata</string>
     <string name="sms_completed">Completed</string>
-    <string name="sms_count_error">SMS count %d not accepted</string>
+    <string name="sms_count_error">SMS count not accepted</string>
     <string name="sms_state_started">Started sms submission</string>
-    <string name="sms_state_asking_number">Asking for gateway number</string>
-    <string name="sms_state_asking_permissions">Asking for permissions</string>
+    <string name="sms_state_converted">Data read and converted</string>
     <string name="sms_general_error">Error sending sms submission</string>
     <string name="sms_title_enrollment">SMS TEI registration and enrollment</string>
     <string name="sms_title_event">SMS event submission</string>

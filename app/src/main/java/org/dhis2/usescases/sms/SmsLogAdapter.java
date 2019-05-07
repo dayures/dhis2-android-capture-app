@@ -12,14 +12,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.dhis2.R;
 import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
-import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
 
 import java.util.List;
 
 public class SmsLogAdapter extends RecyclerView.Adapter<SmsLogAdapter.ViewHolder> {
 
-    private List<SmsRepository.SmsSendingState> states;
-    private Throwable error = null;
+    private List<SmsViewModel.SendingStatus> states;
 
     @NonNull
     @Override
@@ -30,40 +28,40 @@ public class SmsLogAdapter extends RecyclerView.Adapter<SmsLogAdapter.ViewHolder
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull ViewHolder h, int position) {
         boolean firstItem = position == 0;
-        if (error != null) {
-            if (position == 0) {
-                showError(holder, error);
-                return;
-            } else {
-                position--;
-            }
-        }
-        SmsRepository.SmsSendingState state = states.get(position);
-        showState(holder, state, firstItem);
-    }
-
-    private void showState(ViewHolder h, SmsRepository.SmsSendingState state, boolean firstItem) {
+        position = states.size() - position - 1;
         Resources res = h.item.getResources();
-        switch (state.getState()) {
+        SmsViewModel.SendingStatus state = states.get(position);
+        switch (state.state) {
+            case STARTED:
+                h.item.setText(R.string.sms_state_started);
+                break;
+            case CONVERTED:
+                h.item.setText(R.string.sms_state_converted);
+                break;
+            case WAITING_COUNT_CONFIRMATION:
+                h.item.setText(res.getString(R.string.sms_waiting_amount_confirm, state.total));
+                break;
+            case COUNT_NOT_ACCEPTED:
+                h.item.setText(R.string.sms_count_error);
+                break;
             case SENDING:
-                h.item.setText(res.getString(R.string.sms_sending, state.getSent(), state.getTotal()));
+                h.item.setText(res.getString(R.string.sms_sending, state.sent, state.total));
                 break;
-            case WAITING_SMS_COUNT_ACCEPT:
-                h.item.setText(R.string.sms_waiting_amount_confirm);
-                break;
-            case ALL_SENT:
+            case COMPLETED:
                 h.item.setText(R.string.sms_all_sent);
                 break;
+            case ERROR:
+                h.item.setText(getErrorText(res, state.error));
+                return;
         }
         int firstItemColor = ContextCompat.getColor(h.item.getContext(), R.color.sms_sync_last_event);
         int standardColor = ContextCompat.getColor(h.item.getContext(), R.color.text_black_333);
         h.item.setTextColor(firstItem ? firstItemColor : standardColor);
     }
 
-    private void showError(ViewHolder holder, Throwable error) {
-        Resources res = holder.item.getResources();
+    private String getErrorText(Resources res, Throwable error) {
         String text = res.getString(R.string.sms_error);
         if (error instanceof SmsSubmitCase.PreconditionFailed) {
             switch (((SmsSubmitCase.PreconditionFailed) error).getType()) {
@@ -92,32 +90,20 @@ public class SmsLogAdapter extends RecyclerView.Adapter<SmsLogAdapter.ViewHolder
                     text = res.getString(R.string.sms_error_module_disabled);
                     break;
             }
-        } else if (error instanceof SmsRepository.SMSCountException) {
-            text = res.getString(R.string.sms_count_error, ((SmsRepository.SMSCountException) error).getCount());
         }
-        int errorColor = ContextCompat.getColor(holder.item.getContext(), R.color.sms_sync_last_event);
-        holder.item.setText(text);
-        holder.item.setTextColor(errorColor);
+        return text;
     }
-
 
     @Override
     public int getItemCount() {
-        int errorCount = this.error == null ? 0 : 1;
         if (states == null) {
-            return errorCount;
-        } else {
-            return states.size() + errorCount;
+            return 0;
         }
+        return states.size();
     }
 
-    public void setStates(List<SmsRepository.SmsSendingState> states) {
+    public void setStates(List<SmsViewModel.SendingStatus> states) {
         this.states = states;
-        notifyDataSetChanged();
-    }
-
-    public void setError(Throwable error) {
-        this.error = error;
         notifyDataSetChanged();
     }
 

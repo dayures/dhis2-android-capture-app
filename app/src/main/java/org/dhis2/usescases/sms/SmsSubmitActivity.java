@@ -25,14 +25,11 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.dhis2.App;
 import org.dhis2.R;
 import org.dhis2.usescases.general.ViewModelFactory;
-import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
 import javax.inject.Inject;
-
-import timber.log.Timber;
 
 public class SmsSubmitActivity extends AppCompatActivity {
     private static String ARG_TEI = "tei";
@@ -83,7 +80,6 @@ public class SmsSubmitActivity extends AppCompatActivity {
         ((App) getApplicationContext()).userComponent().plus(new SmsModule()).inject(this);
         smsViewModel = ViewModelProviders.of(this, vmFactory).get(SmsViewModel.class);
         smsViewModel.sendingState().observe(this, this::stateChanged);
-        smsViewModel.errors().observe(this, this::onError);
         if (enrollmentId != null) {
             smsViewModel.setEnrollmentData(enrollmentId, teiId);
             title.setText(R.string.sms_title_enrollment);
@@ -152,16 +148,20 @@ public class SmsSubmitActivity extends AppCompatActivity {
         dialog.show(getSupportFragmentManager(), null);
     }
 
-    private void stateChanged(List<SmsRepository.SmsSendingState> states) {
+    private void stateChanged(List<SmsViewModel.SendingStatus> states) {
         adapter.setStates(states);
         if (states.size() == 0) {
             return;
         }
-        SmsRepository.SmsSendingState lastState = states.get(states.size() - 1);
-        if (lastState.getState() == SmsRepository.State.WAITING_SMS_COUNT_ACCEPT) {
-            askForMessagesAmount(lastState.getTotal());
-        } else if (lastState.getState() == SmsRepository.State.ALL_SENT) {
+        SmsViewModel.SendingStatus lastState = states.get(states.size() - 1);
+        if (lastState.state == SmsViewModel.State.WAITING_COUNT_CONFIRMATION) {
+            askForMessagesAmount(lastState.total);
+        } else if (lastState.state == SmsViewModel.State.COMPLETED) {
             state.setText(R.string.sms_bar_state_sent);
+            finishSubmission();
+        } else if (lastState.state == SmsViewModel.State.ERROR || lastState.state == SmsViewModel.State.COUNT_NOT_ACCEPTED) {
+            titleBar.setBackgroundColor(ContextCompat.getColor(this, R.color.sms_sync_title_bar_error));
+            state.setText(R.string.sms_bar_state_failed);
             finishSubmission();
         }
     }
@@ -169,15 +169,6 @@ public class SmsSubmitActivity extends AppCompatActivity {
     private void finishSubmission() {
         rotate.cancel();
         submissionFinished = true;
-
-    }
-
-    private void onError(Throwable e) {
-        finishSubmission();
-        adapter.setError(e);
-        Timber.d(e);
-        titleBar.setBackgroundColor(ContextCompat.getColor(this, R.color.sms_sync_title_bar_error));
-        state.setText(R.string.sms_bar_state_failed);
     }
 
     public static class MessagesAmountDialog extends DialogFragment {
