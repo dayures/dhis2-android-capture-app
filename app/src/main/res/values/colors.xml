@@ -360,6 +360,10 @@
 
     <color name="warning_color">#F19525</color>
     <color name="error_color">#F11E1E</color>
+
+    <color name="sms_sync_last_event">#504eba</color>
+    <color name="sms_sync_title_bar">#dee7ee</color>
+    <color name="sms_sync_title_bar_error">#ffd9d9</color>
     <!--endregion-->
 
 </resources>

@@ -13,30 +13,27 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import io.reactivex.Observable;
+import io.reactivex.Single;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableObserver;
+import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
-import timber.log.Timber;
 
 public class SmsViewModel extends ViewModel {
+    private final D2 d2;
     private String enrollmentId;
     private String eventId;
     private String teiId;
     private CompositeDisposable disposables;
-    private SmsSubmitCase smsSender;
-    private MutableLiveData<Throwable> errors;
-    private MutableLiveData<List<SmsRepository.SmsSendingState>> states;
-    private ArrayList<SmsRepository.SmsSendingState> statesList;
-    private boolean sendInitiated;
+    private SmsSubmitCase smsSender = null;
+    private MutableLiveData<List<SendingStatus>> states;
+    private ArrayList<SendingStatus> statesList;
 
     @Inject
     SmsViewModel(D2 d2) {
+        this.d2 = d2;
         disposables = new CompositeDisposable();
-        smsSender = d2.smsModule().smsSubmitCase();
-        errors = new MutableLiveData<>();
         states = new MutableLiveData<>();
-        sendInitiated = false;
         statesList = new ArrayList<>();
     }
 
@@ -51,37 +48,43 @@ public class SmsViewModel extends ViewModel {
     }
 
     void sendSMS() {
-        if (sendInitiated) return;
-        sendInitiated = true;
-        Observable<SmsRepository.SmsSendingState> sendingTask;
+        if (smsSender != null) return; // maybe activity rotated caused double call
+        smsSender = d2.smsModule().smsSubmitCase();
+        reportState(State.STARTED, 0, 0);
+        Single<Integer> convertTask;
         if (enrollmentId != null && teiId != null) {
-            sendingTask = smsSender.submitEnrollment(enrollmentId, teiId);
+            convertTask = smsSender.convertEnrollment(enrollmentId, teiId);
         } else if (eventId != null && teiId != null) {
-            sendingTask = smsSender.submitEvent(eventId, teiId);
+            convertTask = smsSender.convertEvent(eventId, teiId);
         } else {
-            errors.postValue(new IllegalArgumentException());
+            reportError(new IllegalArgumentException("Not provided required ids of item to submit"));
             return;
         }
 
-        disposables.add(sendingTask.subscribeOn(Schedulers.newThread()
+        disposables.add(convertTask.subscribeOn(Schedulers.newThread()
         ).observeOn(Schedulers.newThread()
-        ).subscribeWith(new DisposableObserver<SmsRepository.SmsSendingState>() {
+        ).subscribeWith(new DisposableSingleObserver<Integer>() {
             @Override
-            public void onNext(SmsRepository.SmsSendingState smsSendingState) {
-                statesList.add(smsSendingState);
-                states.postValue(statesList);
+            public void onSuccess(Integer count) {
+                reportState(State.CONVERTED, 0, count);
+                reportState(State.WAITING_COUNT_CONFIRMATION, 0, count);
             }
 
             @Override
             public void onError(Throwable e) {
-                errors.postValue(e);
-            }
-
-            @Override
-            public void onComplete() {
-                Timber.d("Sms sending observable completed");
+                reportError(e);
             }
         }));
+    }
+
+    private void reportState(State state, int sent, int total) {
+        statesList.add(new SendingStatus(state, null, sent, total));
+        states.postValue(statesList);
+    }
+
+    private void reportError(Throwable throwable) {
+        statesList.add(new SendingStatus(State.ERROR, throwable, 0, 0));
+        states.postValue(statesList);
     }
 
     @Override
@@ -89,15 +92,54 @@ public class SmsViewModel extends ViewModel {
         disposables.dispose();
     }
 
-    LiveData<Throwable> errors() {
-        return errors;
-    }
-
-    LiveData<List<SmsRepository.SmsSendingState>> sendingState() {
+    LiveData<List<SendingStatus>> sendingState() {
         return states;
     }
 
     void acceptSMSCount(boolean acceptCount) {
-        smsSender.acceptSMSCount(acceptCount);
+        if (acceptCount) {
+            executeSending();
+        } else {
+            reportState(State.COUNT_NOT_ACCEPTED, 0, 0);
+        }
+    }
+
+    private void executeSending() {
+        disposables.add(smsSender.send().subscribeOn(Schedulers.newThread()
+        ).observeOn(Schedulers.newThread()
+        ).subscribeWith(new DisposableObserver<SmsRepository.SmsSendingState>() {
+            @Override
+            public void onNext(SmsRepository.SmsSendingState state) {
+                reportState(State.SENDING, state.getSent(), state.getTotal());
+            }
+
+            @Override
+            public void onError(Throwable e) {
+                reportError(e);
+            }
+
+            @Override
+            public void onComplete() {
+                reportState(State.COMPLETED, 0, 0);
+            }
+        }));
+    }
+
+    public static class SendingStatus {
+        public final State state;
+        public final int sent;
+        public final int total;
+        public final Throwable error;
+
+        public SendingStatus(State state, Throwable error, int sent, int total) {
+            this.state = state;
+            this.sent = sent;
+            this.total = total;
+            this.error = error;
+        }
+    }
+
+    public enum State {
+        STARTED, CONVERTED, WAITING_COUNT_CONFIRMATION, COUNT_NOT_ACCEPTED, SENDING, COMPLETED, ERROR
     }
 }
