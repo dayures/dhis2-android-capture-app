@@ -110,7 +110,9 @@ public class SmsViewModel extends ViewModel {
         ).subscribeWith(new DisposableObserver<SmsRepository.SmsSendingState>() {
             @Override
             public void onNext(SmsRepository.SmsSendingState state) {
-                reportState(State.SENDING, state.getSent(), state.getTotal());
+                if (!isLastStateSame(state.getSent(), state.getTotal())) {
+                    reportState(State.SENDING, state.getSent(), state.getTotal());
+                }
             }
 
             @Override
@@ -123,6 +125,12 @@ public class SmsViewModel extends ViewModel {
                 reportState(State.COMPLETED, 0, 0);
             }
         }));
+    }
+
+    private boolean isLastStateSame(int sent, int total) {
+        if (statesList == null || statesList.size() == 0) return false;
+        SendingStatus last = statesList.get(statesList.size() - 1);
+        return last.state == State.SENDING && last.sent == sent && last.total == total;
     }
 
     public static class SendingStatus {
