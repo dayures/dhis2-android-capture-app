@@ -1,5 +1,7 @@
 package org.dhis2.data.forms.dataentry;
 
+import android.database.Cursor;
+
 import androidx.annotation.NonNull;
 
 import com.squareup.sqlbrite2.BriteDatabase;
@@ -8,7 +10,9 @@ import org.dhis2.data.forms.FormRepository;
 import org.dhis2.data.forms.RulesRepository;
 import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.D2;
+import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.enrollment.Enrollment;
+import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.option.Option;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
 import org.hisp.dhis.android.core.program.Program;
@@ -19,6 +23,7 @@ import org.hisp.dhis.android.core.program.ProgramRuleVariable;
 import org.hisp.dhis.android.core.program.ProgramTrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValueModel;
 import org.hisp.dhis.rules.RuleEngine;
 import org.hisp.dhis.rules.models.Rule;
 import org.hisp.dhis.rules.models.RuleAction;
@@ -26,12 +31,18 @@ import org.hisp.dhis.rules.models.RuleAttributeValue;
 import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEnrollment;
 
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import javax.annotation.Nonnull;
+
+import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 
 import static android.text.TextUtils.isEmpty;
@@ -166,7 +177,7 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
             if (rule.condition() == null)
                 ruleIterator.remove();
             for (ProgramRuleAction action : rule.programRuleActions())
-                if ((action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
+                if (action.programRuleActionType() == ProgramRuleActionType.HIDEFIELD ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDESECTION ||
                         action.programRuleActionType() == ProgramRuleActionType.ASSIGN ||
                         action.programRuleActionType() == ProgramRuleActionType.SHOWWARNING ||
@@ -175,10 +186,9 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                         action.programRuleActionType() == ProgramRuleActionType.DISPLAYTEXT ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDEOPTIONGROUP ||
                         action.programRuleActionType() == ProgramRuleActionType.HIDEOPTION ||
-                        action.programRuleActionType() == ProgramRuleActionType.SETMANDATORYFIELD)) {
+                        action.programRuleActionType() == ProgramRuleActionType.SETMANDATORYFIELD)
                     if (!mandatoryRules.contains(rule))
                         mandatoryRules.add(rule);
-                }
         }
 
         List<ProgramRuleVariable> variables = d2.programModule().programRuleVariables
@@ -304,7 +314,6 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
                                 return Flowable.fromCallable(ruleEngine.evaluate(enrollment));
                             else
                                 return Flowable.just(attributeRules.get(lastUpdatedAttr) != null ? attributeRules.get(lastUpdatedAttr) : trasformToRule(mandatoryRules))
-                                        .filter(rules -> !rules.isEmpty())
                                         .flatMap(rules -> Flowable.fromCallable(ruleEngine.evaluate(enrollment, rules)));
                         })
                         .map(Result::success)
@@ -317,5 +326,67 @@ public final class EnrollmentRuleEngineRepository implements RuleEngineRepositor
     public Flowable<Result<RuleEffect>> reCalculate() {
         initData();
         return calculate();
+    }
+
+    private List<Rule> getRulesFor(String lastUpdatedAttr) {
+        return attributeRules.get(lastUpdatedAttr);
+    }
+
+    @NonNull
+    private Flowable<RuleEnrollment> queryEnrollment(
+            @NonNull List<RuleAttributeValue> attributeValues) {
+        return briteDatabase.createQuery(EnrollmentModel.TABLE, QUERY_ENROLLMENT, enrollmentUid == null ? "" : enrollmentUid)
+                .mapToOne(cursor -> {
+                    Date enrollmentDate = parseDate(cursor.getString(2));
+                    Date incidentDate = cursor.isNull(1) ?
+                            enrollmentDate : parseDate(cursor.getString(1));
+                    RuleEnrollment.Status status = RuleEnrollment.Status
+                            .valueOf(cursor.getString(3));
+                    String orgUnit = cursor.getString(4);
+                    String programName = cursor.getString(5);
+                    String ouCode = getOrgUnitCode(orgUnit);
+
+                    return RuleEnrollment.create(cursor.getString(0),
+                            incidentDate, enrollmentDate, status, orgUnit, ouCode, attributeValues, programName);
+                }).toFlowable(BackpressureStrategy.LATEST);
+    }
+
+    @NonNull
+    private Flowable<List<RuleAttributeValue>> queryAttributeValues() {
+
+
+        return briteDatabase.createQuery(Arrays.asList(EnrollmentModel.TABLE,
+                TrackedEntityAttributeValueModel.TABLE), QUERY_ATTRIBUTE_VALUES, enrollmentUid == null ? "" : enrollmentUid)
+                .mapToList(cursor -> {
+                            String value = cursor.getString(1);
+                            boolean useCode = cursor.getInt(2) == 1;
+                            String optionCode = cursor.getString(3);
+                            String optionName = cursor.getString(4);
+                            if (!isEmpty(optionCode) && !isEmpty(optionName))
+                                value = useCode ? optionCode : optionName;
+                            return RuleAttributeValue.create(cursor.getString(0), value);
+                        }
+                ).toFlowable(BackpressureStrategy.LATEST);
+    }
+
+    @NonNull
+    private static Date parseDate(@NonNull String date) {
+        try {
+            return BaseIdentifiableObject.DATE_FORMAT.parse(date);
+        } catch (ParseException parseException) {
+            throw new RuntimeException(parseException);
+        }
+    }
+
+    @Nonnull
+    private String getOrgUnitCode(String orgUnitUid) {
+        String ouCode = "";
+        try (Cursor cursor = briteDatabase.query("SELECT code FROM OrganisationUnit WHERE uid = ? LIMIT 1", orgUnitUid)) {
+            if (cursor != null && cursor.moveToFirst()) {
+                ouCode = cursor.getString(0);
+            }
+        }
+
+        return ouCode;
     }
 }

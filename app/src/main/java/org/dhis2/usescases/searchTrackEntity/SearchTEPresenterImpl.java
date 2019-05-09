@@ -310,7 +310,36 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
                             .startWith(1)
                             .flatMap(page -> {
                                 this.currentPage = page;
-                                TrackedEntityInstanceQuery query = getTeiQuery(page);
+                                List<String> filterList = new ArrayList<>();
+                                Date enrollementDate = null;
+                                if (queryData != null) {
+                                    for (String key : queryData.keySet()) {
+                                        if (key.equals(Constants.ENROLLMENT_DATE_UID))
+                                            enrollementDate = DateUtils.uiDateFormat().parse(queryData.get(key));
+                                        else if (!key.equals(Constants.INCIDENT_DATE_UID)) { //TODO: HOW TO INCLUDE INCIDENT DATE IN ONLINE SEARCH
+                                            String value = queryData.get(key);
+                                            if (value.contains("_os_"))
+                                                value = value.split("_os_")[1];
+                                            String queryItem = String.format("%s:%s:%s", key, queryDataEQ.containsKey(key) ? "EQ" : "LIKE", value);
+                                            filterList.add(queryItem);
+                                        }
+                                    }
+                                }
+                                List<String> orgUnitsUids = new ArrayList<>();
+                                if (orgUnits != null) {
+                                    orgUnitsUids.add(orgUnits.get(0).uid());
+                                }
+                                TrackedEntityInstanceQuery query = TrackedEntityInstanceQuery.builder()
+                                        .program(selectedProgram.uid())
+                                        .page(page)
+                                        .pageSize(20)
+                                        .paging(true)
+                                        .filter(filterList)
+                                        .programStartDate(enrollementDate)
+                                        .orgUnits(orgUnitsUids)
+                                        .orgUnitMode(OuMode.ACCESSIBLE)
+                                        .build();
+
                                 return Flowable.defer(() -> Flowable.fromCallable(d2.trackedEntityModule().queryTrackedEntityInstances(query)))
                                         .observeOn(Schedulers.io())
                                         .subscribeOn(Schedulers.io())
@@ -397,7 +426,16 @@ public class SearchTEPresenterImpl implements SearchTEContractsModule.SearchTEPr
 
         String messageId = "";
         if (selectedProgram != null && !selectedProgram.displayFrontPageList()) {
-            messageId = getSelectedProgramMessage(teiList);
+            if (selectedProgram != null && selectedProgram.minAttributesRequiredToSearch() == 0 && queryData.size() == 0)
+                messageId = view.getContext().getString(R.string.search_attr);
+            if (selectedProgram != null && selectedProgram.minAttributesRequiredToSearch() > queryData.size())
+                messageId = String.format(view.getContext().getString(R.string.search_min_num_attr), selectedProgram.minAttributesRequiredToSearch());
+            else if (selectedProgram.maxTeiCountToReturn() != 0 && teiList.size() > selectedProgram.maxTeiCountToReturn())
+                messageId = String.format(view.getContext().getString(R.string.search_max_tei_reached), selectedProgram.maxTeiCountToReturn());
+            else if (teiList.isEmpty() && !queryData.isEmpty())
+                messageId = String.format(view.getContext().getString(R.string.search_criteria_not_met), getTrackedEntityName().displayName());
+            else if (teiList.isEmpty())
+                messageId = view.getContext().getString(R.string.search_init);
         } else if (selectedProgram == null) {
             messageId = getNoSelectedProgramMessage(teiList);
         } else {

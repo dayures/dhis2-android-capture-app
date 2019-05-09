@@ -5,7 +5,7 @@ import android.content.Context;
 public interface SyncPresenter {
     void syncAndDownloadEvents(Context context) throws SyncError;
 
-    void syncAndDownloadTeis(Context context) throws SyncError;
+    void syncAndDownloadTeis(Context context) throws Exception;
 
     void syncMetadata(Context context) throws SyncError;
 

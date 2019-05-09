@@ -294,10 +294,10 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
 
         if (eventCreationType == EventCreationType.ADDNEW || eventCreationType == EventCreationType.SCHEDULE) {
             fixedOrgUnit = true;
-            binding.orgUnit.setVisibility(View.GONE);
+            binding.orgUnitLayout.setVisibility(View.GONE);
         } else {
             fixedOrgUnit = false;
-            binding.orgUnit.setVisibility(View.VISIBLE);
+            binding.orgUnitLayout.setVisibility(View.VISIBLE);
             binding.orgUnit.setOnClickListener(v -> {
                 if (!fixedOrgUnit)
                     presenter.onOrgUnitButtonClick();
@@ -380,8 +380,10 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         if (eventCreationType == EventCreationType.REFERAL) {
             activityTitle = program.displayName() + " - " + getString(R.string.referral);
         } else {
-            if (eventModel != null && !isEmpty(eventModel.enrollment()))
+            if (eventModel != null && !isEmpty(eventModel.enrollment())) {
                 binding.orgUnit.setEnabled(false);
+                binding.orgUnitLayout.setVisibility(View.GONE);
+            }
 
             activityTitle = eventUid == null ? program.displayName() + " - " + getString(R.string.new_event) : program.displayName();
         }
@@ -433,8 +435,10 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
 
             binding.date.setText(selectedDateString);
         } else {
-            if (!isEmpty(eventModel.enrollment()))
+            if (!isEmpty(eventModel.enrollment())) {
                 binding.orgUnit.setEnabled(false);
+                binding.orgUnitLayout.setVisibility(View.GONE);
+            }
         }
 
         setDateOnClick();
@@ -897,13 +901,15 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
 
     @Override
     public void showOrgUnitSelector(List<OrganisationUnit> orgUnits) {
-        Iterator<OrganisationUnit> iterator = orgUnits.iterator();
-        while (iterator.hasNext()) {
-            OrganisationUnit orgUnit = iterator.next();
-            if (orgUnit.closedDate() != null && selectedDate.after(orgUnit.closedDate()))
-                iterator.remove();
-        }
-        if (!orgUnits.isEmpty()) {
+        if (orgUnits != null && !orgUnits.isEmpty()) {
+
+            Iterator<OrganisationUnit> iterator = orgUnits.iterator();
+            while (iterator.hasNext()) {
+                OrganisationUnit orgUnit = iterator.next();
+                if (orgUnit.closedDate() != null && selectedDate.after(orgUnit.closedDate()))
+                    iterator.remove();
+            }
+
             orgUnitDialog = new OrgUnitDialog()
                     .setTitle(getString(R.string.org_unit))
                     .setMultiSelection(false)

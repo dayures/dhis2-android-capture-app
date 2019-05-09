@@ -3,13 +3,13 @@ package org.dhis2.usescases.programEventDetail;
 import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
-import org.dhis2.R;
-import org.dhis2.databinding.ItemProgramEventBinding;
-
 import androidx.annotation.NonNull;
 import androidx.databinding.DataBindingUtil;
 import androidx.paging.PagedListAdapter;
 import androidx.recyclerview.widget.DiffUtil;
+
+import org.dhis2.R;
+import org.dhis2.databinding.ItemProgramEventBinding;
 
 /**
  * QUADRAM. Created by Cristian on 13/02/2018.
@@ -20,7 +20,7 @@ public class ProgramEventDetailLiveAdapter extends PagedListAdapter<ProgramEvent
     private static final DiffUtil.ItemCallback<ProgramEventViewModel> DIFF_CALLBACK = new DiffUtil.ItemCallback<ProgramEventViewModel>() {
         @Override
         public boolean areItemsTheSame(@NonNull ProgramEventViewModel oldItem, @NonNull ProgramEventViewModel newItem) {
-            return oldItem.uid().equals(newItem.uid());
+            return oldItem.uid() == newItem.uid();
         }
 
         @Override
