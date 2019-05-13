@@ -2,6 +2,7 @@ package org.dhis2.usescases.sms;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -14,16 +15,17 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
+import androidx.fragment.app.FragmentActivity;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.dhis2.App;
 import org.dhis2.R;
+import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.general.ViewModelFactory;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,7 +33,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-public class SmsSubmitActivity extends AppCompatActivity {
+public class SmsSubmitActivity extends ActivityGlobalAbstract {
     private static String ARG_TEI = "tei";
     private static String ARG_EVENT = "event";
     private static String ARG_ENROLLMENT = "enrollment";
@@ -191,6 +193,23 @@ public class SmsSubmitActivity extends AppCompatActivity {
                     ((SmsSubmitActivity) getActivity()).smsViewModel.acceptSMSCount(false)
             );
             return builder.create();
+        }
+
+        @Override
+        public void onStart() {
+            super.onStart();
+            AlertDialog dialog = (AlertDialog) getDialog();
+            int color = ContextCompat.getColor(getActivity(), R.color.colorPrimary);
+            dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextColor(color);
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextColor(color);
+        }
+
+        @Override
+        public void onCancel(@NonNull DialogInterface dialog) {
+            FragmentActivity activity = getActivity();
+            if (activity instanceof SmsSubmitActivity) {
+                ((SmsSubmitActivity) getActivity()).smsViewModel.acceptSMSCount(false);
+            }
         }
 
         @Override
