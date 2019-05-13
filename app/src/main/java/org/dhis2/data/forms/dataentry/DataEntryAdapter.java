@@ -46,7 +46,6 @@ import java.util.List;
 import io.reactivex.Observable;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
-import timber.log.Timber;
 
 public final class DataEntryAdapter extends Adapter {
 
@@ -117,7 +116,7 @@ public final class DataEntryAdapter extends Adapter {
         rows.add(FormAdapter.DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, FormAdapter.DATETIME, true));
         rows.add(FormAdapter.AGEVIEW, new AgeRow(layoutInflater, processor, true));
         rows.add(FormAdapter.YES_NO, new RadioButtonRow(layoutInflater, processor, true));
-        rows.add(FormAdapter.ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, true, orgUnits));
+        rows.add(FormAdapter.ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType(), levels));
         rows.add(FormAdapter.IMAGE, new ImageRow(layoutInflater, processor, dataEntryArguments.renderType()));
         rows.add(FormAdapter.UNSUPPORTED, new UnsupportedRow(layoutInflater));
     }
@@ -230,7 +229,6 @@ public final class DataEntryAdapter extends Adapter {
     }
 
     public void swap(@NonNull List<FieldViewModel> updates) {
-        long currentTime = System.currentTimeMillis();
         DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(
                 new DataEntryDiffCallback(viewModels, updates));
 
@@ -238,7 +236,6 @@ public final class DataEntryAdapter extends Adapter {
         viewModels.addAll(updates);
 
         diffResult.dispatchUpdatesTo(this);
-        Timber.d("ADAPTER SWAP TOOK %s ms", System.currentTimeMillis() - currentTime);
     }
 
     public boolean mandatoryOk() {
@@ -271,12 +268,17 @@ public final class DataEntryAdapter extends Adapter {
         for (FieldViewModel field : viewModels) {
             FieldViewModel toAdd = field;
             if (field.uid().equals(rowAction.id()))
-                toAdd = field.withValue(rowAction.value()).withEditMode(toAdd.editable());
-
+                toAdd = field.withValue(rowAction.optionName() == null ? rowAction.value() : rowAction.optionName()).withEditMode(toAdd.editable());
             helperModels.add(toAdd);
         }
 
+        DiffUtil.DiffResult diffResult = DiffUtil.calculateDiff(
+                new DataEntryDiffCallback(viewModels, helperModels));
+
         viewModels.clear();
         viewModels.addAll(helperModels);
+
+        diffResult.dispatchUpdatesTo(this);
+
     }
 }

@@ -38,6 +38,7 @@ import org.hisp.dhis.android.core.program.ProgramStageModel;
 import org.hisp.dhis.android.core.relationship.RelationshipType;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,9 +55,11 @@ import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
 
 import static org.dhis2.utils.SqlConstants.AND;
+import static org.dhis2.utils.SqlConstants.ENROLLMENT_TABLE;
 import static org.dhis2.utils.SqlConstants.EVENT_ATTR_OPTION_COMBO;
 import static org.dhis2.utils.SqlConstants.EVENT_STATE;
 import static org.dhis2.utils.SqlConstants.JOIN_TABLE_ON;
+import static org.dhis2.utils.SqlConstants.NOTE_TABLE;
 import static org.dhis2.utils.SqlConstants.PROGRAM_TE_ATTR_DISPLAY_IN_LIST;
 import static org.dhis2.utils.SqlConstants.PROGRAM_TE_ATTR_PROGRAM;
 import static org.dhis2.utils.SqlConstants.PROGRAM_TE_ATTR_SORT_ORDER;
@@ -65,6 +68,7 @@ import static org.dhis2.utils.SqlConstants.PROGRAM_TE_ATTR_TE_ATTR;
 import static org.dhis2.utils.SqlConstants.QUESTION_MARK;
 import static org.dhis2.utils.SqlConstants.SELECT;
 import static org.dhis2.utils.SqlConstants.TABLE_FIELD_EQUALS;
+import static org.dhis2.utils.SqlConstants.TEI_TABLE;
 import static org.dhis2.utils.SqlConstants.TE_ATTR_TABLE;
 import static org.dhis2.utils.SqlConstants.TE_ATTR_UID;
 import static org.dhis2.utils.SqlConstants.TE_ATTR_VALUE_TABLE;
@@ -81,10 +85,10 @@ import static org.hisp.dhis.android.core.utils.StoreUtils.sqLiteBind;
 public class DashboardRepositoryImpl implements DashboardRepository {
 
     private static final String INSERT_NOTE = "INSERT INTO Note ( " +
-            "uid, enrollment, value, storedBy, storedDate" +
-            ") VALUES (?, ?, ?, ?, ?);";
+            "uid, enrollment, value, storedBy, storedDate, state" +
+            ") VALUES (?, ?, ?, ?, ?,?);";
 
-    private static final String SELECT_NOTES = SELECT +
+    private static final String SELECT_NOTES = "SELECT " +
             "Note.* FROM Note\n" +
             "JOIN Enrollment ON Enrollment.uid = Note.enrollment\n" +
             "WHERE Enrollment.trackedEntityInstance = ? AND Enrollment.program = ?\n" +
@@ -403,11 +407,19 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                 if (contentValues.get(SqlConstants.TEI_STATE).equals(State.SYNCED.name())) {
                     contentValues.put(SqlConstants.TEI_STATE, State.TO_UPDATE.name());
 
-                    briteDatabase.update(SqlConstants.TEI_TABLE, contentValues, "uid = ?", teiUid);
+                    briteDatabase.update(TEI_TABLE, contentValues, "uid = ?", teiUid);
 
                 }
             }
         }
+    }
+
+    @Override
+    public String relationshipTeiSync(String teiUidToUpdate) {
+        ContentValues cv = new ContentValues();
+        cv.put(TrackedEntityInstanceModel.Columns.STATE, State.SYNCED.name());
+        briteDatabase.update(TrackedEntityInstanceModel.TABLE, cv, "uid = ?", teiUidToUpdate);
+        return teiUidToUpdate;
     }
 
     @Override
@@ -566,12 +578,22 @@ public class DashboardRepositoryImpl implements DashboardRepository {
         SQLiteStatement insetNoteStatement = briteDatabase.getWritableDatabase()
                 .compileStatement(INSERT_NOTE);
 
-
         sqLiteBind(insetNoteStatement, 1, codeGenerator.generate()); //enrollment
-        sqLiteBind(insetNoteStatement, 2, enrollmentUidAux == null ? "" : enrollmentUidAux); //enrollment
+        sqLiteBind(insetNoteStatement, 2, enrollmentUid == null ? "" : enrollmentUid); //enrollment
         sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0()); //value
         sqLiteBind(insetNoteStatement, 4, userName == null ? "" : userName); //storeBy
         sqLiteBind(insetNoteStatement, 5, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime())); //storeDate
+        sqLiteBind(insetNoteStatement, 6, State.TO_POST.name()); //state
+
+        long inserted = briteDatabase.executeInsert(NOTE_TABLE, insetNoteStatement);
+
+        if (inserted != -1) {
+            TrackedEntityInstance tei = d2.trackedEntityModule().trackedEntityInstances.uid(teiUid).get();
+            ContentValues cv = new ContentValues();
+            cv.put(TrackedEntityInstance.Columns.STATE, tei.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+            briteDatabase.update(TEI_TABLE, cv, "uid = ?", teiUid);
+            briteDatabase.update(ENROLLMENT_TABLE, cv, "uid = ?", enrollmentUid);
+        }
 
         return insetNoteStatement;
     }
@@ -598,6 +620,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                 sqLiteBind(insetNoteStatement, 3, stringBooleanPair.val0()); //value
                 sqLiteBind(insetNoteStatement, 4, userName == null ? "" : userName); //storeBy
                 sqLiteBind(insetNoteStatement, 5, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime())); //storeDate
+                sqLiteBind(insetNoteStatement, 6, State.TO_POST.name()); //storeDate
 
                 long success = briteDatabase.executeInsert(SqlConstants.NOTE_TABLE, insetNoteStatement);
 
@@ -653,7 +676,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                 "  FROM Enrollment\n" +
                 "  WHERE Enrollment.uid = ?\n" +
                 ") LIMIT 1;";
-        return briteDatabase.createQuery(SqlConstants.TEI_TABLE, selectTei, enrollmentUid == null ? "" : enrollmentUid)
+        return briteDatabase.createQuery(TEI_TABLE, selectTei, enrollmentUid == null ? "" : enrollmentUid)
                 .mapToOne(TrackedEntityInstance::create).take(1).toFlowable(BackpressureStrategy.LATEST)
                 .switchMap(tei -> {
                     if (State.SYNCED.equals(tei.state()) || State.TO_DELETE.equals(tei.state()) ||
@@ -661,7 +684,7 @@ public class DashboardRepositoryImpl implements DashboardRepository {
                         ContentValues values = tei.toContentValues();
                         values.put(SqlConstants.TEI_STATE, State.TO_UPDATE.toString());
 
-                        if (tei.uid() != null && briteDatabase.update(SqlConstants.TEI_TABLE, values,
+                        if (tei.uid() != null && briteDatabase.update(TEI_TABLE, values,
                                 SqlConstants.TEI_UID + " = ?", tei.uid()) <= 0) {
 
                             throw new IllegalStateException(String.format(Locale.US, "Tei=[%s] " +

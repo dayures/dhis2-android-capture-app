@@ -221,6 +221,7 @@ public class EventCaptureActivity extends ActivityGlobalAbstract implements Even
                 reschedule();
                 break;
             case FINISH:
+                default:
                 finishDataEntry();
                 break;
         }

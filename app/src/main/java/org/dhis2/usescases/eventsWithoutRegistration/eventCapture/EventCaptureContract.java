@@ -5,6 +5,7 @@ import androidx.databinding.ObservableField;
 
 import org.dhis2.data.forms.FormSectionViewModel;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
+import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.event.EventStatus;

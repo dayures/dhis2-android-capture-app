@@ -7,6 +7,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ObservableBoolean;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.dhis2.R;
 import org.dhis2.data.forms.FormSectionViewModel;
 import org.dhis2.data.forms.dataentry.DataEntryAdapter;
@@ -25,15 +33,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ObservableBoolean;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Flowable;
 import io.reactivex.processors.FlowableProcessor;
 import io.reactivex.processors.PublishProcessor;
@@ -136,8 +136,6 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
                 flowableProcessor,
                 flowableOptions, activity.getPresenter().getLevels());
 
-        binding.formRecycler.setAdapter(dataEntryAdapter);
-
         RecyclerView.LayoutManager layoutManager;
         if (arguments.renderType() != null && arguments.renderType().equals(ProgramStageSectionRenderingType.MATRIX.name())) {
             layoutManager = new GridLayoutManager(activity, 2);
@@ -146,6 +144,8 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
                     RecyclerView.VERTICAL, false);
 
         binding.formRecycler.setLayoutManager(layoutManager);
+        binding.formRecycler.setAdapter(dataEntryAdapter);
+
 
     }
 
@@ -160,11 +160,9 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
             for (FieldViewModel fieldViewModel : updates) {
                 fields.put(fieldViewModel.optionSet() == null ? fieldViewModel.uid() : fieldViewModel.optionSet(), !isEmpty(fieldViewModel.value()));
             }
-            for (Map.Entry<String, Boolean> entry : fields.entrySet()) {
-                if (entry.getValue()) {
+            for (String key : fields.keySet())
+                if (fields.get(key))
                     completedValues++;
-                }
-            }
             binding.currentSectionTitle.sectionValues.setText(String.format("%s/%s", completedValues, fields.keySet().size()));
         }
     }
@@ -185,15 +183,11 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
         }
     }
 
-    public View getSectionSelector() {
-        return binding.sectionSelector.getRoot();
-    }
-
     public Flowable<Trio<String, String, Integer>> optionSetActions() {
         return dataEntryAdapter.asFlowableOption();
     }
 
     public void updateAdapter(RowAction rowAction) {
-        dataEntryAdapter.notifyChanges(rowAction);
+        activity.runOnUiThread(() -> dataEntryAdapter.notifyChanges(rowAction));
     }
 }

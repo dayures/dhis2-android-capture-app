@@ -11,6 +11,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
+
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ViewDataBinding;
+
+import com.google.android.material.textfield.TextInputLayout;
 
 import androidx.databinding.DataBindingUtil;
 import androidx.databinding.ViewDataBinding;
@@ -252,5 +258,9 @@ public class CustomTextView extends RelativeLayout implements View.OnFocusChange
     public void setRenderType(String renderType) {
         if (renderType != null && !renderType.equals(ProgramStageSectionRenderingType.LISTING.name()))
             icon.setVisibility(View.VISIBLE);
+    }
+
+    public void setOnEditorActionListener(TextView.OnEditorActionListener actionListener) {
+        editText.setOnEditorActionListener(actionListener);
     }
 }

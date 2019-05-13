@@ -7,6 +7,12 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.DialogFragment;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.jakewharton.rxbinding2.widget.RxTextView;
 
 import org.dhis2.R;
@@ -21,11 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.databinding.DataBindingUtil;
-import androidx.fragment.app.DialogFragment;
-import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.processors.FlowableProcessor;
@@ -34,7 +35,7 @@ import timber.log.Timber;
 
 public class OptionSetDialog extends DialogFragment {
 
-    private static OptionSetDialog instance;
+    private static OptionSetDialog instace;
     private DialogOptionSetBinding binding;
     private CompositeDisposable disposable;
     //1st param is text to search, 2nd param is uid of optionSet,3rd param is page
@@ -49,14 +50,14 @@ public class OptionSetDialog extends DialogFragment {
     private EndlessRecyclerViewScrollListener endlessScrollListener;
 
     public static OptionSetDialog newInstance() {
-        if (instance == null) {
-            instance = new OptionSetDialog();
+        if (instace == null) {
+            instace = new OptionSetDialog();
         }
-        return instance;
+        return instace;
     }
 
     public static Boolean isCreated() {
-        return instance != null;
+        return instace != null;
     }
 
     @NotNull
@@ -67,7 +68,6 @@ public class OptionSetDialog extends DialogFragment {
             dialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
             dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
         }
-
         return dialog;
     }
 
@@ -111,13 +111,9 @@ public class OptionSetDialog extends DialogFragment {
 
     @Override
     public void dismiss() {
+        instace = null;
         disposable.clear();
-        dismissInstance();
         super.dismiss();
-    }
-
-    private static void dismissInstance() {
-        instance = null;
     }
 
     public OptionSetDialog setOnClick(OptionSetOnClickListener listener) {

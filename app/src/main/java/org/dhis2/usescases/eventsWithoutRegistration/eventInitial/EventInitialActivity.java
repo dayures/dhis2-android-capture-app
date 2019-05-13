@@ -268,8 +268,66 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         setUpScrenByCreatinType(eventCreationType);
 
         initProgressBar();
-        setActionButtonText();
-        setActionButtonOnClick();
+
+        if (eventUid == null) {
+            if (binding.actionButton != null)
+                binding.actionButton.setText(R.string.next);
+        } else {
+            if (binding.actionButton != null)
+                binding.actionButton.setText(R.string.update);
+        }
+
+        if (binding.actionButton != null) {
+            binding.actionButton.setOnClickListener(v -> {
+                String programStageModelUid = programStageModel == null ? "" : programStageModel.uid();
+                if (eventUid == null) { // This is a new Event
+                    if (eventCreationType == EventCreationType.REFERAL && tempCreate.equals(PERMANENT)) {
+                        presenter.createEventPermanent(
+                                enrollmentUid,
+                                getTrackedEntityInstance,
+                                programStageModelUid,
+                                selectedDate,
+                                selectedOrgUnit,
+                                null,
+                                catOptionComboUid,
+                                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
+                                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString()
+                        );
+                    } else if (eventCreationType == EventCreationType.SCHEDULE) {
+                        presenter.scheduleEvent(
+                                enrollmentUid,
+                                programStageModelUid,
+                                selectedDate,
+                                selectedOrgUnit,
+                                null,
+                                catOptionComboUid,
+                                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
+                                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString()
+                        );
+                    } else {
+                        presenter.createEvent(
+                                enrollmentUid,
+                                programStageModelUid,
+                                selectedDate,
+                                selectedOrgUnit,
+                                null,
+                                catOptionComboUid,
+                                isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
+                                isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString(),
+                                getTrackedEntityInstance);
+                    }
+                } else {
+                    presenter.editEvent(getTrackedEntityInstance,
+                            programStageModelUid,
+                            eventUid,
+                            DateUtils.databaseDateFormat().format(selectedDate), selectedOrgUnit, null,
+                            catOptionComboUid,
+                            isEmpty(binding.lat.getText()) ? null : binding.lat.getText().toString(),
+                            isEmpty(binding.lon.getText()) ? null : binding.lon.getText().toString()
+                    );
+                }
+            });
+        }
     }
 
     private void setUpScrenByCreatinType(EventCreationType eventCreationType) {

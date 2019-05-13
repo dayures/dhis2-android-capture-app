@@ -67,6 +67,8 @@ public interface DashboardRepository {
 
     void updateTeiState();
 
+    String relationshipTeiSync(String teiUid);
+
     Integer getObjectStyle(Context context, String uid);
 
     Observable<List<Pair<RelationshipType, String>>> relationshipsForTeiType(String teType);

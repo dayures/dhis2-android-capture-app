@@ -19,6 +19,15 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.Spinner;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.databinding.BindingMethod;
+import androidx.databinding.BindingMethods;
+import androidx.databinding.DataBindingUtil;
+import androidx.recyclerview.widget.DividerItemDecoration;
+import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.dhis2.App;
@@ -27,7 +36,6 @@ import org.dhis2.R;
 import org.dhis2.data.forms.dataentry.ProgramAdapter;
 import org.dhis2.data.forms.dataentry.fields.RowAction;
 import org.dhis2.data.metadata.MetadataRepository;
-import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.databinding.ActivitySearchBinding;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
@@ -48,19 +56,12 @@ import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.databinding.BindingMethod;
-import androidx.databinding.BindingMethods;
-import androidx.databinding.DataBindingUtil;
-import androidx.recyclerview.widget.DividerItemDecoration;
-import androidx.recyclerview.widget.RecyclerView;
 import io.reactivex.Flowable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.processors.PublishProcessor;
@@ -74,7 +75,6 @@ import timber.log.Timber;
 @BindingMethods({
         @BindingMethod(type = FloatingActionButton.class, attribute = "app:srcCompat", method = "setImageDrawable")
 })
-@SuppressWarnings("squid:MaximumInheritanceDepth")
 public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTEContractsModule.SearchTEView {
 
     ActivitySearchBinding binding;
@@ -98,13 +98,31 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
         }
     };
     private Program program;
-    private PublishProcessor<Integer> onlinePagerProcessor;
+    private static PublishProcessor<Integer> onlinePagerProcessor;
     private PublishProcessor<Integer> offlinePagerProcessor;
     private EndlessRecyclerViewScrollListener endlessRecyclerViewScrollListener;
     //---------------------------------------------------------------------------------------------
     //region LIFECYCLE
 
-    private void setAdapter() {
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        tEType = getIntent().getStringExtra("TRACKED_ENTITY_UID");
+
+        ((App) getApplicationContext()).userComponent().plus(new SearchTEModule(tEType)).inject(this);
+
+        super.onCreate(savedInstanceState);
+
+        binding = DataBindingUtil.setContentView(this, R.layout.activity_search);
+        binding.setPresenter(presenter);
+        initialProgram = getIntent().getStringExtra("PROGRAM_UID");
+
+        try {
+            fromRelationship = getIntent().getBooleanExtra("FROM_RELATIONSHIP", false);
+            fromRelationshipTeiUid = getIntent().getStringExtra("FROM_RELATIONSHIP_TEI");
+        } catch (Exception e) {
+            Timber.d(e.getMessage());
+        }
+
         if (fromRelationship) {
             searchRelationshipAdapter = new SearchRelationshipAdapter(presenter);
             binding.scrollView.setAdapter(searchRelationshipAdapter);
@@ -112,13 +130,10 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             searchTEAdapter = new SearchTEAdapter(presenter);
             binding.scrollView.setAdapter(searchTEAdapter);
         }
-    }
 
-    private void setUpScroll() {
         binding.scrollView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
 
-        binding.formRecycler.setAdapter(new FormAdapter(getSupportFragmentManager(),
-                LayoutInflater.from(this), presenter.getOrgUnits(), this));
+        binding.formRecycler.setAdapter(new FormAdapter(getSupportFragmentManager(), LayoutInflater.from(this), presenter.getOrgUnits(), this, presenter.getOrgUnitLevels()));
 
         onlinePagerProcessor = PublishProcessor.create();
         offlinePagerProcessor = PublishProcessor.create();
@@ -138,29 +153,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             }
         };
         binding.scrollView.addOnScrollListener(endlessRecyclerViewScrollListener);
-    }
 
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        tEType = getIntent().getStringExtra("TRACKED_ENTITY_UID");
-
-        ((App) getApplicationContext()).userComponent().plus(new SearchTEModule(tEType)).inject(this);
-
-        super.onCreate(savedInstanceState);
-
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_search);
-        binding.setPresenter(presenter);
-        initialProgram = getIntent().getStringExtra("PROGRAM_UID");
-
-        try {
-            fromRelationship = getIntent().getBooleanExtra("FROM_RELATIONSHIP", false);
-            fromRelationshipTeiUid = getIntent().getStringExtra("FROM_RELATIONSHIP_TEI");
-        } catch (Exception e) {
-            Timber.e(e);
-        }
-
-        setAdapter();
-        setUpScroll();
     }
 
     @Override
@@ -195,9 +188,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
 
         //Form has been set.
         FormAdapter formAdapter = (FormAdapter) binding.formRecycler.getAdapter();
-        if (formAdapter != null) {
-            formAdapter.setList(trackedEntityAttributeModels, program, queryData);
-        }
+        formAdapter.setList(trackedEntityAttributeModels, program, queryData);
     }
 
     @NonNull
@@ -282,23 +273,28 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     //region TEI LIST
 
     @Override
-    public Consumer<Pair<List<SearchTeiModel>, String>> swapTeiListData() {
+    public Consumer<Trio<List<SearchTeiModel>, String, Boolean>> swapTeiListData() {
         return data -> {
+            List<SearchTeiModel> searchTeiModels = data.val0();
+            Collections.sort(searchTeiModels, (o1, o2) -> Boolean.compare(o1.isOnline(), o2.isOnline()));
+
             binding.progressLayout.setVisibility(View.GONE);
             if (!fromRelationship) {
                 if (data.val1().isEmpty()) {
                     binding.messageContainer.setVisibility(View.GONE);
-                    searchTEAdapter.setTeis(data.val0());
+                    searchTEAdapter.setTeis(searchTeiModels);
                 } else if (searchTEAdapter.getItemCount() == 0) {
                     binding.messageContainer.setVisibility(View.VISIBLE);
                     binding.message.setText(data.val1());
                 }
 
+                binding.enrollmentButton.setVisibility(data.val2() ? View.VISIBLE : View.GONE);
+
 
             } else {
                 if (data.val1().isEmpty()) {
                     binding.messageContainer.setVisibility(View.GONE);
-                    searchRelationshipAdapter.setItems(data.val0());
+                    searchRelationshipAdapter.setItems(searchTeiModels);
                 } else if (searchTEAdapter.getItemCount() == 0) {
                     binding.messageContainer.setVisibility(View.VISIBLE);
                     binding.message.setText(data.val1());

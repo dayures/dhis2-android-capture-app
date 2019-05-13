@@ -232,9 +232,10 @@ class TEIDataPresenterImpl implements TEIDataContracts.Presenter {
             intent.putExtras(EventCaptureActivity.getActivityBundle(uid, programUid));
             view.openEventCapture(intent);
         } else {
+            Event event = d2.eventModule().events.uid(uid).get();
             Intent intent = new Intent(view.getContext(), EventInitialActivity.class);
             intent.putExtras(EventInitialActivity.getBundle(
-                    programUid, uid, EventCreationType.DEFAULT.name(), teiUid, null, null, null, dashboardModel.getCurrentEnrollment().uid(), 0, dashboardModel.getCurrentEnrollment().status()
+                    programUid, uid, EventCreationType.DEFAULT.name(), teiUid, null, event.organisationUnit(), event.programStage(), dashboardModel.getCurrentEnrollment().uid(), 0, dashboardModel.getCurrentEnrollment().status()
             ));
             view.openEventInitial(intent);
         }

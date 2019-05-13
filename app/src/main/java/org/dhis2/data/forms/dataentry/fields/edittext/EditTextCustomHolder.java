@@ -37,19 +37,28 @@ final class EditTextCustomHolder extends FormViewHolder {
     private FormEditTextCustomBinding binding;
     private EditTextViewModel editTextModel;
 
-    EditTextCustomHolder(FormEditTextCustomBinding binding, FlowableProcessor<RowAction> processor) {
+    EditTextCustomHolder(FormEditTextCustomBinding binding, FlowableProcessor<RowAction> processor,
+                         boolean isSearchMode) {
         super(binding);
         this.binding = binding;
         binding.customEdittext.setFocusChangedListener((v, hasFocus) -> {
-            if (!hasFocus && editTextModel != null && editTextModel.editable() && valueHasChanged()) {
+            if (hasFocus)
+                openKeyboard(binding.customEdittext.getEditText());
+            if (isSearchMode || (!hasFocus && editTextModel != null && editTextModel.editable() && valueHasChanged())) {
                 if (!isEmpty(binding.customEdittext.getEditText().getText())) {
                     checkAutocompleteRendering();
+                    editTextModel.withValue(binding.customEdittext.getEditText().getText().toString());
                     processor.onNext(RowAction.create(editTextModel.uid(), binding.customEdittext.getEditText().getText().toString()));
 
                 } else {
                     processor.onNext(RowAction.create(editTextModel.uid(), null));
                 }
             }
+        });
+        binding.customEdittext.setOnEditorActionListener((v, actionId, event) -> {
+            binding.customEdittext.getEditText().clearFocus();
+            closeKeyboard(binding.customEdittext.getEditText());
+            return false;
         });
     }
 

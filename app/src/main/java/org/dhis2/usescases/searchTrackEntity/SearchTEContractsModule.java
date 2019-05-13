@@ -1,12 +1,14 @@
 package org.dhis2.usescases.searchTrackEntity;
 
+import androidx.annotation.Nullable;
+
 import org.dhis2.data.forms.dataentry.fields.RowAction;
-import org.dhis2.data.tuples.Pair;
 import org.dhis2.data.tuples.Trio;
 import org.dhis2.usescases.general.AbstractActivityContracts;
 import org.dhis2.usescases.searchTrackEntity.adapters.SearchTeiModel;
 import org.hisp.dhis.android.core.option.Option;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttribute;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityType;
@@ -14,7 +16,6 @@ import org.hisp.dhis.android.core.trackedentity.TrackedEntityType;
 import java.util.HashMap;
 import java.util.List;
 
-import androidx.annotation.Nullable;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 import io.reactivex.functions.Consumer;
@@ -28,7 +29,7 @@ public class SearchTEContractsModule {
     public interface SearchTEView extends AbstractActivityContracts.View {
         void setForm(List<TrackedEntityAttribute> trackedEntityAttributeModels, @Nullable Program program, HashMap<String, String> queryData);
 
-        Consumer<Pair<List<SearchTeiModel>, String>> swapTeiListData();
+        Consumer<Trio<List<SearchTeiModel>, String, Boolean>> swapTeiListData();
 
         void setPrograms(List<Program> programModels);
 
@@ -73,7 +74,7 @@ public class SearchTEContractsModule {
 
         void onTEIClick(String teiUid, boolean isOnline);
 
-        void getTrakedEntities();
+        void getTrakedEntities(boolean offlineOnly);
 
         TrackedEntityType getTrackedEntityName();
 
@@ -90,5 +91,7 @@ public class SearchTEContractsModule {
         Observable<List<OrganisationUnit>> getOrgUnits();
 
         String getProgramColor(String uid);
+
+        Observable<List<OrganisationUnitLevel>> getOrgUnitLevels();
     }
 }

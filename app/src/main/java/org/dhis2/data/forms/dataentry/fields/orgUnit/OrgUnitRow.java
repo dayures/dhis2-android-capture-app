@@ -40,14 +40,20 @@ public class OrgUnitRow implements Row<OrgUnitHolder, OrgUnitViewModel> {
     private Observable<List<OrganisationUnitLevel>> levels;
 
 
-    public OrgUnitRow(FragmentManager fm, LayoutInflater layoutInflater, FlowableProcessor<RowAction> processor,
-                      boolean isBgTransparent, Observable<List<OrganisationUnit>> orgUnits) {
+    public OrgUnitRow(FragmentManager fm,
+                      LayoutInflater layoutInflater,
+                      FlowableProcessor<RowAction> processor,
+                      boolean isBgTransparent,
+                      Observable<List<OrganisationUnit>> orgUnits,
+                      Observable<List<OrganisationUnitLevel>> levels) {
         this.inflater = layoutInflater;
         this.processor = processor;
         this.isBgTransparent = isBgTransparent;
         this.fm = fm;
         this.orgUnits = orgUnits;
         this.renderType = null;
+        this.isSearchMode = true;
+        this.levels = levels;
     }
 
     public OrgUnitRow(FragmentManager fm, LayoutInflater layoutInflater, FlowableProcessor<RowAction> processor,
