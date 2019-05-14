@@ -429,6 +429,8 @@
     <string name="check_mandatory_field">Check fields</string>
     <string name="error_no_network_during_sync">You lost your internet connection while performing your configuration sync. Please try again later</string>
     <string name="action_agree">Agree</string>
+    <string name="resource_not_found">%s not found</string>
+    <string name="relationship_not_found_message">The record you are trying to access is not available. Would you like to search for it?</string>
 
     <string name="sms_receiver_number">Receiver number</string>
     <string name="sms_amount_question">Do you accept to send %d messages?</string>
@@ -454,5 +456,4 @@
     <string name="sms_bar_state_sending">In progress</string>
     <string name="sms_bar_state_sent">Sent</string>
     <string name="sms_bar_state_failed">Failed</string>
-
 </resources>
