@@ -360,6 +360,9 @@
 
     <color name="warning_color">#F19525</color>
     <color name="error_color">#F11E1E</color>
+    <color name="colorPrimaryDarkText">#DE333333</color>
     <!--endregion-->
+
+    <color name="blueMaterial">#2C98F0</color>
 
 </resources>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <data>
+        <import type="android.view.View" />
+        <import type="org.dhis2.utils.Constants"/>
+
+        <variable
+            name="viewModel"
+            type="org.dhis2.usescases.settings.SettingsViewModel"/>
+
+        <variable
+            name="config"
+            type="org.dhis2.usescases.settings.ConfigData"/>
+
+    </data>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:padding="4dp"
+            android:id="@+id/layoutTop"
+            android:paddingBottom="@dimen/widget_margin"
+            android:onClick="@{() -> viewModel.show(config)}"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                app:srcCompat="@drawable/ic_delete_local_data"
+                android:id="@+id/icon"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                style="@style/sync_data_icon" />
+
+            <TextView
+                android:text="@string/sync_delete_title"
+                style="@style/sync_data_title"
+                app:layout_constraintStart_toEndOf="@id/icon"
+                app:layout_constraintTop_toTopOf="parent"
+                android:id="@+id/title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:id="@+id/subtitle1"
+                android:text="@string/lorem"
+                app:layout_constraintStart_toEndOf="@id/icon"
+                app:layout_constraintTop_toBottomOf="@id/title"
+                style="@style/sync_data_subtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layoutBottom"
+            app:layout_constraintTop_toBottomOf="@id/layoutTop"
+            android:layout_width="match_parent"
+            android:visibility="@{viewModel.config == config ? View.VISIBLE : View.GONE}"
+            android:layout_height="wrap_content">
+
+            <Button
+                android:onClick="@{() -> viewModel.deleteData()}"
+                android:fontFamily="@font/rubik_regular"
+                android:textColor="@color/red_060"
+                style="@style/Base.Widget.AppCompat.Button.Borderless.Colored"
+                android:text="@string/action_accept"
+                android:layout_marginBottom="6dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginTop="6dp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content" />
+
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+        <View
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="6dp"
+            android:background="@color/colorPrimaryDarkText"
+            app:layout_constraintTop_toBottomOf="@id/layoutBottom"
+            android:layout_marginStart="16dp"
+            android:layout_width="0dp"
+            android:layout_height="1dp"/>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</layout>

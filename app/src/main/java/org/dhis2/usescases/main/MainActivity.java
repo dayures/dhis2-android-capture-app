@@ -21,6 +21,7 @@ import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.jira.JiraFragment;
 import org.dhis2.usescases.main.program.ProgramFragment;
 import org.dhis2.usescases.qrReader.QrReaderFragment;
+import org.dhis2.usescases.settings.SettingsFragment;
 import org.dhis2.usescases.syncManager.ErrorDialog;
 import org.dhis2.usescases.syncManager.SyncManagerFragment;
 import org.dhis2.utils.Constants;
@@ -202,7 +203,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
         String tag = null;
         switch (id) {
             case R.id.sync_manager:
-                fragment = new SyncManagerFragment();
+                fragment = new SettingsFragment();
                 tag = getString(R.string.SYNC_MANAGER);
                 binding.filter.setVisibility(View.GONE);
                 break;

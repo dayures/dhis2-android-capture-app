@@ -205,4 +205,27 @@
         <item name="android:textColor">@color/error_color</item>
     </style>
 
+    <style name="sync_data_icon">
+        <item name="android:layout_marginTop">@dimen/syncIconTopMargin</item>
+        <item name="android:layout_marginStart">@dimen/default_start_margin</item>
+        <item name="android:layout_width">@dimen/syncIconSize</item>
+        <item name="android:layout_height">@dimen/syncIconSize</item>
+    </style>
+
+    <style name="sync_data_title">
+        <item name="android:textColor">@color/colorPrimaryDarkText</item>
+        <item name="android:textSize">@dimen/syncTitleText</item>
+        <item name="android:gravity">start|bottom</item>
+        <item name="android:layout_marginStart">@dimen/default_start_margin</item>
+        <item name="android:fontFamily">@font/rubik_regular</item>
+    </style>
+
+    <style name="sync_data_subtitle">
+        <item name="android:layout_marginStart">@dimen/default_start_margin</item>
+        <item name="android:fontFamily">@font/rubik_light</item>
+        <item name="android:textSize">@dimen/syncSubtitleText</item>
+        <item name="android:gravity">start|top</item>
+        <item name="android:textColor">@color/colorPrimaryDarkText</item>
+    </style>
+
 </resources>

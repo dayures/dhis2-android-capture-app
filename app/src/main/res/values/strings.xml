@@ -435,4 +435,19 @@
     <string name="error_no_network_during_sync">You lost your internet connection while performing your configuration sync. Please try again later</string>
     <string name="action_agree">Agree</string>
 
+
+
+    <!-- SETTINGS DATA -->
+    <string name="sync_data_title">Sync data</string>
+    <string name="sync_configuration_title">Sync Configuration</string>
+    <string name="sync_reset_title"><![CDATA[Reset app data & configuration]]></string>
+    <string name="sync_delete_title">Delete local data</string>
+    <string name="sync_reserved_title">Reserved values</string>
+    <string name="sync_sync_error_title">Open sync errors log</string>
+    <string name="sync_parameters_title">Sync parameters</string>
+
+    <string name="sync_data_period">Synchronization settings: %s</string>
+    <string name="TIME_15">15 Minutes</string>
+    <string name="EVERY_HOUR">Every hour</string>
+
 </resources>
