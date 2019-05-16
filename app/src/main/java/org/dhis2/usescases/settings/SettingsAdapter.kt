@@ -6,6 +6,8 @@ import androidx.databinding.DataBindingUtil
 import androidx.recyclerview.widget.RecyclerView
 import org.dhis2.R
 import org.dhis2.databinding.*
+import org.dhis2.extensions.getDhisPreferences
+import org.dhis2.utils.Constants
 
 class SettingsAdapter(val viewModel: SettingsViewModel): RecyclerView.Adapter<RecyclerView.ViewHolder>() {
     val list: List<ConfigData> = listOf(ConfigData.SYNC_DATA, ConfigData.SYNC_CONFIGURATION, ConfigData.SYNC_PARAMETERS,
@@ -133,21 +135,36 @@ class SettingsAdapter(val viewModel: SettingsViewModel): RecyclerView.Adapter<Re
     }
 
     inner class SyncDataHolder(val binding: ItemSettingsSyncDataBinding): RecyclerView.ViewHolder(binding.root) {
+        private val dataStatus = binding.root.context.getDhisPreferences(Constants.LAST_DATA_SYNC_STATUS, true)
         fun bind(config: ConfigData) {
             binding.let {
                 it.config = config
                 it.viewModel = viewModel
+            }
+            if (dataStatus) {
+                binding.subtitle2.text = String.format(binding.root.context.resources.getString(R.string.last_data_sync_date),
+                        binding.root.context.getDhisPreferences(Constants.LAST_DATA_SYNC, "-"))
+            } else {
+                binding.subtitle2.text = binding.root.context.resources.getString(R.string.sync_error_text)
             }
         }
     }
 
     inner class SyncParametersHolders(val binding: ItemSettingsSyncParametersBinding): RecyclerView.ViewHolder(binding.root) {
+        val metaStatus = binding.root.context.getDhisPreferences(Constants.LAST_META_SYNC_STATUS, true)
         fun bind(config: ConfigData) {
             binding.let {
                 it.config = config
                 it.viewModel = viewModel
             }
+            if (metaStatus)
+                binding.subtitle2.text = String.format(binding.root.context.resources.getString(R.string.last_data_sync_date),
+                        binding.root.context.getDhisPreferences(Constants.LAST_META_SYNC, "-"));
+            else
+                binding.subtitle2.text = binding.root.context.resources.getString(R.string.sync_error_text);
+
         }
+
     }
 
 }

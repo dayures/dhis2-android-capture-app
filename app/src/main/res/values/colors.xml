@@ -364,5 +364,6 @@
     <!--endregion-->
 
     <color name="blueMaterial">#2C98F0</color>
+    <color name="materialRed">#EB5757</color>
 
 </resources>

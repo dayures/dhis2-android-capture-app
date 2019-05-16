@@ -228,4 +228,25 @@
         <item name="android:textColor">@color/colorPrimaryDarkText</item>
     </style>
 
+    <style name="MaterialDialog" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="buttonBarPositiveButtonStyle">@style/PositiveButtonStyle</item>
+        <item name="buttonBarNegativeButtonStyle">@style/NegativeButtonStyle</item>
+        <item name="android:windowTitleStyle">@style/TitleStyle</item>
+        <item name="android:textColorPrimary">@color/materialRed</item>
+        <item name="android:fontFamily">@font/rubik_regular</item>
+    </style>
+
+
+    <style name="PositiveButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/materialRed</item>
+    </style>
+
+    <style name="TitleStyle" parent="AlertDialog.MaterialComponents.Title.Text">
+        <item name="android:textColor">@color/black_de0</item>
+    </style>
+
+    <style name="NegativeButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/blueMaterial</item>
+    </style>
+
 </resources>
