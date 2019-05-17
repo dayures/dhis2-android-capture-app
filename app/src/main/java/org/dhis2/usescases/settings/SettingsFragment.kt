@@ -30,7 +30,6 @@ class SettingsFragment: BaseFragment() {
 
     lateinit var binding: FragmentSettingsBinding
 
-    @Inject
     lateinit var viewModel: SettingsViewModel
 
 
@@ -59,11 +58,13 @@ class SettingsFragment: BaseFragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_settings, container, false)
-        viewModel.goToIntent = ::goToIntentAction
-        viewModel.requiereConfirm = ::requireConfirmAction
-        viewModel.goToLogin = ::goToLoginAction
-        viewModel.showErroDialog = ::showErrorDialogAction
-        viewModel.showLocalDataDeleted = ::showLocalDataDeletedAction
+        viewModel = viewModel(viewModelFactory) {
+            goToIntent = ::goToIntentAction
+            requiereConfirm = ::requireConfirmAction
+            goToLogin = ::goToLoginAction
+            showErroDialog = ::showErrorDialogAction
+            showLocalDataDeleted = ::showLocalDataDeletedAction
+        }
         return binding.root
     }
 

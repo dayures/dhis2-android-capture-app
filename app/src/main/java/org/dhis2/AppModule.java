@@ -2,10 +2,12 @@ package org.dhis2;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
+import androidx.lifecycle.ViewModel;
 
 import org.apache.commons.jexl2.JexlEngine;
 import org.dhis2.data.server.ConfigurationRepository;
 import org.dhis2.data.server.ConfigurationRepositoryImpl;
+import org.dhis2.usescases.settings.SettingsViewModel;
 import org.dhis2.utils.CodeGenerator;
 import org.dhis2.utils.CodeGeneratorImpl;
 import org.dhis2.utils.ExpressionEvaluatorImpl;
@@ -16,6 +18,7 @@ import org.hisp.dhis.rules.RuleExpressionEvaluator;
 
 import javax.inject.Singleton;
 
+import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 
@@ -65,6 +68,12 @@ public final class AppModule {
     @Singleton
     RuleExpressionEvaluator ruleExpressionEvaluator(@NonNull JexlEngine jexlEngine) {
         return new ExpressionEvaluatorImpl(jexlEngine);
+    }
+
+    @Binds
+    @Singleton
+    SettingsViewModel settingsViewModel() {
+
     }
 
 

@@ -7,14 +7,10 @@ import androidx.databinding.Observable
 import androidx.databinding.ObservableBoolean
 import androidx.databinding.ObservableField
 import androidx.databinding.ObservableInt
-import androidx.lifecycle.AndroidViewModel
 import androidx.work.*
-import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
-import io.reactivex.schedulers.Schedulers
-import org.dhis2.App
 import org.dhis2.R
 import org.dhis2.data.base.BaseViewModel
 import org.dhis2.data.metadata.MetadataRepository
@@ -24,12 +20,10 @@ import org.dhis2.data.tuples.Pair
 import org.dhis2.utils.Constants
 import org.dhis2.utils.Constants.*
 import org.hisp.dhis.android.core.D2
-import org.hisp.dhis.android.core.constant.Constant
 import org.hisp.dhis.android.core.maintenance.D2Error
 import timber.log.Timber
 import java.io.File
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
 import javax.inject.Singleton
 
 const val TYPE_DELETE_DATA = 0
@@ -39,8 +33,8 @@ const val TYPE_RESET_APP = 1
 class SettingsViewModel: BaseViewModel() {
 
     lateinit var app: Application
-    //lateinit var d2: D2
-    //lateinit var metadataRepository: MetadataRepository
+    lateinit var d2: D2
+    lateinit var metadataRepository: MetadataRepository
 
     private val prefs: SharedPreferences = app.getSharedPreferences(Constants.SHARE_PREFS, MODE_PRIVATE)
     val eventDataMax = ObservableField<String>(prefs.getInt(Constants.EVENT_MAX, Constants.EVENT_MAX_DEFAULT).toString())
@@ -209,7 +203,7 @@ class SettingsViewModel: BaseViewModel() {
     private fun deleteLocal() {
         var error = false;
         try {
-           // d2.wipeModule().wipeData();
+            d2.wipeModule().wipeData();
         } catch (e: D2Error) {
             Timber.e(e);
             error = true;
