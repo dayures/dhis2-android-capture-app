@@ -23,7 +23,7 @@ import dagger.Component;
  */
 @Singleton
 @Component(modules = {
-        AppModule.class, DbModule.class, SchedulerModule.class, UtilsModule.class, MetadataModule.class, QRModule.class
+         AppModule.class, DbModule.class, SchedulerModule.class, UtilsModule.class, MetadataModule.class, QRModule.class
 })
 public interface AppComponent {
 

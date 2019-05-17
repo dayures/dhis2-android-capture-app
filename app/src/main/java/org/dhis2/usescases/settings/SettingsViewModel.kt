@@ -3,6 +3,8 @@ package org.dhis2.usescases.settings
 import android.app.Application
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
+import androidx.databinding.Observable
+import androidx.databinding.ObservableBoolean
 import androidx.databinding.ObservableField
 import androidx.databinding.ObservableInt
 import androidx.lifecycle.AndroidViewModel
@@ -12,7 +14,9 @@ import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.schedulers.Schedulers
+import org.dhis2.App
 import org.dhis2.R
+import org.dhis2.data.base.BaseViewModel
 import org.dhis2.data.metadata.MetadataRepository
 import org.dhis2.data.service.SyncDataWorker
 import org.dhis2.data.service.SyncMetadataWorker
@@ -25,14 +29,25 @@ import org.hisp.dhis.android.core.maintenance.D2Error
 import timber.log.Timber
 import java.io.File
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 
 const val TYPE_DELETE_DATA = 0
 const val TYPE_RESET_APP = 1
 
-class SettingsViewModel(val app: Application): AndroidViewModel(app) {
+@Singleton
+class SettingsViewModel: BaseViewModel() {
 
-    lateinit var d2: D2
+    lateinit var app: Application
+    //lateinit var d2: D2
+    //lateinit var metadataRepository: MetadataRepository
+
     private val prefs: SharedPreferences = app.getSharedPreferences(Constants.SHARE_PREFS, MODE_PRIVATE)
+    val eventDataMax = ObservableField<String>(prefs.getInt(Constants.EVENT_MAX, Constants.EVENT_MAX_DEFAULT).toString())
+    val teiMaxData = ObservableField<String>(prefs.getInt(Constants.TEI_MAX, Constants.TEI_MAX_DEFAULT).toString())
+    val eventCurrentdata = ObservableField<String>()
+    val teiCurrentData = ObservableField<String>()
+    val limitByOrgUnit = ObservableBoolean(prefs.getBoolean(LIMIT_BY_ORG_UNIT, false))
     val syncDataFrequency = ObservableInt(prefs.getInt("timeData", Constants.TIME_DAILY))
     val syncDataFrequencyString = ObservableField<String>(getStringTagByMinutes(syncDataFrequency.get()))
     val syncConfigFrequency = ObservableInt(prefs.getInt("timeMeta", Constants.TIME_DAILY))
@@ -40,13 +55,16 @@ class SettingsViewModel(val app: Application): AndroidViewModel(app) {
     var config = ObservableField<ConfigData>()
     private val compositeDisposable = CompositeDisposable()
     val checkData: FlowableProcessor<Boolean> = PublishProcessor.create()
-    lateinit var metadataRepository: MetadataRepository
+
+
     lateinit var requiereConfirm: (type: Int, callback: () -> Unit) -> Unit
     lateinit var goToIntent: (config: ConfigData) -> Unit
     lateinit var showLocalDataDeleted: (error: Boolean) -> Unit
     lateinit var goToLogin: () -> Unit
+    lateinit var showErroDialog: (data: List<D2Error>) -> Unit
 
     init {
+        /*
         compositeDisposable.add(
                 checkData
                         .startWith(true)
@@ -61,10 +79,40 @@ class SettingsViewModel(val app: Application): AndroidViewModel(app) {
                             Timber.e(it)
                         })
         )
+        */
+
+        limitByOrgUnit.addOnPropertyChangedCallback(object: Observable.OnPropertyChangedCallback() {
+            override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
+                val active = (sender as ObservableBoolean).get()
+                prefs.edit().putBoolean(LIMIT_BY_ORG_UNIT, active).apply()
+            }
+        })
+        eventDataMax.addOnPropertyChangedCallback(object: Observable.OnPropertyChangedCallback() {
+            override fun onPropertyChanged(sender: Observable, propertyId: Int) {
+                val text = (sender as ObservableField<*>).get() as String
+                if (text.toInt() > 0)
+                    prefs.edit().putInt(EVENT_MAX, text.toInt()).apply()
+            }
+        })
+        teiMaxData.addOnPropertyChangedCallback(object: Observable.OnPropertyChangedCallback() {
+            override fun onPropertyChanged(sender: Observable, propertyId: Int) {
+                val text = (sender as ObservableField<*>).get() as String
+                if (text.toInt() > 0)
+                    prefs.edit().putInt(TEI_MAX, text.toInt()).apply()
+            }
+        })
     }
 
     private fun setSyncData(it: Pair<Int, Int>?) {
+        eventDataMax.set(prefs.getInt(Constants.EVENT_MAX, Constants.EVENT_MAX_DEFAULT).toString())
+        teiMaxData.set(prefs.getInt(Constants.TEI_MAX, Constants.TEI_MAX_DEFAULT).toString())
+        eventCurrentdata.set(it?.val0().toString())
+        teiCurrentData.set(it?.val1().toString())
+        limitByOrgUnit.set(prefs.getBoolean(LIMIT_BY_ORG_UNIT, false))
+    }
 
+    fun showSyncErrors(data: List<D2Error>) {
+        showErroDialog(data)
     }
 
     fun getPreferences(key: String): String {
@@ -161,20 +209,19 @@ class SettingsViewModel(val app: Application): AndroidViewModel(app) {
     private fun deleteLocal() {
         var error = false;
         try {
-            d2.wipeModule().wipeData();
+           // d2.wipeModule().wipeData();
         } catch (e: D2Error) {
             Timber.e(e);
             error = true;
         }
-
-        showLocalDataDeleted(error);
+        showLocalDataDeleted(error)
     }
 
     private fun wipeDB() {
         try {
             WorkManager.getInstance().cancelAllWork()
             WorkManager.getInstance().pruneWork()
-            d2.wipeModule().wipeEverything()
+            //d2.wipeModule().wipeEverything()
             // clearing cache data
             deleteDir(app.cacheDir)
             prefs.edit().clear().apply()

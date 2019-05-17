@@ -1,6 +1,6 @@
 package org.dhis2.usescases.settings
 
-import android.app.AlertDialog
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,32 +12,32 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
-import kotlinx.android.synthetic.main.date_view.*
+import com.google.android.material.snackbar.Snackbar
 import org.dhis2.App
 import org.dhis2.R
-import org.dhis2.data.user.UserComponent
-import org.dhis2.extensions.viewModel
-import org.dhis2.usescases.general.FragmentGlobalAbstract
+import org.dhis2.data.base.BaseFragment
 import org.dhis2.databinding.FragmentSettingsBinding
+import org.dhis2.extensions.viewModel
 import org.dhis2.usescases.login.LoginActivity
 import org.dhis2.usescases.reservedValue.ReservedValueActivity
-import org.dhis2.utils.OnDialogClickListener
+import org.dhis2.usescases.syncManager.ErrorDialog
 import org.dhis2.utils.SyncUtils
-import org.hisp.dhis.android.core.D2
-import org.jetbrains.anko.noButton
-import org.jetbrains.anko.support.v4.alert
-import org.jetbrains.anko.yesButton
+import org.hisp.dhis.android.core.maintenance.D2Error
 import javax.inject.Inject
 
-class SettingsFragment: FragmentGlobalAbstract() {
+class SettingsFragment: BaseFragment() {
 
 
     lateinit var binding: FragmentSettingsBinding
+
+    @Inject
     lateinit var viewModel: SettingsViewModel
 
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
+        (context.applicationContext as App).userComponent()
+                ?.plus(SettingsModule())?.inject(this)
     }
 
 
@@ -46,7 +46,6 @@ class SettingsFragment: FragmentGlobalAbstract() {
             if (intent.action != null && intent.action == "action_sync") {
                 if (!(SyncUtils.isSyncRunning() && abstractActivity.progressBar.visibility == View.VISIBLE)) {
                     binding.recycler.adapter?.notifyDataSetChanged()
-                    //presenter.checkData();
                 }
             }
         }
@@ -60,13 +59,16 @@ class SettingsFragment: FragmentGlobalAbstract() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_settings, container, false)
-        viewModel = viewModel {
-            this.d2 =  (context!!.applicationContext as App).serverComponent()!!.userManager().d2
-            goToIntent = ::goToIntentAction
-            requiereConfirm = ::requireConfirmAction
-            goToLogin = ::goToLoginAction
-        }
+        viewModel.goToIntent = ::goToIntentAction
+        viewModel.requiereConfirm = ::requireConfirmAction
+        viewModel.goToLogin = ::goToLoginAction
+        viewModel.showErroDialog = ::showErrorDialogAction
+        viewModel.showLocalDataDeleted = ::showLocalDataDeletedAction
         return binding.root
+    }
+
+    private fun showErrorDialogAction(list: @ParameterName(name = "data") List<D2Error>) {
+        ErrorDialog().setData(list).show(childFragmentManager.beginTransaction(), ErrorDialog.TAG)
     }
 
     private fun goToLoginAction() {
@@ -109,5 +111,32 @@ class SettingsFragment: FragmentGlobalAbstract() {
         super.onViewCreated(view, savedInstanceState)
         binding.recycler.layoutManager = LinearLayoutManager(view.context)
         binding.recycler.adapter = SettingsAdapter(viewModel)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        LocalBroadcastManager.getInstance(abstractActivity.applicationContext).unregisterReceiver(syncReceiver)
+    }
+
+    override fun onStop() {
+        val notificationManager = context?.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(123456)
+        super.onStop()
+    }
+
+    private fun showLocalDataDeletedAction(error: Boolean) {
+        if(!error) {
+            viewModel.eventCurrentdata.set(0.toString())
+            viewModel.teiCurrentData.set(0.toString())
+        }
+        val message = if(error) {
+            R.string.delete_local_data_error
+        } else {
+            R.string.delete_local_data_done
+        }
+        val deleteDataSnack = Snackbar.make(binding.root,
+        message,
+        Snackbar.LENGTH_SHORT)
+        deleteDataSnack.show()
     }
 }

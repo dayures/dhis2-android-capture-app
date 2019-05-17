@@ -43,6 +43,8 @@ import org.dhis2.usescases.reservedValue.ReservedValueComponent;
 import org.dhis2.usescases.reservedValue.ReservedValueModule;
 import org.dhis2.usescases.searchTrackEntity.SearchTEComponent;
 import org.dhis2.usescases.searchTrackEntity.SearchTEModule;
+import org.dhis2.usescases.settings.SettingsComponent;
+import org.dhis2.usescases.settings.SettingsModule;
 import org.dhis2.usescases.syncManager.SyncManagerComponent;
 import org.dhis2.usescases.syncManager.SyncManagerModule;
 import org.dhis2.usescases.teiDashboard.TeiDashboardComponent;
@@ -140,5 +142,8 @@ public interface UserComponent {
 
     @NonNull
     EnrollmentComponent plus(EnrollmentModule enrollmentModule);
+
+    @NonNull
+    SettingsComponent plus(SettingsModule settingsModule);
 
 }
