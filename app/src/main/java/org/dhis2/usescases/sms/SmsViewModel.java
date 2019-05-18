@@ -21,6 +21,7 @@ import io.reactivex.schedulers.Schedulers;
 
 public class SmsViewModel extends ViewModel {
     private final D2 d2;
+    private Type type;
     private String enrollmentId;
     private String eventId;
     private String teiId;
@@ -37,29 +38,33 @@ public class SmsViewModel extends ViewModel {
         statesList = new ArrayList<>();
     }
 
-    void setEventData(String eventId, String teiId) {
+    void setTrackerEventData(String eventId, String teiId) {
         this.eventId = eventId;
         this.teiId = teiId;
+        this.enrollmentId = null;
+        type = Type.TRACKER_EVENT;
+    }
+
+    void setSimpleEventData(String eventId) {
+        this.eventId = eventId;
+        this.teiId = null;
+        this.enrollmentId = null;
+        type = Type.SIMPLE_EVENT;
     }
 
     void setEnrollmentData(String enrollmentId, String teiId) {
-        this.enrollmentId = enrollmentId;
+        this.eventId = null;
         this.teiId = teiId;
+        this.enrollmentId = enrollmentId;
+        type = Type.ENROLLMENT;
     }
 
     void sendSMS() {
         if (smsSender != null) return; // maybe activity rotated caused double call
         smsSender = d2.smsModule().smsSubmitCase();
         reportState(State.STARTED, 0, 0);
-        Single<Integer> convertTask;
-        if (enrollmentId != null && teiId != null) {
-            convertTask = smsSender.convertEnrollment(enrollmentId, teiId);
-        } else if (eventId != null && teiId != null) {
-            convertTask = smsSender.convertEvent(eventId, teiId);
-        } else {
-            reportError(new IllegalArgumentException("Not provided required ids of item to submit"));
-            return;
-        }
+        Single<Integer> convertTask = chooseConvertTask();
+        if (convertTask == null) return;
 
         disposables.add(convertTask.subscribeOn(Schedulers.newThread()
         ).observeOn(Schedulers.newThread()
@@ -75,6 +80,27 @@ public class SmsViewModel extends ViewModel {
                 reportError(e);
             }
         }));
+    }
+
+    private Single<Integer> chooseConvertTask() {
+        switch (type) {
+            case ENROLLMENT:
+                if (enrollmentId != null && teiId != null)
+                    return smsSender.convertEnrollment(enrollmentId, teiId);
+                break;
+            case TRACKER_EVENT:
+                if (eventId != null && teiId != null) {
+                    return smsSender.convertTrackerEvent(eventId, teiId);
+                }
+                break;
+            case SIMPLE_EVENT:
+                if (eventId != null) {
+                    return smsSender.convertSimpleEvent(eventId);
+                }
+                break;
+        }
+        reportState(State.ITEM_NOT_READY, 0, 0);
+        return null;
     }
 
     private void reportState(State state, int sent, int total) {
@@ -148,6 +174,11 @@ public class SmsViewModel extends ViewModel {
     }
 
     public enum State {
-        STARTED, CONVERTED, WAITING_COUNT_CONFIRMATION, COUNT_NOT_ACCEPTED, SENDING, COMPLETED, ERROR
+        STARTED, CONVERTED, ITEM_NOT_READY, WAITING_COUNT_CONFIRMATION,
+        COUNT_NOT_ACCEPTED, SENDING, COMPLETED, ERROR
+    }
+
+    public enum Type {
+        ENROLLMENT, TRACKER_EVENT, SIMPLE_EVENT
     }
 }

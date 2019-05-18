@@ -209,7 +209,11 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
         Activity activity = view.getAbstractActivity();
         Intent intent = new Intent(activity, SmsSubmitActivity.class);
         Bundle args = new Bundle();
-        SmsSubmitActivity.setEventData(args, eventId, teiId);
+        if (teiId != null) {
+            SmsSubmitActivity.setTrackerEventData(args, eventId, teiId);
+        } else {
+            SmsSubmitActivity.setSimpleEventData(args, eventId);
+        }
         intent.putExtras(args);
         activity.startActivity(intent);
     }

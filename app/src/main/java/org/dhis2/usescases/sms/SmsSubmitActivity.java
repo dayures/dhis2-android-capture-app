@@ -52,9 +52,13 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
     @Inject
     ViewModelFactory<SmsViewModel> vmFactory;
 
-    public static void setEventData(Bundle args, String eventId, String teiId) {
+    public static void setTrackerEventData(Bundle args, String eventId, String teiId) {
         args.putString(ARG_EVENT, eventId);
         args.putString(ARG_TEI, teiId);
+    }
+
+    public static void setSimpleEventData(Bundle args, String eventId) {
+        args.putString(ARG_EVENT, eventId);
     }
 
     public static void setEnrollmentData(Bundle args, String teiId, String enrollmentId) {
@@ -85,8 +89,11 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
         if (enrollmentId != null) {
             smsViewModel.setEnrollmentData(enrollmentId, teiId);
             title.setText(R.string.sms_title_enrollment);
-        } else if (eventId != null) {
-            smsViewModel.setEventData(eventId, teiId);
+        } else if (eventId != null && teiId != null) {
+            smsViewModel.setTrackerEventData(eventId, teiId);
+            title.setText(R.string.sms_title_event);
+        } else {
+            smsViewModel.setSimpleEventData(eventId);
             title.setText(R.string.sms_title_event);
         }
         state.setText(R.string.sms_bar_state_sending);
@@ -161,7 +168,8 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
         } else if (lastState.state == SmsViewModel.State.COMPLETED) {
             state.setText(R.string.sms_bar_state_sent);
             finishSubmission();
-        } else if (lastState.state == SmsViewModel.State.ERROR || lastState.state == SmsViewModel.State.COUNT_NOT_ACCEPTED) {
+        } else if (lastState.state == SmsViewModel.State.ERROR || lastState.state == SmsViewModel.State.COUNT_NOT_ACCEPTED
+                || lastState.state == SmsViewModel.State.ITEM_NOT_READY) {
             titleBar.setBackgroundColor(ContextCompat.getColor(this, R.color.sms_sync_title_bar_error));
             state.setText(R.string.sms_bar_state_failed);
             finishSubmission();

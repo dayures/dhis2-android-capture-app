@@ -438,6 +438,7 @@
     <string name="sms_waiting_amount_confirm">Waiting amount confirmation - %d</string>
     <string name="sms_all_sent">All sent</string>
     <string name="sms_error">Error sending</string>
+    <string name="sms_error_item_not_ready">Data item not ready to be sent</string>
     <string name="sms_error_no_network">No network</string>
     <string name="sms_error_no_check_network_permission">No check network permission</string>
     <string name="sms_error_no_receive_sms_permission">No receive sms permission</string>

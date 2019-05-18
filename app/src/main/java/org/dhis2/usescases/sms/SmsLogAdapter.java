@@ -55,6 +55,9 @@ public class SmsLogAdapter extends RecyclerView.Adapter<SmsLogAdapter.ViewHolder
             case ERROR:
                 h.item.setText(getErrorText(res, state.error));
                 return;
+            case ITEM_NOT_READY:
+                h.item.setText(R.string.sms_error_item_not_ready);
+                return;
         }
         int firstItemColor = ContextCompat.getColor(h.item.getContext(), R.color.sms_sync_last_event);
         int standardColor = ContextCompat.getColor(h.item.getContext(), R.color.text_black_333);
