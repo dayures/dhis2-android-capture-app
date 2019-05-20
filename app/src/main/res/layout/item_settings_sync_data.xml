@@ -77,6 +77,7 @@
             android:layout_height="wrap_content">
 
             <TableLayout
+                android:id="@+id/table"
                 android:layout_marginTop="7dp"
                 android:gravity="center"
                 android:layout_marginStart="60dp"
@@ -140,8 +141,20 @@
 
             </TableLayout>
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
+            <Button
+                android:enabled="@{viewModel.isEnabledButton}"
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/table"
+                android:onClick="@{() -> viewModel.syncData()}"
+                android:layout_width="wrap_content"
+                android:textColor="@color/color_button_material"
+                style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                android:text="@string/sync_now" />
 
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
 
         <View

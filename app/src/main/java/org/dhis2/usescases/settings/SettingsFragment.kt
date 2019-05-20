@@ -10,6 +10,8 @@ import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.work.WorkManager
+import androidx.work.WorkStatus
 import com.google.android.material.snackbar.Snackbar
 import org.dhis2.App
 import org.dhis2.R
@@ -23,7 +25,10 @@ import org.dhis2.utils.Constants
 import org.dhis2.utils.SyncUtils
 import org.hisp.dhis.android.core.maintenance.D2Error
 import org.jetbrains.anko.userManager
+import java.util.*
 import javax.inject.Inject
+import androidx.lifecycle.Observer
+import androidx.work.State.*
 
 class SettingsFragment: BaseFragment() {
 
@@ -32,9 +37,6 @@ class SettingsFragment: BaseFragment() {
 
     lateinit var viewModel: SettingsViewModel
 
-    @Inject
-    lateinit var prefsA: SharedPreferences
-
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -42,22 +44,6 @@ class SettingsFragment: BaseFragment() {
                 ?.plus(SettingsModule())?.inject(this)
     }
 
-
-    val syncReceiver = object: BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent) {
-            if (intent.action != null && intent.action == "action_sync") {
-                if (!(SyncUtils.isSyncRunning() && abstractActivity.progressBar.visibility == View.VISIBLE)) {
-                    binding.recycler.adapter?.notifyDataSetChanged()
-                }
-            }
-        }
-    }
-
-    override fun onResume() {
-        super.onResume()
-        LocalBroadcastManager.getInstance(abstractActivity.applicationContext).registerReceiver(syncReceiver,  IntentFilter("action_sync"))
-
-    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_settings, container, false)
@@ -69,8 +55,23 @@ class SettingsFragment: BaseFragment() {
             showErroDialog = ::showErrorDialogAction
             showLocalDataDeleted = ::showLocalDataDeletedAction
             cacheDir = context!!.cacheDir
-
         }
+        val observer = Observer<List<WorkStatus>> {
+            if (it.isNotEmpty()) {
+                when(it[0].state) {
+                    RUNNING -> {
+                        viewModel.isEnabledButton.set(false)
+                    }
+                    else -> {
+                        viewModel.isEnabledButton.set(true)
+                    }
+                }
+            } else {
+                viewModel.isEnabledButton.set(false)
+            }
+        }
+        WorkManager.getInstance().getStatusesByTagLiveData(Constants.DATA).observe(this, observer)
+        WorkManager.getInstance().getStatusesByTagLiveData(Constants.META).observe(this, observer)
         return binding.root
     }
 
@@ -118,11 +119,6 @@ class SettingsFragment: BaseFragment() {
         super.onViewCreated(view, savedInstanceState)
         binding.recycler.layoutManager = LinearLayoutManager(view.context)
         binding.recycler.adapter = SettingsAdapter(viewModel)
-    }
-
-    override fun onPause() {
-        super.onPause()
-        LocalBroadcastManager.getInstance(abstractActivity.applicationContext).unregisterReceiver(syncReceiver)
     }
 
     override fun onStop() {

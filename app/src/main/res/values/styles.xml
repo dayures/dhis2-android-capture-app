@@ -249,4 +249,8 @@
         <item name="android:textColor">@color/blueMaterial</item>
     </style>
 
+    <style name="SwitchCompatTheme">
+            <item name="colorControlActivated">@color/blueMaterial</item>
+    </style>
+
 </resources>

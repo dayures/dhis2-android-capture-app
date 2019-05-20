@@ -46,6 +46,7 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
     val eventCurrentdata = ObservableField<String>()
     val teiCurrentData = ObservableField<String>()
     val limitByOrgUnit = ObservableBoolean(prefs.getBoolean(LIMIT_BY_ORG_UNIT, false))
+    val limitByProgram = ObservableBoolean(prefs.getBoolean(LIMIT_BY_ORG_UNIT, false))
     val syncDataFrequency = ObservableInt(prefs.getInt("timeData", Constants.TIME_DAILY))
     val syncDataFrequencyString = ObservableField<String>(getStringTagByMinutes(syncDataFrequency.get()))
     val syncConfigFrequency = ObservableInt(prefs.getInt("timeMeta", Constants.TIME_DAILY))
@@ -53,6 +54,7 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
     var config = ObservableField<ConfigData>()
     private val compositeDisposable = CompositeDisposable()
     val checkData: FlowableProcessor<Boolean> = PublishProcessor.create()
+    val isEnabledButton = ObservableBoolean(true)
 
 
     lateinit var requiereConfirm: (type: Int, callback: () -> Unit) -> Unit
@@ -89,15 +91,14 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
             override fun onPropertyChanged(sender: Observable, propertyId: Int) {
                 val text = (sender as ObservableField<*>).get() as String
                 when {
-                    text.length > 9 -> {
-                        val shortText = text.substring(0, 9)
+                    text.length > 5 -> {
+                        val shortText = text.substring(0, 4)
                         prefs.edit().putInt(EVENT_MAX, shortText.toInt()).apply()
                         (sender as ObservableField<String>).set(shortText)
                     }
                     text.isNotEmpty() -> prefs.edit().putInt(EVENT_MAX, text.toInt()).apply()
                     else -> {
-                        prefs.edit().putInt(EVENT_MAX, 0).apply()
-                        (sender as ObservableField<String>).set("0")
+                        prefs.edit().putInt(EVENT_MAX, 1).apply()
                     }
                 }
             }
@@ -106,17 +107,22 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
             override fun onPropertyChanged(sender: Observable, propertyId: Int) {
                 val text = (sender as ObservableField<*>).get() as String
                 when {
-                    text.length > 9 -> {
-                        val shortText = text.substring(0, 9)
+                    text.length > 5 -> {
+                        val shortText = text.substring(0, 4)
                         prefs.edit().putInt(TEI_MAX, shortText.toInt()).apply()
                         (sender as ObservableField<String>).set(shortText)
                     }
                     text.isNotEmpty() -> prefs.edit().putInt(TEI_MAX, text.toInt()).apply()
                     else -> {
-                        prefs.edit().putInt(TEI_MAX, 0).apply()
-                        (sender as ObservableField<String>).set("0")
+                        prefs.edit().putInt(TEI_MAX, 1).apply()
                     }
                 }
+            }
+        })
+
+        limitByOrgUnit.addOnPropertyChangedCallback(object: Observable.OnPropertyChangedCallback() {
+            override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
+                prefs.edit().putBoolean(Constants.LIMIT_BY_ORG_UNIT, (sender as ObservableBoolean).get()).apply()
             }
         })
     }
@@ -129,13 +135,11 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
         limitByOrgUnit.set(prefs.getBoolean(LIMIT_BY_ORG_UNIT, false))
     }
 
-    fun showSyncErrors(data: List<D2Error>) {
-        showErroDialog(data)
+    fun showSyncErrors() {
+        config.set(null)
+        showErroDialog(metadataRepository.syncErrors)
     }
 
-    fun showErrors() {
-
-    }
 
     fun getPreferences(key: String): String {
         return prefs.getString(key, "-") ?: "-"
@@ -161,8 +165,9 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
     }
 
 
-    fun goTo(config: ConfigData) {
-        goToIntent(config)
+    fun goTo(cc: ConfigData) {
+        config.set(cc)
+        goToIntent(cc)
     }
 
     fun setDataFrequency(frequency: Int) {
@@ -202,6 +207,28 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
                 .build());
         val request = syncDataBuilder.build();
         WorkManager.getInstance().enqueueUniquePeriodicWork(scheduleTag, ExistingPeriodicWorkPolicy.REPLACE, request);
+    }
+
+    fun syncData() {
+        val syncDataBuilder = OneTimeWorkRequest.Builder(SyncDataWorker::class.java)
+        syncDataBuilder.addTag(Constants.DATA_NOW);
+        syncDataBuilder.setConstraints(Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build());
+        val request = syncDataBuilder.build()
+        WorkManager.getInstance().beginUniqueWork(Constants.DATA_NOW, ExistingWorkPolicy.REPLACE, request).enqueue();
+        isEnabledButton.set(false)
+    }
+
+    fun syncMeta() {
+        val syncDataBuilder = OneTimeWorkRequest.Builder(SyncMetadataWorker::class.java)
+        syncDataBuilder.addTag(Constants.META_NOW)
+        syncDataBuilder.setConstraints(Constraints.Builder()
+                .setRequiredNetworkType(NetworkType.CONNECTED)
+                .build())
+        val request = syncDataBuilder.build()
+        WorkManager.getInstance().beginUniqueWork(Constants.META_NOW, ExistingWorkPolicy.REPLACE, request).enqueue()
+        isEnabledButton.set(false)
     }
 
     private fun syncMeta(seconds: Int, scheduleTag: String) {
