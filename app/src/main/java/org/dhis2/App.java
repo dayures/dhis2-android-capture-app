@@ -25,7 +25,6 @@ import org.dhis2.data.server.ServerModule;
 import org.dhis2.data.server.UserManager;
 import org.dhis2.data.user.UserComponent;
 import org.dhis2.data.user.UserModule;
-import org.dhis2.dii.viewModel.ViewModelModule;
 import org.dhis2.usescases.login.LoginComponent;
 import org.dhis2.usescases.login.LoginModule;
 import org.dhis2.usescases.sync.SyncComponent;

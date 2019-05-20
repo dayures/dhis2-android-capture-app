@@ -1,10 +1,8 @@
 package org.dhis2.usescases.settings
 
 import android.app.NotificationManager
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
+import android.content.*
+import android.content.Context.MODE_PRIVATE
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -21,8 +19,10 @@ import org.dhis2.extensions.viewModel
 import org.dhis2.usescases.login.LoginActivity
 import org.dhis2.usescases.reservedValue.ReservedValueActivity
 import org.dhis2.usescases.syncManager.ErrorDialog
+import org.dhis2.utils.Constants
 import org.dhis2.utils.SyncUtils
 import org.hisp.dhis.android.core.maintenance.D2Error
+import org.jetbrains.anko.userManager
 import javax.inject.Inject
 
 class SettingsFragment: BaseFragment() {
@@ -31,6 +31,9 @@ class SettingsFragment: BaseFragment() {
     lateinit var binding: FragmentSettingsBinding
 
     lateinit var viewModel: SettingsViewModel
+
+    @Inject
+    lateinit var prefsA: SharedPreferences
 
 
     override fun onAttach(context: Context) {
@@ -59,11 +62,14 @@ class SettingsFragment: BaseFragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         binding = DataBindingUtil.inflate(inflater, R.layout.fragment_settings, container, false)
         viewModel = viewModel(viewModelFactory) {
+            d2 = (context!!.applicationContext as App).serverComponent.userManager().d2
             goToIntent = ::goToIntentAction
             requiereConfirm = ::requireConfirmAction
             goToLogin = ::goToLoginAction
             showErroDialog = ::showErrorDialogAction
             showLocalDataDeleted = ::showLocalDataDeletedAction
+            cacheDir = context!!.cacheDir
+
         }
         return binding.root
     }

@@ -25,7 +25,7 @@
             android:background="?attr/selectableItemBackground"
             android:padding="4dp"
             android:id="@+id/layoutTop"
-            android:onClick="@{() -> viewModel.showSyncErrors()}"
+            android:onClick="@{() -> viewModel.showErrors()}"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">

@@ -1,78 +1,154 @@
 <?xml version="1.0" encoding="utf-8"?>
 <layout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools">
+xmlns:app="http://schemas.android.com/apk/res-auto"
+xmlns:tools="http://schemas.android.com/tools">
 
-    <data>
-        <import type="android.view.View" />
-        <import type="org.dhis2.utils.Constants"/>
+<data>
+    <import type="android.view.View" />
+    <import type="org.dhis2.utils.Constants"/>
 
-        <variable
-            name="viewModel"
-            type="org.dhis2.usescases.settings.SettingsViewModel"/>
+    <variable
+        name="viewModel"
+        type="org.dhis2.usescases.settings.SettingsViewModel"/>
 
-        <variable
-            name="config"
-            type="org.dhis2.usescases.settings.ConfigData"/>
+    <variable
+        name="config"
+        type="org.dhis2.usescases.settings.ConfigData"/>
 
-    </data>
+</data>
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+        android:background="?attr/selectableItemBackground"
+        android:padding="4dp"
+        android:id="@+id/layoutTop"
+        android:onClick="@{() -> viewModel.show(config)}"
+        app:layout_constraintTop_toTopOf="parent"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
-            android:background="?attr/selectableItemBackground"
-            android:padding="4dp"
-            android:id="@+id/layoutTop"
-            android:onClick="@{() -> viewModel.goTo(config)}"
-            app:layout_constraintTop_toTopOf="parent"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content">
-
-            <ImageView
-                app:srcCompat="@drawable/ic_sync_parameters"
-                android:id="@+id/icon"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                style="@style/sync_data_icon" />
-
-            <TextView
-                android:text="@string/sync_parameters_title"
-                style="@style/sync_data_title"
-                app:layout_constraintStart_toEndOf="@id/icon"
-                app:layout_constraintTop_toTopOf="parent"
-                android:id="@+id/title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"/>
-
-            <TextView
-                android:id="@+id/subtitle1"
-                android:text="@string/lorem"
-                android:paddingEnd="21dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/icon"
-                app:layout_constraintTop_toBottomOf="@id/title"
-                style="@style/sync_data_subtitle"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content" />
-
-
-
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
-        <View
+        <ImageView
+            app:srcCompat="@drawable/ic_sync_configuration"
+            android:id="@+id/icon"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="6dp"
-            android:background="@color/colorPrimaryDarkText"
-            app:layout_constraintTop_toBottomOf="@id/layoutTop"
-            android:layout_marginStart="72dp"
-            android:layout_width="0dp"
-            android:layout_height="1dp"/>
+            app:layout_constraintTop_toTopOf="parent"
+            style="@style/sync_data_icon" />
+
+        <TextView
+            android:text="@string/sync_configuration_title"
+            style="@style/sync_data_title"
+            app:layout_constraintStart_toEndOf="@id/icon"
+            app:layout_constraintTop_toTopOf="parent"
+            android:id="@+id/title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <TextView
+            tools:text="Synchonization settings: daily (default)"
+            android:id="@+id/subtitle1"
+            android:text="@{@string/sync_data_period(viewModel.syncConfigFrequencyString)}"
+            app:layout_constraintStart_toEndOf="@id/icon"
+            app:layout_constraintTop_toBottomOf="@id/title"
+            style="@style/sync_data_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            tools:text="Last sync on: 2019-01-09"
+            android:id="@+id/subtitle2"
+            android:text="@{@string/last_data_sync_date(viewModel.getPreferences(Constants.LAST_META_SYNC))}"
+            app:layout_constraintStart_toEndOf="@id/icon"
+            app:layout_constraintTop_toBottomOf="@id/subtitle1"
+            style="@style/sync_data_subtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/layoutBottom"
+        app:layout_constraintTop_toBottomOf="@id/layoutTop"
+        android:layout_width="match_parent"
+        android:visibility="@{viewModel.config == config ? View.VISIBLE : View.GONE}"
+        android:layout_height="wrap_content">
+
+        <TableLayout
+            android:layout_marginTop="7dp"
+            android:gravity="center"
+            android:layout_marginStart="60dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content">
+
+            <TableRow
+                android:padding="14dp"
+                android:id="@+id/row1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.appcompat.widget.AppCompatRadioButton
+                    app:buttonTint="@color/radio_sync_color"
+                    android:layout_weight="1"
+                    android:onClick="@{() -> viewModel.setConfigFrequency(Constants.TIME_DAILY)}"
+                    android:checked="@{viewModel.syncConfigFrequency.get() == Constants.TIME_DAILY}"
+                    android:layout_span="1"
+                    android:text="@string/DAILY"
+                    tools:text="@string/DAILY" />
+
+                <androidx.appcompat.widget.AppCompatRadioButton
+                    app:buttonTint="@color/radio_sync_color"
+                    android:layout_weight="1"
+                    android:onClick="@{() -> viewModel.setConfigFrequency(Constants.TIME_WEEKLY)}"
+                    android:checked="@{viewModel.syncConfigFrequency.get() == Constants.TIME_WEEKLY}"
+                    android:layout_marginStart="14dp"
+                    android:text="@string/WEEKLY"
+                    tools:text="@string/WEEKLY"
+                    android:layout_span="1" />
+
+            </TableRow>
+
+            <TableRow
+                android:padding="14dp"
+                android:id="@+id/row2"
+                android:weightSum="2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.appcompat.widget.AppCompatRadioButton
+                    app:buttonTint="@color/radio_sync_color"
+                    android:layout_weight="1"
+                    android:onClick="@{() -> viewModel.setConfigFrequency(Constants.TIME_MANUAL)}"
+                    android:checked="@{viewModel.syncConfigFrequency.get() == Constants.TIME_MANUAL}"
+                    tools:text="@string/Manual"
+                    android:text="@string/Manual"
+                    android:layout_span="1" />
+
+
+            </TableRow>
+
+        </TableLayout>
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+
+    <View
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="6dp"
+        android:background="@color/colorPrimaryDarkText"
+        app:layout_constraintTop_toBottomOf="@id/layoutBottom"
+        android:layout_marginStart="72dp"
+        android:layout_width="0dp"
+        android:layout_height="1dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>
 
 </layout>

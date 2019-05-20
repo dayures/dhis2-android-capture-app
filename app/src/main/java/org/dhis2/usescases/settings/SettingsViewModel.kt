@@ -3,14 +3,17 @@ package org.dhis2.usescases.settings
 import android.app.Application
 import android.content.Context.MODE_PRIVATE
 import android.content.SharedPreferences
+import android.content.res.Resources
 import androidx.databinding.Observable
 import androidx.databinding.ObservableBoolean
 import androidx.databinding.ObservableField
 import androidx.databinding.ObservableInt
 import androidx.work.*
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.CompositeDisposable
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
+import io.reactivex.schedulers.Schedulers
 import org.dhis2.R
 import org.dhis2.data.base.BaseViewModel
 import org.dhis2.data.metadata.MetadataRepository
@@ -24,19 +27,20 @@ import org.hisp.dhis.android.core.maintenance.D2Error
 import timber.log.Timber
 import java.io.File
 import java.util.concurrent.TimeUnit
+import javax.inject.Inject
 import javax.inject.Singleton
 
 const val TYPE_DELETE_DATA = 0
 const val TYPE_RESET_APP = 1
 
 @Singleton
-class SettingsViewModel: BaseViewModel() {
+class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepository,
+                                            val resources: Resources,
+                                            val prefs: SharedPreferences): BaseViewModel() {
 
-    lateinit var app: Application
     lateinit var d2: D2
-    lateinit var metadataRepository: MetadataRepository
+    lateinit var cacheDir: File
 
-    private val prefs: SharedPreferences = app.getSharedPreferences(Constants.SHARE_PREFS, MODE_PRIVATE)
     val eventDataMax = ObservableField<String>(prefs.getInt(Constants.EVENT_MAX, Constants.EVENT_MAX_DEFAULT).toString())
     val teiMaxData = ObservableField<String>(prefs.getInt(Constants.TEI_MAX, Constants.TEI_MAX_DEFAULT).toString())
     val eventCurrentdata = ObservableField<String>()
@@ -58,7 +62,7 @@ class SettingsViewModel: BaseViewModel() {
     lateinit var showErroDialog: (data: List<D2Error>) -> Unit
 
     init {
-        /*
+
         compositeDisposable.add(
                 checkData
                         .startWith(true)
@@ -73,7 +77,7 @@ class SettingsViewModel: BaseViewModel() {
                             Timber.e(it)
                         })
         )
-        */
+
 
         limitByOrgUnit.addOnPropertyChangedCallback(object: Observable.OnPropertyChangedCallback() {
             override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
@@ -84,15 +88,35 @@ class SettingsViewModel: BaseViewModel() {
         eventDataMax.addOnPropertyChangedCallback(object: Observable.OnPropertyChangedCallback() {
             override fun onPropertyChanged(sender: Observable, propertyId: Int) {
                 val text = (sender as ObservableField<*>).get() as String
-                if (text.toInt() > 0)
-                    prefs.edit().putInt(EVENT_MAX, text.toInt()).apply()
+                when {
+                    text.length > 9 -> {
+                        val shortText = text.substring(0, 9)
+                        prefs.edit().putInt(EVENT_MAX, shortText.toInt()).apply()
+                        (sender as ObservableField<String>).set(shortText)
+                    }
+                    text.isNotEmpty() -> prefs.edit().putInt(EVENT_MAX, text.toInt()).apply()
+                    else -> {
+                        prefs.edit().putInt(EVENT_MAX, 0).apply()
+                        (sender as ObservableField<String>).set("0")
+                    }
+                }
             }
         })
         teiMaxData.addOnPropertyChangedCallback(object: Observable.OnPropertyChangedCallback() {
             override fun onPropertyChanged(sender: Observable, propertyId: Int) {
                 val text = (sender as ObservableField<*>).get() as String
-                if (text.toInt() > 0)
-                    prefs.edit().putInt(TEI_MAX, text.toInt()).apply()
+                when {
+                    text.length > 9 -> {
+                        val shortText = text.substring(0, 9)
+                        prefs.edit().putInt(TEI_MAX, shortText.toInt()).apply()
+                        (sender as ObservableField<String>).set(shortText)
+                    }
+                    text.isNotEmpty() -> prefs.edit().putInt(TEI_MAX, text.toInt()).apply()
+                    else -> {
+                        prefs.edit().putInt(TEI_MAX, 0).apply()
+                        (sender as ObservableField<String>).set("0")
+                    }
+                }
             }
         })
     }
@@ -107,6 +131,10 @@ class SettingsViewModel: BaseViewModel() {
 
     fun showSyncErrors(data: List<D2Error>) {
         showErroDialog(data)
+    }
+
+    fun showErrors() {
+
     }
 
     fun getPreferences(key: String): String {
@@ -190,7 +218,7 @@ class SettingsViewModel: BaseViewModel() {
 
 
     private fun getStringTagByMinutes(minutes: Int): String {
-        return app.resources.getString(when(minutes) {
+        return resources.getString(when(minutes) {
             TIME_MANUAL -> R.string.Manual
             TIME_15M -> R.string.TIME_15
             TIME_HOURLY -> R.string.EVERY_HOUR
@@ -215,9 +243,9 @@ class SettingsViewModel: BaseViewModel() {
         try {
             WorkManager.getInstance().cancelAllWork()
             WorkManager.getInstance().pruneWork()
-            //d2.wipeModule().wipeEverything()
+            d2.wipeModule().wipeEverything()
             // clearing cache data
-            deleteDir(app.cacheDir)
+            deleteDir(cacheDir)
             prefs.edit().clear().apply()
             goToLogin()
         } catch (e: Exception) {

@@ -22,23 +22,23 @@
         android:layout_height="wrap_content">
 
         <androidx.constraintlayout.widget.ConstraintLayout
+            android:onClick="@{() -> viewModel.show(config)}"
             android:background="?attr/selectableItemBackground"
             android:padding="4dp"
             android:id="@+id/layoutTop"
-            android:onClick="@{() -> viewModel.show(config)}"
             app:layout_constraintTop_toTopOf="parent"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
             <ImageView
-                app:srcCompat="@drawable/ic_sync_configuration"
+                app:srcCompat="@drawable/ic_sync_parameters"
                 android:id="@+id/icon"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 style="@style/sync_data_icon" />
 
             <TextView
-                android:text="@string/sync_configuration_title"
+                android:text="@string/sync_parameters_title"
                 style="@style/sync_data_title"
                 app:layout_constraintStart_toEndOf="@id/icon"
                 app:layout_constraintTop_toTopOf="parent"
@@ -47,23 +47,14 @@
                 android:layout_height="wrap_content"/>
 
             <TextView
-                tools:text="Synchonization settings: daily (default)"
                 android:id="@+id/subtitle1"
-                android:text="@{@string/sync_data_period(viewModel.syncConfigFrequencyString)}"
+                android:text="@string/lorem"
+                android:paddingEnd="21dp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/icon"
                 app:layout_constraintTop_toBottomOf="@id/title"
                 style="@style/sync_data_subtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-
-            <TextView
-                tools:text="Last sync on: 2019-01-09"
-                android:id="@+id/subtitle2"
-                android:text="@{@string/last_data_sync_date(viewModel.getPreferences(Constants.LAST_META_SYNC))}"
-                app:layout_constraintStart_toEndOf="@id/icon"
-                app:layout_constraintTop_toBottomOf="@id/subtitle1"
-                style="@style/sync_data_subtitle"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content" />
 
 
@@ -71,73 +62,150 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:id="@+id/layoutBottom"
-            app:layout_constraintTop_toBottomOf="@id/layoutTop"
-            android:layout_width="match_parent"
             android:visibility="@{viewModel.config == config ? View.VISIBLE : View.GONE}"
+            android:layout_marginTop="14dp"
+            app:layout_constraintTop_toBottomOf="@id/layoutTop"
+            android:id="@+id/layoutBottom"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
-            <TableLayout
-                android:layout_marginTop="7dp"
-                android:gravity="center"
-                android:layout_marginStart="60dp"
+            <LinearLayout
+                android:id="@+id/linearGlobal"
+                android:layout_marginEnd="21dp"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                android:layout_width="0dp"
+                android:gravity="end"
+                android:orientation="horizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    android:layout_margin="6dp"
+                    android:text="Global"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/switchGlobal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <Switch
+                    progressColor="@color/blueMaterial"
+                    eventColor="@color/blueMaterial"
+                    android:checked="@={viewModel.limitByOrgUnit}"
+                    android:layout_margin="6dp"
+                    android:id="@+id/switchGlobal"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+                <TextView
+                    android:layout_margin="6dp"
+                    android:text="By organisation unit"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/switchGlobal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+            <TableLayout
+                android:id="@+id/table"
+                android:layout_marginStart="62dp"
+                app:layout_constraintTop_toBottomOf="@id/linearGlobal"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
                 <TableRow
-                    android:padding="14dp"
-                    android:id="@+id/row1"
-                    android:layout_width="match_parent"
+                    android:padding="4dp"
                     android:layout_height="wrap_content">
 
-                    <androidx.appcompat.widget.AppCompatRadioButton
-                        app:buttonTint="@color/radio_sync_color"
-                        android:layout_weight="1"
-                        android:onClick="@{() -> viewModel.setConfigFrequency(Constants.TIME_DAILY)}"
-                        android:checked="@{viewModel.syncConfigFrequency.get() == Constants.TIME_DAILY}"
-                        android:layout_span="1"
-                        android:text="@string/DAILY"
-                        tools:text="@string/DAILY" />
+                    <View
+                        android:layout_height="1dp"
+                        android:layout_weight="2" />
 
-                    <androidx.appcompat.widget.AppCompatRadioButton
-                        app:buttonTint="@color/radio_sync_color"
+                    <TextView
+                        android:fontFamily="@font/rubik_regular"
+                        android:text="Max"
+                        android:textColor="@color/blueMaterial"
                         android:layout_weight="1"
-                        android:onClick="@{() -> viewModel.setConfigFrequency(Constants.TIME_WEEKLY)}"
-                        android:checked="@{viewModel.syncConfigFrequency.get() == Constants.TIME_WEEKLY}"
-                        android:layout_marginStart="14dp"
-                        android:text="@string/WEEKLY"
-                        tools:text="@string/WEEKLY"
-                        android:layout_span="1" />
+                        android:textAlignment="center" />
+
+                    <TextView
+                        android:fontFamily="@font/rubik_regular"
+                        android:textColor="@color/blueMaterial"
+                        android:text="Current"
+                        android:layout_weight="1"
+                        android:textAlignment="center" />
 
                 </TableRow>
 
-                <TableRow
-                    android:padding="14dp"
-                    android:id="@+id/row2"
-                    android:weightSum="2"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
+                <TableRow android:padding="4dp">
 
-                    <androidx.appcompat.widget.AppCompatRadioButton
-                        app:buttonTint="@color/radio_sync_color"
-                        android:layout_weight="1"
-                        android:onClick="@{() -> viewModel.setConfigFrequency(Constants.TIME_MANUAL)}"
-                        android:checked="@{viewModel.syncConfigFrequency.get() == Constants.TIME_MANUAL}"
-                        tools:text="@string/Manual"
-                        android:text="@string/Manual"
-                        android:layout_span="1" />
+                    <TextView
+                        android:fontFamily="@font/rubik_bold"
+                        android:textAlignment="textStart"
+                        android:layout_weight="2"
+                        android:text="Events" />
 
+                    <EditText
+                        android:inputType="number"
+                        android:textAlignment="center"
+                        android:minWidth="30dp"
+                        android:layout_width="wrap_content"
+                        android:padding="4dp"
+                        android:text="@={viewModel.eventDataMax}"
+                        android:background="@color/greyish"
+                        android:layout_weight="1" />
+
+
+                    <TextView
+                        android:textAlignment="center"
+                        android:text="@{viewModel.eventCurrentdata}"
+                        android:layout_weight="1" />
+
+                </TableRow>
+
+                <TableRow android:padding="4dp">
+
+                    <TextView
+                        android:fontFamily="@font/rubik_bold"
+                        android:textAlignment="textStart"
+                        android:layout_weight="2"
+                        android:text="TEI" />
+
+                    <EditText
+                        android:inputType="number"
+                        android:textAlignment="center"
+                        android:minWidth="30dp"
+                        android:layout_width="wrap_content"
+                        android:padding="4dp"
+                        android:text="@={viewModel.teiMaxData}"
+                        android:background="@color/greyish"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:textAlignment="center"
+                        android:text="@{viewModel.teiCurrentData}"
+                        android:layout_weight="1" />
 
                 </TableRow>
 
             </TableLayout>
 
+            <Button
+                android:layout_height="wrap_content"
+                android:layout_margin="10dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/table"
+                android:onClick="@{() -> viewModel.resetSyncParameters()}"
+                android:layout_width="wrap_content"
+                android:textColor="@color/blueMaterial"
+                style="@style/Widget.AppCompat.Button.Borderless.Colored"
+                android:text="@string/reset_default" />
+
+
         </androidx.constraintlayout.widget.ConstraintLayout>
-
-
 
         <View
             app:layout_constraintStart_toStartOf="parent"

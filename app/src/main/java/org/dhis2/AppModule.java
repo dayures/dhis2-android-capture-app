@@ -1,6 +1,9 @@
 package org.dhis2;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.ViewModel;
 
@@ -22,6 +25,8 @@ import dagger.Binds;
 import dagger.Module;
 import dagger.Provides;
 
+import static org.dhis2.utils.Constants.SHARE_PREFS;
+
 /**
  * QUADRAM. Created by ppajuelo on 10/10/2017.
  */
@@ -39,6 +44,14 @@ public final class AppModule {
     Context context() {
         return application;
     }
+
+    @Provides
+    @Singleton
+    SharedPreferences preferences() {return application.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE);}
+
+    @Provides
+    @Singleton
+    Resources resources() { return application.getResources(); }
 
     @Provides
     @Singleton
@@ -68,12 +81,6 @@ public final class AppModule {
     @Singleton
     RuleExpressionEvaluator ruleExpressionEvaluator(@NonNull JexlEngine jexlEngine) {
         return new ExpressionEvaluatorImpl(jexlEngine);
-    }
-
-    @Binds
-    @Singleton
-    SettingsViewModel settingsViewModel() {
-
     }
 
 

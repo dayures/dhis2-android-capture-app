@@ -31,7 +31,7 @@ class SettingsAdapter(val viewModel: SettingsViewModel): RecyclerView.Adapter<Re
                         DataBindingUtil.inflate(inflater, R.layout.item_settings_reserved_values, parent, false)
                 return ReservedValuesHolder(binding)
             }
-            SYNC_CONFIGURATION -> {
+            SYNC_PARAMETERS -> {
                 val binding: ItemSettingsSyncParametersBinding =
                         DataBindingUtil.inflate(inflater, R.layout.item_settings_sync_parameters, parent, false)
                 return SyncParametersHolders(binding)
@@ -46,7 +46,7 @@ class SettingsAdapter(val viewModel: SettingsViewModel): RecyclerView.Adapter<Re
                         DataBindingUtil.inflate(inflater, R.layout.item_settings_sync_data, parent, false)
                 return SyncDataHolder(binding)
             }
-            SYNC_PARAMETERS -> {
+            SYNC_CONFIGURATION -> {
                 val binding: ItemSettingsSyncConfigurationBinding =
                         DataBindingUtil.inflate(inflater, R.layout.item_settings_sync_configuration, parent, false)
                 return SyncConfigHolder(binding)
@@ -117,11 +117,18 @@ class SettingsAdapter(val viewModel: SettingsViewModel): RecyclerView.Adapter<Re
     }
 
     inner class SyncConfigHolder(val binding: ItemSettingsSyncConfigurationBinding): RecyclerView.ViewHolder(binding.root) {
+        val metaStatus = binding.root.context.getDhisPreferences(Constants.LAST_META_SYNC_STATUS, true)
         fun bind(config: ConfigData) {
             binding.let {
                 it.config = config
                 it.viewModel = viewModel
             }
+            if (metaStatus)
+                binding.subtitle2.text = String.format(binding.root.context.resources.getString(R.string.last_data_sync_date),
+                        binding.root.context.getDhisPreferences(Constants.LAST_META_SYNC, "-"));
+            else
+                binding.subtitle2.text = binding.root.context.resources.getString(R.string.sync_error_text);
+
         }
     }
 
@@ -151,20 +158,12 @@ class SettingsAdapter(val viewModel: SettingsViewModel): RecyclerView.Adapter<Re
     }
 
     inner class SyncParametersHolders(val binding: ItemSettingsSyncParametersBinding): RecyclerView.ViewHolder(binding.root) {
-        val metaStatus = binding.root.context.getDhisPreferences(Constants.LAST_META_SYNC_STATUS, true)
         fun bind(config: ConfigData) {
             binding.let {
                 it.config = config
                 it.viewModel = viewModel
             }
-            if (metaStatus)
-                binding.subtitle2.text = String.format(binding.root.context.resources.getString(R.string.last_data_sync_date),
-                        binding.root.context.getDhisPreferences(Constants.LAST_META_SYNC, "-"));
-            else
-                binding.subtitle2.text = binding.root.context.resources.getString(R.string.sync_error_text);
-
         }
-
     }
 
 }
