@@ -64,6 +64,7 @@ class SettingsAdapter(val viewModel: SettingsViewModel): RecyclerView.Adapter<Re
     }
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        holder.setIsRecyclable(false)
         val config = list[position]
         when(holder) {
             is DeleteLocalHolder -> holder.bind(config)

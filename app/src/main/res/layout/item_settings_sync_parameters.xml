@@ -152,7 +152,7 @@
 
                     <TextView
                         android:fontFamily="@font/rubik_regular"
-                        android:text="Max"
+                        android:text="@string/max"
                         android:textColor="@color/blueMaterial"
                         android:layout_weight="1"
                         android:textAlignment="center" />
@@ -160,7 +160,7 @@
                     <TextView
                         android:fontFamily="@font/rubik_regular"
                         android:textColor="@color/blueMaterial"
-                        android:text="Current"
+                        android:text="@string/current"
                         android:layout_weight="1"
                         android:textAlignment="center" />
 
@@ -169,10 +169,11 @@
                 <TableRow android:padding="4dp">
 
                     <TextView
+                        android:textAllCaps="true"
                         android:fontFamily="@font/rubik_bold"
                         android:textAlignment="textStart"
                         android:layout_weight="2"
-                        android:text="Events" />
+                        android:text="@string/events" />
 
                     <EditText
                         android:hint="1"
@@ -196,10 +197,11 @@
                 <TableRow android:padding="4dp">
 
                     <TextView
+                        android:textAllCaps="true"
                         android:fontFamily="@font/rubik_bold"
                         android:textAlignment="textStart"
                         android:layout_weight="2"
-                        android:text="TEI" />
+                        android:text="@string/tei" />
 
                     <EditText
                         android:hint="1"

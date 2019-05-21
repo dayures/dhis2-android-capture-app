@@ -451,5 +451,9 @@
     <string name="EVERY_HOUR">Every hour</string>
     <string name="reset_default">Reset to default</string>
     <string name="limit_by_program">By Program</string>
+    <string name="settings_sync_error">This log contains all errors caused by syncing your data and metadata.</string>
+    <string name="settings_sync_delete">All Capture App data stored in your device will be deleted. Data which is not synced to the server will be lost.</string>
+    <string name="settings_reset">Your configuration and App data stored in the device will be deleted. You will be asked to log in again and data which is not synced to the server will be lost.</string>
+    <string name="settings_reserved_value">Here you can see your number of values available offline and reserve new ones.</string>
 
 </resources>

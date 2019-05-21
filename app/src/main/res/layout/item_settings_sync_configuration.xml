@@ -137,6 +137,7 @@ xmlns:tools="http://schemas.android.com/tools">
         </TableLayout>
 
         <Button
+            android:id="@+id/sync_button"
             android:enabled="@{viewModel.isEnabledButton}"
             android:layout_height="wrap_content"
             android:layout_margin="10dp"

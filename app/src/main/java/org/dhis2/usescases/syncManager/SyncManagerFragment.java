@@ -359,6 +359,17 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
                         .title(getString(R.string.tuto_settings_1))
                         .closeOnTouch(true)
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
+                        .dismissListener(new DismissListener() {
+                            @Override
+                            public void onDismiss(String id) {
+
+                            }
+
+                            @Override
+                            public void onSkipped(String id) {
+                                // unused
+                            }
+                        })
                         .build();
 
                 FancyShowCaseView tuto2 = new FancyShowCaseView.Builder(getAbstractActivity())
@@ -376,9 +387,7 @@ public class SyncManagerFragment extends FragmentGlobalAbstract implements SyncM
                         .dismissListener(new DismissListener() {
                             @Override
                             public void onDismiss(String id) {
-                                if (scrollView != null) {
-                                    scrollView.scrollTo((int) getAbstractActivity().findViewById(R.id.reservedValue).getX(), (int) getAbstractActivity().findViewById(R.id.reservedValue).getY());
-                                }
+
                             }
 
                             @Override

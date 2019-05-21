@@ -1,40 +1,41 @@
 package org.dhis2.usescases.settings
 
 import android.app.NotificationManager
-import android.content.*
-import android.content.Context.MODE_PRIVATE
+import android.content.Context
 import android.os.Bundle
+import android.os.Handler
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.databinding.DataBindingUtil
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.lifecycle.Observer
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.work.State.RUNNING
 import androidx.work.WorkManager
 import androidx.work.WorkStatus
 import com.google.android.material.snackbar.Snackbar
+import me.toptas.fancyshowcase.DismissListener
+import me.toptas.fancyshowcase.FancyShowCaseView
+import me.toptas.fancyshowcase.FocusShape
 import org.dhis2.App
+import org.dhis2.BuildConfig
 import org.dhis2.R
 import org.dhis2.data.base.BaseFragment
 import org.dhis2.databinding.FragmentSettingsBinding
+import org.dhis2.extensions.getDhisPreferences
+import org.dhis2.extensions.setDhisPreferences
 import org.dhis2.extensions.viewModel
 import org.dhis2.usescases.login.LoginActivity
 import org.dhis2.usescases.reservedValue.ReservedValueActivity
 import org.dhis2.usescases.syncManager.ErrorDialog
 import org.dhis2.utils.Constants
-import org.dhis2.utils.SyncUtils
+import org.dhis2.utils.HelpManager
 import org.hisp.dhis.android.core.maintenance.D2Error
-import org.jetbrains.anko.userManager
-import java.util.*
-import javax.inject.Inject
-import androidx.lifecycle.Observer
-import androidx.work.State.*
 
 class SettingsFragment: BaseFragment() {
 
 
     lateinit var binding: FragmentSettingsBinding
-
     lateinit var viewModel: SettingsViewModel
 
 
@@ -99,11 +100,11 @@ class SettingsFragment: BaseFragment() {
         androidx.appcompat.app.AlertDialog.Builder(binding.root.context, R.style.MaterialDialog)
                 .setTitle(getString(alertTitle))
                 .setMessage(getString(alertMessage))
-                .setPositiveButton(getString(R.string.wipe_data_ok)) { dialog, witch ->
+                .setPositiveButton(getString(R.string.wipe_data_ok)) { dialog, _ ->
                     callback()
                     dialog.dismiss()
                 }
-                .setNegativeButton(getString(R.string.wipe_data_no)) { dialog, witch ->
+                .setNegativeButton(getString(R.string.wipe_data_no)) { dialog, _ ->
                     dialog.dismiss()
                 }
                 .show()
@@ -141,5 +142,140 @@ class SettingsFragment: BaseFragment() {
         message,
         Snackbar.LENGTH_SHORT)
         deleteDataSnack.show()
+    }
+
+    override fun showTutorial(shacked: Boolean) {
+        if (isAdded && abstractActivity != null && context != null) {
+            Handler().postDelayed({
+                val layoutManager = binding.recycler.layoutManager!!
+                val tuto1 = FancyShowCaseView.Builder(abstractActivity)
+                        .focusOn(layoutManager.getChildAt(0))
+                        .title(getString(R.string.tuto_settings_1))
+                        .closeOnTouch(true)
+                        .focusShape(FocusShape.ROUNDED_RECTANGLE)
+                        .dismissListener(object: DismissListener {
+                            override fun onSkipped(id: String?) {}
+
+                            override fun onDismiss(id: String?) {
+                                viewModel.config.set(ConfigData.SYNC_CONFIGURATION)
+                                binding.recycler.scrollToPosition(1)
+                            }
+                        })
+                        .build();
+
+                val tuto2 = FancyShowCaseView.Builder(abstractActivity)
+                        .focusOn(layoutManager.getChildAt(1))
+                        .title(getString(R.string.tuto_settings_2))
+                        .focusShape(FocusShape.ROUNDED_RECTANGLE)
+                        .closeOnTouch(true)
+                        .dismissListener(object: DismissListener {
+                            override fun onSkipped(id: String?) {}
+
+                            override fun onDismiss(id: String?) {
+                                viewModel.config.set(ConfigData.SYNC_PARAMETERS)
+                                binding.recycler.scrollToPosition(2)
+                            }
+                        })
+                        .build();
+
+                val tuto3 = FancyShowCaseView.Builder(abstractActivity)
+                        .focusOn(layoutManager.getChildAt(2))
+                        .title(getString(R.string.tuto_settings_3))
+                        .focusShape(FocusShape.ROUNDED_RECTANGLE)
+                        .closeOnTouch(true)
+                        .dismissListener(object: DismissListener {
+                            override fun onSkipped(id: String?) {}
+
+                            override fun onDismiss(id: String?) {
+                                viewModel.config.set(ConfigData.RESERVED_VALUES)
+                                binding.recycler.scrollToPosition(3)
+                            }
+                        })
+                        .build();
+
+                val tuto4 = FancyShowCaseView.Builder(abstractActivity)
+                        .focusOn(layoutManager.getChildAt(3))
+                        .title(getString(R.string.tuto_settings_reserved))
+                        .focusShape(FocusShape.ROUNDED_RECTANGLE)
+                        .closeOnTouch(true)
+                        .dismissListener(object: DismissListener {
+                            override fun onSkipped(id: String?) {}
+
+                            override fun onDismiss(id: String?) {
+                                viewModel.config.set(ConfigData.OPEN_SYNC_ERROR)
+                                binding.recycler.scrollToPosition(4)
+                            }
+                        })
+                        .build();
+
+                val tuto5 = FancyShowCaseView.Builder(abstractActivity)
+                        .focusOn(layoutManager.getChildAt(4))
+                        .title(getString(R.string.tuto_settings_errors))
+                        .focusShape(FocusShape.ROUNDED_RECTANGLE)
+                        .closeOnTouch(true)
+                        .dismissListener(object: DismissListener {
+                            override fun onSkipped(id: String?) {}
+
+                            override fun onDismiss(id: String?) {
+                                viewModel.config.set(ConfigData.RESET_APP)
+                                binding.recycler.scrollToPosition(6)
+                            }
+                        })
+                        .build();
+
+                val tuto6 = FancyShowCaseView.Builder(abstractActivity)
+                        .focusOn(layoutManager.getChildAt(5))
+                        .title(getString(R.string.tuto_settings_reset))
+                        .focusShape(FocusShape.ROUNDED_RECTANGLE)
+                        .closeOnTouch(true)
+                        .dismissListener(object: DismissListener {
+                            override fun onSkipped(id: String?) {}
+
+                            override fun onDismiss(id: String?) {
+                                viewModel.config.set(ConfigData.DELETE_LOCAL)
+                                binding.recycler.scrollToPosition(7)
+                            }
+                        })
+                        .build();
+
+                val tuto7 = FancyShowCaseView.Builder(abstractActivity)
+                        .focusOn(layoutManager.getChildAt(6))
+                        .title(getString(R.string.tuto_settings_4))
+                        .closeOnTouch(true)
+                        .focusShape(FocusShape.ROUNDED_RECTANGLE)
+                        .dismissListener(object: DismissListener {
+                            override fun onSkipped(id: String?) {}
+
+                            override fun onDismiss(id: String?) {
+                                viewModel.config.set(ConfigData.SYNC_DATA)
+                                binding.recycler.scrollToPosition(0)
+                            }
+                        })
+                        .build();
+
+
+                val steps = arrayListOf<FancyShowCaseView>()
+                steps.add(tuto1);
+                steps.add(tuto2);
+                steps.add(tuto3);
+                steps.add(tuto4);
+                steps.add(tuto5);
+                steps.add(tuto6);
+                steps.add(tuto7);
+                HelpManager.getInstance().setScreenHelp(javaClass.name, steps);
+                if (!abstractActivity.getDhisPreferences("TUTO_SETTINGS_SHOWN", false) && !BuildConfig.DEBUG) {
+                    binding.recycler.scrollToPosition(0)
+                    viewModel.config.set(ConfigData.SYNC_DATA)
+                    HelpManager.getInstance().showHelp()
+                    abstractActivity.setDhisPreferences("TUTO_SETTINGS_SHOWN", true)
+                }
+
+            }, 500)
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        showTutorial(!context!!.getDhisPreferences("TUTO_SETTINGS_SHOWN", false) && !BuildConfig.DEBUG)
     }
 }

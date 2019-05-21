@@ -47,9 +47,9 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
     val teiCurrentData = ObservableField<String>()
     val limitByOrgUnit = ObservableBoolean(prefs.getBoolean(LIMIT_BY_ORG_UNIT, false))
     val limitByProgram = ObservableBoolean(prefs.getBoolean(LIMIT_BY_ORG_UNIT, false))
-    val syncDataFrequency = ObservableInt(prefs.getInt("timeData", Constants.TIME_DAILY))
+    val syncDataFrequency = ObservableInt(prefs.getInt(TIME_DATA, Constants.TIME_DAILY))
     val syncDataFrequencyString = ObservableField<String>(getStringTagByMinutes(syncDataFrequency.get()))
-    val syncConfigFrequency = ObservableInt(prefs.getInt("timeMeta", Constants.TIME_DAILY))
+    val syncConfigFrequency = ObservableInt(prefs.getInt(TIME_META, Constants.TIME_DAILY))
     val syncConfigFrequencyString = ObservableField<String>(getStringTagByMinutes(syncConfigFrequency.get()))
     var config = ObservableField<ConfigData>()
     private val compositeDisposable = CompositeDisposable()
@@ -64,22 +64,14 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
     lateinit var showErroDialog: (data: List<D2Error>) -> Unit
 
     init {
-
-        compositeDisposable.add(
-                checkData
+        compositeDisposable.add(checkData
                         .startWith(true)
                         .flatMap { _ ->
-                            metadataRepository.downloadedData
-                        }
+                            metadataRepository.downloadedData }
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .subscribe({
-                            setSyncData(it)
-                        }, {
-                            Timber.e(it)
-                        })
-        )
-
+                            setSyncData(it) }, { Timber.e(it) }))
 
         limitByOrgUnit.addOnPropertyChangedCallback(object: Observable.OnPropertyChangedCallback() {
             override fun onPropertyChanged(sender: Observable?, propertyId: Int) {
@@ -92,7 +84,7 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
                 val text = (sender as ObservableField<*>).get() as String
                 when {
                     text.length > 5 -> {
-                        val shortText = text.substring(0, 4)
+                        val shortText = text.substring(0, 5)
                         prefs.edit().putInt(EVENT_MAX, shortText.toInt()).apply()
                         (sender as ObservableField<String>).set(shortText)
                     }
@@ -108,7 +100,7 @@ class SettingsViewModel @Inject constructor(val metadataRepository: MetadataRepo
                 val text = (sender as ObservableField<*>).get() as String
                 when {
                     text.length > 5 -> {
-                        val shortText = text.substring(0, 4)
+                        val shortText = text.substring(0, 5)
                         prefs.edit().putInt(TEI_MAX, shortText.toInt()).apply()
                         (sender as ObservableField<String>).set(shortText)
                     }

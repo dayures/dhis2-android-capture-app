@@ -48,7 +48,7 @@
 
             <TextView
                 android:id="@+id/subtitle1"
-                android:text="@string/lorem"
+                android:text="@string/settings_reserved_value"
                 android:paddingEnd="21dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toEndOf="@id/icon"
