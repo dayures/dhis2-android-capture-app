@@ -150,7 +150,6 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
 
     private final BriteDatabase briteDatabase;
     private final String eventUid;
-    @NonNull
     private final Event currentEvent;
     private final FormRepository formRepository;
     private final D2 d2;
@@ -162,7 +161,6 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     private List<ProgramRule> mandatoryRules;
     private List<ProgramRule> rules;
 
-
     public EventCaptureRepositoryImpl(Context context, BriteDatabase briteDatabase, FormRepository formRepository, String eventUid, D2 d2) {
         this.briteDatabase = briteDatabase;
         this.eventUid = eventUid;
@@ -170,13 +168,13 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
         this.d2 = d2;
 
         currentEvent = d2.eventModule().events.uid(eventUid).withAllChildren().get();
-        currentProgramStage = d2.programModule().programStages.uid(currentEvent.programStage()).withAllChildren().get();
+        ProgramStage programStage = d2.programModule().programStages.uid(currentEvent.programStage()).withAllChildren().get();
         OrganisationUnit ou = d2.organisationUnitModule().organisationUnits.uid(currentEvent.organisationUnit()).withAllChildren().get();
 
         eventBuilder = RuleEvent.builder()
                 .event(currentEvent.uid())
                 .programStage(currentEvent.programStage())
-                .programStageName(currentProgramStage.displayName())
+                .programStageName(programStage.displayName())
                 .status(RuleEvent.Status.valueOf(currentEvent.status().name()))
                 .eventDate(currentEvent.eventDate())
                 .dueDate(currentEvent.dueDate() != null ? currentEvent.dueDate() : currentEvent.eventDate())
@@ -357,7 +355,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
 
     @Override
     public Flowable<String> programStageName() {
-        return Flowable.just(currentProgramStage.displayName());
+        return Flowable.just(d2.eventModule().events.uid(eventUid).get())
+                .map(event -> d2.programModule().programStages.uid(event.programStage()).get().displayName());
     }
 
     @Override
@@ -397,6 +396,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     @NonNull
     @Override
     public Flowable<List<FieldViewModel>> list(String sectionUid) {
+        accessDataWrite = getAccessDataWrite();
+        long time;
         return briteDatabase
                 .createQuery(TrackedEntityDataValueModel.TABLE, prepareStatement(sectionUid, eventUid))
                 .mapToList(this::transform)
