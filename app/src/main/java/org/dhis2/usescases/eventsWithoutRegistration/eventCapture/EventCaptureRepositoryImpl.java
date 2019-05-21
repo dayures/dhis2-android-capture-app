@@ -33,6 +33,7 @@ import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.option.Option;
 import org.hisp.dhis.android.core.option.OptionSet;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 import org.hisp.dhis.android.core.program.Program;
 import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramRule;
@@ -46,6 +47,7 @@ import org.hisp.dhis.android.core.program.ProgramStageSection;
 import org.hisp.dhis.android.core.program.ProgramStageSectionDeviceRendering;
 import org.hisp.dhis.android.core.program.ProgramStageSectionModel;
 import org.hisp.dhis.android.core.program.ProgramStageSectionRenderingType;
+import org.hisp.dhis.android.core.program.ProgramType;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValueModel;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
@@ -152,9 +154,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
     private final Event currentEvent;
     private final FormRepository formRepository;
     private final D2 d2;
-    private final boolean isEventExpired;
-    @NonNull
-    private final ProgramStage currentProgramStage;
+    private final boolean isEventEditable;
+    private boolean accessDataWrite;
     private String lastUpdatedUid;
     private RuleEvent.Builder eventBuilder;
     private Map<String, List<Rule>> dataElementRules = new HashMap<>();
@@ -195,7 +196,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
 
         loadDataElementRules(currentEvent);
 
-        isEventExpired = isEventExpired(eventUid);
+        isEventEditable = isEventExpired(eventUid);
     }
 
     private void loadDataElementRules(Event event) {
@@ -258,7 +259,21 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 rule.displayName());
     }
 
+
+    private List<ProgramRule> filterRules(List<ProgramRule> rules){
+        Program program = d2.programModule().programs.uid(currentEvent.program()).withAllChildren().get();
+        if(program.programType().equals(ProgramType.WITH_REGISTRATION)) {
+            Iterator<ProgramRule> iterator = rules.iterator();
+            while (iterator.hasNext()) {
+                if (iterator.next().programStage() == null)
+                    iterator.remove();
+            }
+        }
+        return rules;
+    }
+
     private List<Rule> trasformToRule(List<ProgramRule> rules) {
+        filterRules(rules);
         List<Rule> finalRules = new ArrayList<>();
         for (ProgramRule rule : rules) {
             finalRules.add(Rule.create(
@@ -391,8 +406,6 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 })
                 .toFlowable(BackpressureStrategy.LATEST)
                 .doOnSubscribe(subscription -> Timber.d("LIST SUBSCRIBED! at %s", System.currentTimeMillis()))
-                .doOnNext(onNext -> Timber.d("LIST ON NEXT! at %s", System.currentTimeMillis()))
-                .doOnComplete(() -> Timber.d("LIST COMPLETE! at %s", System.currentTimeMillis()))
                 ;
     }
 
@@ -486,7 +499,6 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
 
             return fieldViewModelList;
         }).map(this::checkRenderType);*/
-
         return briteDatabase
                 .createQuery(TrackedEntityDataValueModel.TABLE, prepareStatement(eventUid))
                 .mapToList(this::transform)
@@ -498,6 +510,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
 
     private List<FieldViewModel> getFieldViewModelFor(List<ProgramStageDataElement> programStageDataElementList) {
         List<FieldViewModel> fieldViewModelList = new ArrayList<>();
+        long init = System.currentTimeMillis();
 
         String programStageSection = null;
         for (ProgramStageDataElement programStageDataElement : programStageDataElementList) {
@@ -528,6 +541,8 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                             dataValue = option.displayName();
                 }
             }
+            Timber.d("OptionSet check is %s", System.currentTimeMillis() - init);
+
 
             ValueTypeDeviceRenderingModel fieldRendering = null;
             try (Cursor rendering = briteDatabase.query("SELECT ValueTypeDeviceRendering.* FROM ValueTypeDeviceRendering" +
@@ -536,26 +551,34 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 if (rendering != null && rendering.moveToFirst())
                     fieldRendering = ValueTypeDeviceRenderingModel.create(rendering);
             }
+            Timber.d("ValueTypeDeviceRendering check is %s", System.currentTimeMillis() - init);
+
             ObjectStyleModel objectStyle = ObjectStyleModel.builder().build();
             try (Cursor objStyleCursor = briteDatabase.query("SELECT * FROM ObjectStyle WHERE uid = ?", uid)) {
                 if (objStyleCursor != null && objStyleCursor.moveToFirst())
                     objectStyle = ObjectStyleModel.create(objStyleCursor);
             }
+            Timber.d("ObjectStyle check is %s", System.currentTimeMillis() - init);
 
             ProgramStageSectionRenderingType renderingType = renderingType(programStageSection);
+            Timber.d("ProgramStageSectionRendering check is %s", System.currentTimeMillis() - init);
 
             fieldViewModelList.add(fieldFactory.create(uid, formName == null ? displayName : formName,
                     valueType, mandatory, optionSet, dataValue,
                     programStageSection, allowFurureDates,
-                    !isEventExpired,
+                    !isEventEditable,
                     renderingType, description, fieldRendering, optionCount, objectStyle));
+            Timber.d("Field creation check is %s", System.currentTimeMillis() - init);
 
         }
+        Timber.d("FIELD TIME for %s fields is %s", fieldViewModelList.size(), System.currentTimeMillis() - init);
+
         return fieldViewModelList;
     }
 
     private List<FieldViewModel> getFieldViewModelForSection(List<ProgramStageSection> sections, Map<String, ProgramStageDataElement> programStageDataElementList) {
         List<FieldViewModel> fieldViewModelList = new ArrayList<>();
+        long init = System.currentTimeMillis();
         for (ProgramStageSection section : sections) {
             String programStageSection = section.uid();
             for (DataElement dataElement : section.dataElements()) {
@@ -605,13 +628,15 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                 fieldViewModelList.add(fieldFactory.create(uid, formName == null ? displayName : formName,
                         valueType, mandatory, optionSet, dataValue,
                         programStageSection, allowFurureDates,
-                        !isEventExpired,
+                        !isEventEditable,
                         renderingType, description, fieldRendering, optionCount, objectStyle));
 
             }
 
 
         }
+
+        Timber.d("FIELD TIME for %s fields is %s", fieldViewModelList.size(), System.currentTimeMillis() - init);
         return fieldViewModelList;
     }
 
@@ -702,12 +727,10 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
 
         ProgramStageSectionRenderingType renderingType = renderingType(programStageSection);
 
-        Timber.d("TRANSFORM TIME IS %s", System.currentTimeMillis() - transformInitTime);
-
         return fieldFactory.create(uid, formName == null ? displayName : formName,
                 ValueType.valueOf(valueTypeName), mandatory, optionSet, dataValue,
                 programStageSection, allowFurureDates,
-                !isEventExpired,
+                !isEventEditable,
                 renderingType, description, fieldRendering, optionCount, objectStyle);
     }
 
@@ -723,7 +746,7 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
                                         return Flowable.fromCallable(ruleEngine.evaluate(event, trasformToRule(rules)));
                                     else
                                         return Flowable.just(dataElementRules.get(lastUpdatedUid) != null ? dataElementRules.get(lastUpdatedUid) : new ArrayList<Rule>())
-                                                .map(rules -> rules.isEmpty() ? trasformToRule(mandatoryRules) : rules)
+                                                .map(updatedRules -> updatedRules.isEmpty() ? trasformToRule(rules) : updatedRules)
                                                 .flatMap(rules -> Flowable.fromCallable(ruleEngine.evaluate(event, rules)));
                                 })
                                 .map(Result::success)
@@ -904,5 +927,10 @@ public class EventCaptureRepositoryImpl implements EventCaptureContract.EventCap
             // This programstage has sections
             return FormSectionViewModel.createForSection(eventUid, cursor.getString(2), cursor.getString(3), cursor.getString(5));
         }
+    }
+
+    @Override
+    public Observable<List<OrganisationUnitLevel>> getOrgUnitLevels() {
+        return Observable.just(d2.organisationUnitModule().organisationUnitLevels.get());
     }
 }

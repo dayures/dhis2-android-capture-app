@@ -10,6 +10,7 @@ import org.dhis2.data.tuples.Trio;
 import org.dhis2.utils.Result;
 import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.common.ValueType;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.rules.models.RuleAction;
 import org.hisp.dhis.rules.models.RuleActionAssign;
@@ -68,6 +69,8 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
     private Map<String, FieldViewModel> currentFieldViewModels;
     private FlowableProcessor<RowAction> assignProcessor;
     private FlowableProcessor<Boolean> requestListProcessor;
+
+    private List<OrganisationUnitLevel> levels;
 
     DataEntryPresenterImpl(@NonNull DataEntryStore dataEntryStore,
                            @NonNull DataEntryRepository dataEntryRepository,
@@ -157,6 +160,14 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
                                 dataEntryView::setListOptions,
                                 Timber::e
                         ));
+
+        disposable.add(dataEntryRepository.getOrgUnitLevels()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        data -> levels = data,
+                        Timber::e
+                ));
     }
 
     private void save(String uid, String value) {
@@ -172,6 +183,11 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
     @Override
     public Observable<List<OrganisationUnitModel>> getOrgUnits() {
         return dataEntryRepository.getOrgUnits();
+    }
+
+    @Override
+    public Observable<List<OrganisationUnitLevel>> getLevels() {
+        return dataEntryRepository.getOrgUnitLevels();
     }
 
     @NonNull
@@ -231,20 +247,6 @@ final class DataEntryPresenterImpl implements DataEntryPresenter {
                 RuleActionHideField hideField = (RuleActionHideField) ruleAction;
                 fieldViewModels.remove(hideField.field());
                 save(hideField.field(), null);
-            } else if (ruleAction instanceof RuleActionDisplayText) {
-                RuleActionDisplayText displayText = (RuleActionDisplayText) ruleAction;
-                String uid = displayText.content();
-
-                EditTextViewModel textViewModel = EditTextViewModel.create(uid,
-                        displayText.content(), false, ruleEffect.data(), "Information", 1, ValueType.TEXT, null, false, null, null, ObjectStyleModel.builder().build());
-
-                if (this.currentFieldViewModels == null ||
-                        !this.currentFieldViewModels.containsKey(uid)) {
-                    fieldViewModels.put(uid, textViewModel);
-                } else if (this.currentFieldViewModels.containsKey(uid) &&
-                        !currentFieldViewModels.get(uid).value().equals(textViewModel.value())) {
-                    fieldViewModels.put(uid, textViewModel);
-                }
             } else if (ruleAction instanceof RuleActionHideSection) {
                 RuleActionHideSection hideSection = (RuleActionHideSection) ruleAction;
                 dataEntryView.removeSection(hideSection.programStageSection());

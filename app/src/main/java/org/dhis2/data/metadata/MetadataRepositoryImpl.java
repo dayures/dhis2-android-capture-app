@@ -20,7 +20,7 @@ import org.hisp.dhis.android.core.category.CategoryOptionModel;
 import org.hisp.dhis.android.core.common.ObjectStyleModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.event.EventModel;
-import org.hisp.dhis.android.core.maintenance.D2Error;
+import org.hisp.dhis.android.core.imports.TrackerImportConflict;
 import org.hisp.dhis.android.core.option.OptionGroup;
 import org.hisp.dhis.android.core.option.OptionModel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
@@ -68,7 +68,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
     private final String ACTIVE_TEI_PROGRAMS = String.format(
             " SELECT %s.* FROM %s " +
                     "JOIN %s ON %s.%s = %s.%s " +
-                    "WHERE %s.%s = ?",
+                    "WHERE %s.%s = ? ",
             ProgramModel.TABLE,
             ProgramModel.TABLE,
             EnrollmentModel.TABLE, EnrollmentModel.TABLE, EnrollmentModel.Columns.PROGRAM, ProgramModel.TABLE, ProgramModel.Columns.UID,
@@ -324,8 +324,12 @@ public class MetadataRepositoryImpl implements MetadataRepository {
 
 
     @Override
-    public Observable<List<ProgramModel>> getTeiActivePrograms(String teiUid) {
-        return briteDatabase.createQuery(ACTIVE_TEI_PROGRAMS_TABLES, ACTIVE_TEI_PROGRAMS, teiUid == null ? "" : teiUid)
+    public Observable<List<ProgramModel>> getTeiActivePrograms(String teiUid, boolean showOnlyActive) {
+        String query = ACTIVE_TEI_PROGRAMS;
+        if(showOnlyActive)
+            query = query + " and Enrollment.status = 'ACTIVE'";
+
+        return briteDatabase.createQuery(ACTIVE_TEI_PROGRAMS_TABLES, query, teiUid == null ? "" : teiUid)
                 .mapToList(ProgramModel::create);
     }
 
@@ -432,21 +436,20 @@ public class MetadataRepositoryImpl implements MetadataRepository {
 
 
     @Override
-    public List<D2Error> getSyncErrors() {
-        List<D2Error> d2Errors = new ArrayList<>();
-        try (Cursor cursor = briteDatabase.query("SELECT * FROM D2Error ORDER BY created DESC LIMIT 20")) {
+    public List<TrackerImportConflict> getSyncErrors() {
+        List<TrackerImportConflict> conflicts = new ArrayList<>();
+        try (Cursor cursor = briteDatabase.query("SELECT * FROM TrackerImportConflict ORDER BY created DESC")) {
             if (cursor != null && cursor.moveToFirst()) {
                 for (int i = 0; i < cursor.getCount(); i++) {
-                    D2Error d2Error = D2Error.create(cursor);
-                    if (d2Error.url() == null || !d2Error.url().contains("api/trackedEntityInstances/query"))
-                        d2Errors.add(D2Error.create(cursor));
+                    TrackerImportConflict conflict = TrackerImportConflict.create(cursor);
+                    conflicts.add(conflict);
                     cursor.moveToNext();
                 }
             }
         } catch (Exception e) {
             Timber.e(e);
         }
-        return d2Errors;
+        return conflicts;
     }
 
     @Override
@@ -470,6 +473,14 @@ public class MetadataRepositoryImpl implements MetadataRepository {
         return briteDatabase.createQuery(OptionModel.TABLE, optionQuery, idOptionSet)
                 .mapToList(OptionModel::create)
                 .map(optionList -> {
+                    int from = page * 15;
+                    int to = page * 15 + 15 > optionList.size() ? optionList.size() : page * 15 + 15;
+                    if (to > from)
+                        return optionList.subList(from, to);
+                    else
+                        return new ArrayList<OptionModel>();
+                })
+                .map(optionList -> {
                     Iterator<OptionModel> iterator = optionList.iterator();
                     while (iterator.hasNext()) {
                         OptionModel option = iterator.next();
@@ -492,15 +503,7 @@ public class MetadataRepositoryImpl implements MetadataRepository {
                             iterator.remove();
 
                     }
-                    int from = page * 15;
-                    int to = page * 15 + 15 > optionList.size() ? optionList.size() : page * 15 + 15;
-                    if (to > from)
-                        return optionList.subList(from, to);
-                    else
-                        return new ArrayList<>();
+                    return optionList;
                 });
-/*
-        return briteDatabase.createQuery(OptionModel.TABLE, options, idOptionSet)
-                .mapToList(OptionModel::create);*/
     }
 }

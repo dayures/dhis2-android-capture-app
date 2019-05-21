@@ -8,6 +8,7 @@ import androidx.databinding.ObservableBoolean;
 import androidx.databinding.ObservableField;
 import androidx.fragment.app.FragmentManager;
 import androidx.recyclerview.widget.DiffUtil;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.RecyclerView.Adapter;
 import androidx.recyclerview.widget.RecyclerView.ViewHolder;
 
@@ -20,6 +21,8 @@ import org.dhis2.data.forms.dataentry.fields.coordinate.CoordinateRow;
 import org.dhis2.data.forms.dataentry.fields.coordinate.CoordinateViewModel;
 import org.dhis2.data.forms.dataentry.fields.datetime.DateTimeRow;
 import org.dhis2.data.forms.dataentry.fields.datetime.DateTimeViewModel;
+import org.dhis2.data.forms.dataentry.fields.display.DisplayRow;
+import org.dhis2.data.forms.dataentry.fields.display.DisplayViewModel;
 import org.dhis2.data.forms.dataentry.fields.edittext.EditTextModel;
 import org.dhis2.data.forms.dataentry.fields.edittext.EditTextRow;
 import org.dhis2.data.forms.dataentry.fields.file.FileRow;
@@ -36,6 +39,7 @@ import org.dhis2.data.forms.dataentry.fields.unsupported.UnsupportedRow;
 import org.dhis2.data.forms.dataentry.fields.unsupported.UnsupportedViewModel;
 import org.dhis2.data.tuples.Trio;
 import org.hisp.dhis.android.core.common.ValueType;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 
 import java.util.ArrayList;
@@ -59,6 +63,8 @@ public final class DataEntryAdapter extends Adapter {
     private static final int ORG_UNIT = 10;
     private static final int IMAGE = 11;
     private static final int UNSUPPORTED = 12;
+    private static final int LONG_TEXT = 13;
+    private static final int DISPLAY = 14;
 
 
     @NonNull
@@ -79,11 +85,29 @@ public final class DataEntryAdapter extends Adapter {
 
     private final FlowableProcessor<Trio<String, String, Integer>> processorOptionSet;
 
+    private final Observable<List<OrganisationUnitLevel>> levels;
+
+    private final RecyclerView.AdapterDataObserver adapterDataObserver = new RecyclerView.AdapterDataObserver() {
+        @Override
+        public void onItemRangeInserted(int positionStart, int itemCount) {
+            super.onItemRangeInserted(positionStart, itemCount);
+            focusPosition = positionStart;
+        }
+
+        @Override
+        public void onItemRangeRemoved(int positionStart, int itemCount) {
+            super.onItemRangeRemoved(positionStart, itemCount);
+            focusPosition = positionStart;
+        }
+    };
+    private int focusPosition = -1;
+
     public DataEntryAdapter(@NonNull LayoutInflater layoutInflater,
                             @NonNull FragmentManager fragmentManager,
                             @NonNull DataEntryArguments dataEntryArguments,
                             @NonNull Observable<List<OrganisationUnitModel>> orgUnits,
-                            ObservableBoolean isEditable) { //TODO: Add isEditable to all fields and test if can be changed on the fly
+                            ObservableBoolean isEditable,
+                            Observable<List<OrganisationUnitLevel>> levels) { //TODO: Add isEditable to all fields and test if can be changed on the fly
         setHasStableIds(true);
         rows = new ArrayList<>();
         viewModels = new ArrayList<>();
@@ -92,8 +116,9 @@ public final class DataEntryAdapter extends Adapter {
         currentPosition = PublishProcessor.create();
         this.processorOptionSet = PublishProcessor.create();
         this.dataEntryArguments = dataEntryArguments;
+        this.levels = levels;
 
-        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable));
+        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable, false));
         rows.add(BUTTON, new FileRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
         rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
         rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, currentPosition, processorOptionSet, true, dataEntryArguments.renderType()));
@@ -103,9 +128,13 @@ public final class DataEntryAdapter extends Adapter {
         rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true, dataEntryArguments.renderType()));
         rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
         rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType()));
+        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType(), levels));
         rows.add(IMAGE, new ImageRow(layoutInflater, processor, currentPosition, dataEntryArguments.renderType()));
         rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
+        rows.add(LONG_TEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable, true));
+        rows.add(DISPLAY, new DisplayRow(layoutInflater));
+
+        registerAdapterDataObserver(adapterDataObserver);
 
     }
 
@@ -113,9 +142,10 @@ public final class DataEntryAdapter extends Adapter {
                             @NonNull FragmentManager fragmentManager,
                             @NonNull DataEntryArguments dataEntryArguments,
                             @NonNull Observable<List<OrganisationUnitModel>> orgUnits,
-                            ObservableBoolean isEditable,
+                            ObservableBoolean isEditable,//TODO: Add isEditable to all fields and test if can be changed on the fly
                             @NonNull FlowableProcessor<RowAction> processor,
-                            @NonNull FlowableProcessor<Trio<String, String, Integer>> processorOptSet) { //TODO: Add isEditable to all fields and test if can be changed on the fly
+                            @NonNull FlowableProcessor<Trio<String, String, Integer>> processorOptSet,
+                            Observable<List<OrganisationUnitLevel>> levels) {
         setHasStableIds(true);
         rows = new ArrayList<>();
         viewModels = new ArrayList<>();
@@ -124,8 +154,9 @@ public final class DataEntryAdapter extends Adapter {
         currentPosition = PublishProcessor.create();
         this.processorOptionSet = processorOptSet;
         this.dataEntryArguments = dataEntryArguments;
+        this.levels = levels;
 
-        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable));
+        rows.add(EDITTEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable, false));
         rows.add(BUTTON, new FileRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
         rows.add(CHECKBOX, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
         rows.add(SPINNER, new SpinnerRow(layoutInflater, processor, currentPosition, processorOptionSet, true, dataEntryArguments.renderType()));
@@ -135,9 +166,13 @@ public final class DataEntryAdapter extends Adapter {
         rows.add(DATETIME, new DateTimeRow(layoutInflater, processor, currentPosition, DATETIME, true, dataEntryArguments.renderType()));
         rows.add(AGEVIEW, new AgeRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
         rows.add(YES_NO, new RadioButtonRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
-        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType()));
+        rows.add(ORG_UNIT, new OrgUnitRow(fragmentManager, layoutInflater, processor, currentPosition, true, orgUnits, dataEntryArguments.renderType(), levels));
         rows.add(IMAGE, new ImageRow(layoutInflater, processor, currentPosition, dataEntryArguments.renderType()));
         rows.add(UNSUPPORTED, new UnsupportedRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType()));
+        rows.add(LONG_TEXT, new EditTextRow(layoutInflater, processor, currentPosition, true, dataEntryArguments.renderType(), isEditable, true));
+        rows.add(DISPLAY, new DisplayRow(layoutInflater));
+
+        registerAdapterDataObserver(adapterDataObserver);
 
     }
 
@@ -154,6 +189,9 @@ public final class DataEntryAdapter extends Adapter {
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         rows.get(holder.getItemViewType()).onBind(holder,
                 viewModels.get(holder.getAdapterPosition()));
+
+        if(position == focusPosition)
+            holder.itemView.requestFocus();
     }
 
     @Override
@@ -166,7 +204,10 @@ public final class DataEntryAdapter extends Adapter {
 
         FieldViewModel viewModel = viewModels.get(position);
         if (viewModel instanceof EditTextModel) {
-            return EDITTEXT;
+            if (((EditTextModel) viewModel).valueType() != ValueType.LONG_TEXT)
+                return EDITTEXT;
+            else
+                return LONG_TEXT;
         } else if (viewModel instanceof RadioButtonViewModel) {
             return CHECKBOX;
         } else if (viewModel instanceof SpinnerViewModel) {
@@ -191,6 +232,8 @@ public final class DataEntryAdapter extends Adapter {
             return IMAGE;
         } else if (viewModel instanceof UnsupportedViewModel) {
             return UNSUPPORTED;
+        } else if (viewModel instanceof DisplayViewModel) {
+            return DISPLAY;
         } else {
             throw new IllegalStateException("Unsupported view model type: "
                     + viewModel.getClass());
@@ -246,6 +289,19 @@ public final class DataEntryAdapter extends Adapter {
         return hasError;
     }
 
+    public String getErrorFieldNames() {
+        StringBuilder errorFieldNames = new StringBuilder();
+        for (FieldViewModel fieldViewModel : viewModels) {
+            if(fieldViewModel.error() != null) {
+                if(errorFieldNames.length()==0)
+                    errorFieldNames.append(fieldViewModel.label());
+                else
+                    errorFieldNames.append(", ").append(fieldViewModel.label());
+            }
+        }
+        return errorFieldNames.toString();
+    }
+
     public void notifyChanges(RowAction rowAction) {
         List<FieldViewModel> helperModels = new ArrayList<>();
         for (FieldViewModel field : viewModels) {
@@ -263,6 +319,6 @@ public final class DataEntryAdapter extends Adapter {
         viewModels.addAll(helperModels);
 
         diffResult.dispatchUpdatesTo(this);
-
     }
+
 }

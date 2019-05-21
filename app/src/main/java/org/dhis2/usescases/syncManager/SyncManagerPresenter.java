@@ -3,7 +3,6 @@ package org.dhis2.usescases.syncManager;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import androidx.core.util.Pair;
 import androidx.work.Constraints;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.ExistingWorkPolicy;
@@ -19,6 +18,7 @@ import org.dhis2.usescases.login.LoginActivity;
 import org.dhis2.usescases.reservedValue.ReservedValueActivity;
 import org.dhis2.utils.Constants;
 import org.hisp.dhis.android.core.D2;
+import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.maintenance.D2Error;
 import org.hisp.dhis.android.core.sms.domain.interactor.ConfigCase;
 
@@ -199,6 +199,16 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
     }
 
     @Override
+    public boolean dataHasErrors() {
+        return !d2.eventModule().events.byState().in(State.ERROR).get().isEmpty() || !d2.trackedEntityModule().trackedEntityInstances.byState().in(State.ERROR).get().isEmpty();
+    }
+
+    @Override
+    public boolean dataHasWarnings() {
+        return !d2.eventModule().events.byState().in(State.WARNING).get().isEmpty() || !d2.trackedEntityModule().trackedEntityInstances.byState().in(State.WARNING).get().isEmpty();
+    }
+
+    @Override
     public void disponse() {
         compositeDisposable.clear();
     }
@@ -212,6 +222,7 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
         editor.putInt(Constants.EVENT_MAX, Constants.EVENT_MAX_DEFAULT);
         editor.putInt(Constants.TEI_MAX, Constants.TEI_MAX_DEFAULT);
         editor.putBoolean(Constants.LIMIT_BY_ORG_UNIT, false);
+        editor.putBoolean(Constants.LIMIT_BY_PROGRAM, false);
 
         editor.apply();
 

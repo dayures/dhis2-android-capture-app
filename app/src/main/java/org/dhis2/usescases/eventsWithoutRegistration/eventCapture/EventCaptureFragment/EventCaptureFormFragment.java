@@ -96,15 +96,8 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
         });
 
         activity.getPresenter().initCompletionPercentage(sectionSelectorAdapter.completionPercentage());
-//        activity.getPresenter().subscribeToSection();
 
         return binding.getRoot();
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
     }
 
     public void setSectionTitle(DataEntryArguments arguments, FormSectionViewModel formSectionViewModel) {
@@ -142,7 +135,7 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
                 activity.getPresenter().getOrgUnits(),
                 new ObservableBoolean(true),
                 flowableProcessor,
-                flowableOptions);
+                flowableOptions, activity.getPresenter().getLevels());
 
         RecyclerView.LayoutManager layoutManager;
         if (arguments.renderType() != null && arguments.renderType().equals(ProgramStageSectionRenderingType.MATRIX.name())) {
@@ -157,7 +150,6 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
 
     }
 
-    @NonNull
     public void showFields(List<FieldViewModel> updates) {
         binding.progress.setVisibility(View.GONE);
 
@@ -192,15 +184,18 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
         }
     }
 
-    public View getSectionSelector() {
-        return binding.sectionSelector.getRoot();
-    }
-
     public Flowable<Trio<String, String, Integer>> optionSetActions() {
         return dataEntryAdapter.asFlowableOption();
     }
 
     public void updateAdapter(RowAction rowAction) {
-        activity.runOnUiThread(() -> dataEntryAdapter.notifyChanges(rowAction));
+        activity.runOnUiThread(() -> {
+            dataEntryAdapter.notifyChanges(rowAction);
+            if (rowAction.lastFocusPosition() != -1)
+                if (rowAction.lastFocusPosition() >= dataEntryAdapter.getItemCount())
+                    binding.formRecycler.smoothScrollToPosition(rowAction.lastFocusPosition());
+                else
+                    binding.formRecycler.smoothScrollToPosition(rowAction.lastFocusPosition() + 1);
+        });
     }
 }

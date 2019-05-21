@@ -1,6 +1,7 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventCapture;
 
 import android.os.Handler;
+import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -13,6 +14,7 @@ import org.dhis2.data.forms.dataentry.DataEntryArguments;
 import org.dhis2.data.forms.dataentry.DataEntryStore;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.forms.dataentry.fields.RowAction;
+import org.dhis2.data.forms.dataentry.fields.display.DisplayViewModel;
 import org.dhis2.data.metadata.MetadataRepository;
 import org.dhis2.data.tuples.Quartet;
 import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureFragment.EventCaptureFormFragment;
@@ -23,6 +25,7 @@ import org.dhis2.utils.RulesUtilsProvider;
 import org.dhis2.utils.custom_views.OptionSetDialog;
 import org.dhis2.utils.custom_views.OptionSetPopUp;
 import org.hisp.dhis.android.core.event.EventStatus;
+import org.hisp.dhis.android.core.organisationunit.OrganisationUnitLevel;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.rules.models.RuleActionShowError;
 import org.hisp.dhis.rules.models.RuleEffect;
@@ -30,6 +33,7 @@ import org.hisp.dhis.rules.models.RuleEffect;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +49,7 @@ import io.reactivex.schedulers.Schedulers;
 import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
+import static android.view.View.FOCUS_DOWN;
 
 /**
  * QUADRAM. Created by ppajuelo on 19/11/2018.
@@ -76,6 +81,8 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     private final FlowableProcessor<String> sectionProcessor;
     private boolean isSubscribed;
     private long ruleInitTime;
+    private List<OrganisationUnitLevel> levels;
+    private int lastAdapterPosition;
 
     public EventCapturePresenterImpl(String eventUid, EventCaptureContract.EventCaptureRepository eventCaptureRepository, MetadataRepository metadataRepository, RulesUtilsProvider rulesUtils, DataEntryStore dataEntryStore) {
         this.eventUid = eventUid;
@@ -154,6 +161,14 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                         )
         );
 
+        compositeDisposable.add(eventCaptureRepository.getOrgUnitLevels()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(
+                        data -> levels = data,
+                        Timber::e
+                ));
+
         compositeDisposable.add(
                 getFieldFlowable(null)
                         .map(fields -> {
@@ -212,7 +227,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
 
         compositeDisposable.add(
                 sectionProcessor
-                        .flatMap(section -> getFieldFlowable(section)
+                        .switchMap(section -> getFieldFlowable(section)
                                 .map(fields -> {
                                     HashMap<String, List<FieldViewModel>> fieldMap = new HashMap<>();
                                     for (FieldViewModel fieldViewModel : fields) {
@@ -392,6 +407,7 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                                 eventCaptureRepository.setLastUpdated(action.id());
                                 ruleInitTime = System.currentTimeMillis();
                                 EventCaptureFormFragment.getInstance().updateAdapter(action);
+                                this.lastAdapterPosition = action.lastFocusPosition();
                                 return dataEntryStore.save(action.id(), action.value());
                             }
                     ).subscribe(result -> Timber.d("SAVED VALUE AT %s", System.currentTimeMillis()),
@@ -441,7 +457,6 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     private List<FieldViewModel> applyEffects(
             @NonNull List<FieldViewModel> viewModels,
             @NonNull Result<RuleEffect> calcResult) {
-        Timber.d("RULE EFFECTS INIT TOOK %s ms to execute for %s viewmodels", System.currentTimeMillis() - ruleInitTime, viewModels.size());
         long currentTime = System.currentTimeMillis();
 
         if (calcResult.error() != null) {
@@ -459,7 +474,15 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
         Map<String, FieldViewModel> fieldViewModels = toMap(viewModels);
         rulesUtils.applyRuleEffects(fieldViewModels, calcResult, this);
 
-        Timber.d("RULE EFFECTS TOOK %s ms to execute, final count is %s viewmodels", System.currentTimeMillis() - currentTime, fieldViewModels.values().size());
+        //Display the DisplayViewModels only in the last section
+        if(!isEmpty(currentSection.get()) && !currentSection.get().equals(sectionList.get(sectionList.size()-1).sectionUid())) {
+            Iterator<Map.Entry<String, FieldViewModel>> iter = fieldViewModels.entrySet().iterator();
+            while(iter.hasNext())
+                if (iter.next().getValue() instanceof DisplayViewModel)
+                    iter.remove();
+        }
+
+        Timber.d("RULE EFFECTS TOOK %s ms to execute", System.currentTimeMillis() - currentTime);
         return new ArrayList<>(fieldViewModels.values());
     }
 
@@ -691,6 +714,11 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
     @Override
     public void displayMessage(String message) {
         view.displayMessage(message);
+    }
+
+    @Override
+    public Observable<List<OrganisationUnitLevel>> getLevels() {
+        return eventCaptureRepository.getOrgUnitLevels();
     }
 
     //region ruleActions

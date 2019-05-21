@@ -1,17 +1,18 @@
 package org.dhis2.usescases.main.program;
 
+import androidx.annotation.NonNull;
+
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.arch.repositories.scope.RepositoryScope;
+import org.hisp.dhis.android.core.common.State;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnit;
-import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.period.DatePeriod;
-import org.hisp.dhis.android.core.user.UserOrganisationUnitLinkModel;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import androidx.annotation.NonNull;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
 
@@ -52,18 +53,75 @@ class HomeRepositoryImpl implements HomeRepository {
                     else
                         typeName = "DataSets";
 
-                    int count = 0;
-                    if (program.programType() == WITHOUT_REGISTRATION)
-                        if (!dateFilter.isEmpty())
-                            count = d2.eventModule().events.byProgramUid().eq(program.uid()).byEventDate().inDatePeriods(dateFilter).count();
-                        else
-                            count = d2.eventModule().events.byProgramUid().eq(program.uid()).count();
-                    else {
+                    int count;
+                    State state = State.SYNCED;
+                    if (program.programType() == WITHOUT_REGISTRATION) {
                         if (!dateFilter.isEmpty()) {
-                            count = d2.eventModule().events.byProgramUid().eq(program.uid()).byEventDate().inDatePeriods(dateFilter).countTrackedEntityInstances();
-                        } else
-                            count = d2.eventModule().events.byProgramUid().eq(program.uid()).countTrackedEntityInstances();
+                            if (!orgUnitFilter.isEmpty()) {
+                                count = d2.eventModule().events
+                                        .byProgramUid().eq(program.uid())
+                                        .byEventDate().inDatePeriods(dateFilter)
+                                        .byOrganisationUnitUid().in(orgUnitFilter)
+                                        .count();
+                            } else {
+                                count = d2.eventModule().events
+                                        .byProgramUid().eq(program.uid())
+                                        .byEventDate().inDatePeriods(dateFilter)
+                                        .count();
+                            }
+                        } else if (!orgUnitFilter.isEmpty()) {
+                            count = d2.eventModule().events
+                                    .byProgramUid().eq(program.uid())
+                                    .byOrganisationUnitUid().in(orgUnitFilter)
+                                    .count();
+                        } else {
+                            count = d2.eventModule().events
+                                    .byProgramUid().eq(program.uid())
+                                    .count();
+                        }
+
+                        if (!d2.eventModule().events.byProgramUid().eq(program.uid()).byState().in(State.ERROR, State.WARNING).get().isEmpty())
+                            state = State.WARNING;
+                        else if (!d2.eventModule().events.byProgramUid().eq(program.uid()).byState().in(State.SENT_VIA_SMS, State.SYNCED_VIA_SMS).get().isEmpty())
+                            state = State.SENT_VIA_SMS;
+                        else if (!d2.eventModule().events.byProgramUid().eq(program.uid()).byState().in(State.TO_UPDATE, State.TO_POST, State.TO_DELETE).get().isEmpty())
+                            state = State.TO_UPDATE;
+
+                    } else {
+                        if (!dateFilter.isEmpty()) {
+                            if (!orgUnitFilter.isEmpty()) {
+                                count = d2.eventModule().events
+                                        .byProgramUid().eq(program.uid())
+                                        .byEventDate().inDatePeriods(dateFilter)
+                                        .byOrganisationUnitUid().in(orgUnitFilter)
+                                        .countTrackedEntityInstances();
+                            } else {
+                                count = d2.eventModule().events
+                                        .byProgramUid().eq(program.uid())
+                                        .byEventDate().inDatePeriods(dateFilter)
+                                        .countTrackedEntityInstances();
+                            }
+                        } else if (!orgUnitFilter.isEmpty()) {
+                            count = d2.eventModule().events
+                                    .byProgramUid().eq(program.uid())
+                                    .byOrganisationUnitUid().in(orgUnitFilter)
+                                    .countTrackedEntityInstances();
+                        } else {
+                            count = d2.eventModule().events
+                                    .byProgramUid().eq(program.uid())
+                                    .countTrackedEntityInstances();
+                        }
+
+                        List<String> programUids = new ArrayList<>();
+                        programUids.add(program.uid());
+                        if (!d2.trackedEntityModule().trackedEntityInstances.byProgramUids(programUids).byState().in(State.ERROR, State.WARNING).get().isEmpty())
+                            state = State.WARNING;
+                        else if (!d2.trackedEntityModule().trackedEntityInstances.byProgramUids(programUids).byState().in(State.SENT_VIA_SMS, State.SYNCED_VIA_SMS).get().isEmpty())
+                            state = State.SENT_VIA_SMS;
+                        else if (!d2.trackedEntityModule().trackedEntityInstances.byProgramUids(programUids).byState().in(State.TO_UPDATE, State.TO_POST, State.TO_DELETE).get().isEmpty())
+                            state = State.TO_UPDATE;
                     }
+
 
                     return ProgramViewModel.create(
                             program.uid(),
@@ -76,7 +134,8 @@ class HomeRepositoryImpl implements HomeRepository {
                             program.programType() != null ? program.programType().name() : null,
                             program.displayDescription(),
                             true,
-                            true
+                            true,
+                            state.name()
                     );
                 }).toList().toFlowable();
     }

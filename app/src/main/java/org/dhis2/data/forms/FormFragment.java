@@ -9,15 +9,17 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 
-import com.google.android.gms.maps.model.LatLng;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.jakewharton.rxbinding2.view.RxView;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 
 import org.dhis2.App;
+import org.dhis2.Bindings.Bindings;
 import org.dhis2.R;
 import org.dhis2.data.forms.dataentry.DataEntryFragment;
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
@@ -42,6 +44,7 @@ import org.hisp.dhis.rules.models.RuleActionShowError;
 import org.hisp.dhis.rules.models.RuleActionWarningOnCompletion;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -105,7 +108,8 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
     private Date closingDate;
     private boolean mandatoryDelete = true;
     private Context context;
-
+    private ProgressBar progressBar;
+    private DataEntryFragment enrollmentFragment;
 
     public View getDatesLayout() {
         return datesLayout;
@@ -161,6 +165,8 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
         incidentDateLayout = view.findViewById(R.id.incident_date_layout);
         incidentDate = view.findViewById(R.id.incident_date_text);
         coordinatorLayout = view.findViewById(R.id.coordinatorlayout_form);
+        progressBar = view.findViewById(R.id.progress);
+        Bindings.setProgressColor(progressBar, R.color.colorPrimary);
         formSectionAdapter = new FormSectionAdapter(getChildFragmentManager());
         viewPager.setAdapter(formSectionAdapter);
         tabLayout.setupWithViewPager(viewPager);
@@ -304,6 +310,7 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
             if (viewPager.getAdapter() != null && viewPager.getCurrentItem() == viewPager.getAdapter().getCount() - 1) {
                 ((Button) nextButton).setText(getString(R.string.save));
             }
+            enrollmentFragment = ((DataEntryFragment)getChildFragmentManager().getFragments().get(0));
         };
     }
 
@@ -360,6 +367,7 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
     public Consumer<Trio<String, String, String>> finishEnrollment() {
         return trio -> {
             enrollmentTrio = trio;
+            progressBar.setVisibility(View.VISIBLE);
             formPresenter.checkMandatoryFields();
         };
     }
@@ -531,15 +539,19 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
                     eventCreationIntent.putExtras(EventCaptureActivity.getActivityBundle(enrollmentTrio.val2(), enrollmentTrio.val1()));
                     eventCreationIntent.putExtra(Constants.TRACKED_ENTITY_INSTANCE, enrollmentTrio.val0());
                     startActivityForResult(eventCreationIntent, RQ_EVENT);
-                } else { //val0 is program uid, val1 is trackedEntityInstance, val2 is empty
+                } else if(!enrollmentFragment.checkErrors()){ //val0 is program uid, val1 is trackedEntityInstance, val2 is empty
                     this.programUid = enrollmentTrio.val1();
                     this.teiUid = enrollmentTrio.val0();
                     openDashboard(null);
+                }else{
+                    progressBar.setVisibility(View.GONE);
+                    showErrorsDialog();
                 }
             } else {
                 checkAction();
             }
         } else {
+            progressBar.setVisibility(View.GONE);
             showMandatoryFieldsDialog();
         }
     }
@@ -563,6 +575,7 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
                         @Override
                         public void onNegative() {
                             // do nothing
+                            progressBar.setVisibility(View.GONE);
                         }
                     });
             if (isAdded() && !isEmpty(messageOnComplete) && !dialog.isShowing())
@@ -571,6 +584,18 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
                 getActivity().finish(); //TODO: ASK IF USER WANTS TO DELETE RECORD
             }
         }
+    }
+
+    private void showErrorsDialog() {
+        new CustomDialog(
+                getAbstracContext(),
+                getAbstracContext().getString(R.string.error_fields_title),
+                String.format(getString(R.string.error_fields), enrollmentFragment.getErrorFields()),
+                getAbstracContext().getString(R.string.button_ok),
+                null,
+                RC_GO_BACK,
+                null)
+                .show();
     }
 
     @Override
@@ -624,7 +649,34 @@ public class FormFragment extends FragmentGlobalAbstract implements FormView, Co
 
     @Override
     public void onBackPressed() {
-        formPresenter.checkMandatoryFields();
+        String description = isEnrollment ? getAbstracContext().getString(R.string.delete_go_back) :
+                getAbstracContext().getString(R.string.missing_mandatory_fields_events);
+        String buttonAccept = isEnrollment ? getAbstracContext().getString(R.string.missing_mandatory_fields_go_back) :
+                getAbstracContext().getString(R.string.button_ok);
+        new CustomDialog(
+                getAbstracContext(),
+                getAbstracContext().getString(R.string.title_delete_go_back),
+                description,
+                getAbstracContext().getString(R.string.cancel),
+                buttonAccept,
+                RC_GO_BACK,
+                new DialogClickListener() {
+                    @Override
+                    public void onPositive() {
+                        // do nothing
+                    }
+
+                    @Override
+                    public void onNegative() {
+                        if (mandatoryDelete)
+                            if (isEnrollment)
+                                deleteAllSavedDataAndGoBack();
+                            else if (getActivity() != null && isAdded()) {
+                                getActivity().finish();
+                            }
+                    }
+                })
+                .show();
     }
 
     public void onBackPressed(boolean delete) {
