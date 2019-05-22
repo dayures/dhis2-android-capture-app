@@ -154,14 +154,14 @@ class SettingsFragment: BaseFragment() {
                         .title(getString(R.string.tuto_settings_1))
                         .closeOnTouch(true)
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
-                        .build();
+                        .build()
 
                 val tuto2 = FancyShowCaseView.Builder(abstractActivity)
                         .focusOn(recycler.findViewById(R.id.settings_sync_configuration))
                         .title(getString(R.string.tuto_settings_2))
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .closeOnTouch(true)
-                        .build();
+                        .build()
 
                 val tuto3 = FancyShowCaseView.Builder(abstractActivity)
                         .focusOn(recycler.findViewById(R.id.settings_sync_parameters))
@@ -169,7 +169,7 @@ class SettingsFragment: BaseFragment() {
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .titleGravity(Gravity.TOP)
                         .closeOnTouch(true)
-                        .build();
+                        .build()
 
                 val tuto4 = FancyShowCaseView.Builder(abstractActivity)
                         .focusOn(recycler.findViewById(R.id.settings_reserved_values))
@@ -177,7 +177,7 @@ class SettingsFragment: BaseFragment() {
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .closeOnTouch(true)
                         .titleGravity(Gravity.TOP)
-                        .build();
+                        .build()
 
                 val tuto5 = FancyShowCaseView.Builder(abstractActivity)
                         .focusOn(recycler.findViewById(R.id.settings_sync_error))
@@ -185,22 +185,21 @@ class SettingsFragment: BaseFragment() {
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .closeOnTouch(true)
                         .titleGravity(Gravity.TOP)
-                        .build();
+                        .build()
 
                 val tuto6 = FancyShowCaseView.Builder(abstractActivity)
                         .focusOn(recycler.findViewById(R.id.settings_delete_local))
                         .title(getString(R.string.tuto_settings_reset))
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .closeOnTouch(true)
-                        .build();
+                        .build()
 
                 val tuto7 = FancyShowCaseView.Builder(abstractActivity)
                         .focusOn(recycler.findViewById(R.id.settings_reset_app))
                         .title(getString(R.string.tuto_settings_4))
                         .closeOnTouch(true)
-
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
-                        .build();
+                        .build()
 
 
                 val steps = arrayListOf<FancyShowCaseView>()
