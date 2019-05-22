@@ -2,6 +2,7 @@ package org.dhis2.usescases.general;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
@@ -268,50 +269,40 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
     @Override
     public void showInfoDialog(String title, String message) {
         if (getActivity() != null) {
-            AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
-
-            //TITLE
-            final View titleView = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_title, null);
-            ((TextView) titleView.findViewById(R.id.dialogTitle)).setText(title);
-            alertDialog.setCustomTitle(titleView);
-
-            //BODY
-            final View msgView = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_body, null);
-            ((TextView) msgView.findViewById(R.id.dialogBody)).setText(message);
-            msgView.findViewById(R.id.dialogAccept).setOnClickListener(view -> alertDialog.dismiss());
-            msgView.findViewById(R.id.dialogCancel).setOnClickListener(view -> alertDialog.dismiss());
-            alertDialog.setView(msgView);
-
-
+            AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity(), R.style.DhisMaterialDialog);
+            alertDialog.setTitle(title);
+            alertDialog.setMessage(message);
+            alertDialog.setPositiveButton(R.string.action_accept, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                }
+            });
             alertDialog.show();
-
         }
     }
 
     @Override
     public AlertDialog showInfoDialog(String title, String message, OnDialogClickListener clickListener) {
         if (getActivity() != null) {
-            AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
-
-            //TITLE
-            final View titleView = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_title, null);
-            ((TextView) titleView.findViewById(R.id.dialogTitle)).setText(title);
-            alertDialog.setCustomTitle(titleView);
-
-            //BODY
-            final View msgView = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_body, null);
-            ((TextView) msgView.findViewById(R.id.dialogBody)).setText(message);
-            msgView.findViewById(R.id.dialogAccept).setOnClickListener(view -> {
-                clickListener.onPossitiveClick(alertDialog);
-                alertDialog.dismiss();
+            AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity(), R.style.DhisMaterialDialog);
+            alertDialog.setTitle(title);
+            alertDialog.setMessage(message);
+            alertDialog.setPositiveButton(R.string.action_accept, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    clickListener.onPossitiveClick(dialog);
+                    dialog.dismiss();
+                }
             });
-            msgView.findViewById(R.id.dialogCancel).setOnClickListener(view -> {
-                clickListener.onNegativeClick(alertDialog);
-                alertDialog.dismiss();
+            alertDialog.setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    clickListener.onNegativeClick(dialog);
+                    dialog.dismiss();
+                }
             });
-            alertDialog.setView(msgView);
-
-            return alertDialog;
+            return alertDialog.create();
 
         } else
             return null;
@@ -320,29 +311,24 @@ public abstract class ActivityGlobalAbstract extends AppCompatActivity implement
     @Override
     public AlertDialog showInfoDialog(String title, String message, String positiveButtonText, String negativeButtonText, OnDialogClickListener clickListener) {
         if (getActivity() != null) {
-            AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
-
-            //TITLE
-            final View titleView = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_title, null);
-            ((TextView) titleView.findViewById(R.id.dialogTitle)).setText(title);
-            alertDialog.setCustomTitle(titleView);
-
-            //BODY
-            final View msgView = LayoutInflater.from(getActivity()).inflate(R.layout.dialog_body, null);
-            ((TextView) msgView.findViewById(R.id.dialogBody)).setText(message);
-            ((Button) msgView.findViewById(R.id.dialogAccept)).setText(positiveButtonText);
-            ((Button) msgView.findViewById(R.id.dialogCancel)).setText(negativeButtonText);
-            msgView.findViewById(R.id.dialogAccept).setOnClickListener(view -> {
-                clickListener.onPossitiveClick(alertDialog);
-                alertDialog.dismiss();
+            AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity(), R.style.DhisMaterialDialog);
+            alertDialog.setTitle(title);
+            alertDialog.setMessage(message);
+            alertDialog.setPositiveButton(positiveButtonText, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    clickListener.onPossitiveClick(dialog);
+                    dialog.dismiss();
+                }
             });
-            msgView.findViewById(R.id.dialogCancel).setOnClickListener(view -> {
-                clickListener.onNegativeClick(alertDialog);
-                alertDialog.dismiss();
+            alertDialog.setNegativeButton(negativeButtonText, new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    clickListener.onNegativeClick(dialog);
+                    dialog.dismiss();
+                }
             });
-            alertDialog.setView(msgView);
-
-            return alertDialog;
+            return alertDialog.create();
 
         } else
             return null;

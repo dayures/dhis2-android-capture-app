@@ -5,6 +5,8 @@ import android.content.Context;
 import androidx.databinding.DataBindingUtil;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import android.content.DialogInterface;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,7 +20,7 @@ import org.dhis2.utils.DialogClickListener;
  * QUADRAM. Created by frodriguez on 5/4/2018.
  */
 
-public class CustomDialog extends AlertDialog implements View.OnClickListener {
+public class CustomDialog extends AlertDialog {
 
     private Context context;
     private AlertDialog dialog;
@@ -49,24 +51,29 @@ public class CustomDialog extends AlertDialog implements View.OnClickListener {
 
     @Override
     public void show() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        LayoutInflater inflater = LayoutInflater.from(context);
-        CustomDialogBinding binding = DataBindingUtil.inflate(inflater, R.layout.custom_dialog, null, false);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context, R.style.DhisMaterialDialog);
+        builder.setTitle(title);
+        builder.setMessage(message);
+        if (!TextUtils.isEmpty(negativeText))
+            builder.setNegativeButton(negativeText, new OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    if (listener != null)
+                        listener.onNegative();
+                }
+            });
+        if (!TextUtils.isEmpty(positiveText))
+            builder.setPositiveButton(positiveText, new OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    if (listener != null)
+                        listener.onPositive();
+                }
+            });
 
-        binding.setTitle(title);
-        binding.setMessage(message);
-        binding.setNegativeText(negativeText);
-        binding.setPositiveText(positiveText);
-
-        builder.setView(binding.getRoot());
 
         dialog = builder.create();
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-
-        if (!TextUtils.isEmpty(negativeText))
-            binding.negative.setOnClickListener(this);
-        if (!TextUtils.isEmpty(positiveText))
-            binding.possitive.setOnClickListener(this);
         dialog.show();
     }
 
@@ -81,23 +88,4 @@ public class CustomDialog extends AlertDialog implements View.OnClickListener {
     }
 
 
-    @Override
-    public void onClick(View view) {
-        switch (view.getId()) {
-            case R.id.negative:
-                if (listener != null) {
-                    listener.onNegative();
-                }
-                dismiss();
-                break;
-            case R.id.possitive:
-                if (listener != null) {
-                    listener.onPositive();
-                }
-                dismiss();
-                break;
-            default:
-                break;
-        }
-    }
 }

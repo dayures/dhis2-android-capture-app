@@ -161,12 +161,12 @@ public class EventDetailPresenter implements EventDetailContracts.Presenter {
                                 if (!isEmpty(formFragment.getMessageOnComplete())) {
                                     final AlertDialog dialog = view.showInfoDialog(view.getContext().getString(R.string.warning_error_on_complete_title), formFragment.getMessageOnComplete(), new OnDialogClickListener() {
                                         @Override
-                                        public void onPossitiveClick(AlertDialog alertDialog) {
+                                        public void onPossitiveClick(DialogInterface alertDialog) {
                                             updateEventStatus(eventModel);
                                         }
 
                                         @Override
-                                        public void onNegativeClick(AlertDialog alertDialog) {
+                                        public void onNegativeClick(DialogInterface alertDialog) {
 
                                         }
                                     });

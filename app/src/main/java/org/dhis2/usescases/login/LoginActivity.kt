@@ -2,6 +2,7 @@ package org.dhis2.usescases.login
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -215,13 +216,13 @@ class LoginActivity : ActivityGlobalAbstract(), LoginContracts.View {
         showInfoDialog(getString(R.string.send_user_name_title), getString(R.string.send_user_name_mesage),
                 getString(R.string.action_agree), getString(R.string.cancel),
                 object : OnDialogClickListener {
-                    override fun onPossitiveClick(alertDialog: AlertDialog) {
+                    override fun onPossitiveClick(alertDialog: DialogInterface) {
                         sharedPreferences.edit().putBoolean(Constants.USER_ASKED_CRASHLYTICS, true).apply()
                         sharedPreferences.edit().putString(Constants.USER, binding.userName.editText?.text.toString()).apply()
                         showLoginProgress(true)
                     }
 
-                    override fun onNegativeClick(alertDialog: AlertDialog) {
+                    override fun onNegativeClick(alertDialog: DialogInterface) {
                         sharedPreferences.edit().putBoolean(Constants.USER_ASKED_CRASHLYTICS, true).apply()
                         showLoginProgress(true)
                     }
@@ -309,7 +310,7 @@ class LoginActivity : ActivityGlobalAbstract(), LoginContracts.View {
             showInfoDialog(getString(R.string.biometrics_security_title),
                     getString(R.string.biometrics_security_text),
                     object : OnDialogClickListener {
-                        override fun onPossitiveClick(alertDialog: AlertDialog) {
+                        override fun onPossitiveClick(alertDialog: DialogInterface) {
                             BiometricStorage.saveUserCredentials(
                                     binding.serverUrlEdit.text?.toString(),
                                     binding.userNameEdit.text?.toString(),
@@ -317,7 +318,7 @@ class LoginActivity : ActivityGlobalAbstract(), LoginContracts.View {
                             goToNextScreen()
                         }
 
-                        override fun onNegativeClick(alertDialog: AlertDialog) {
+                        override fun onNegativeClick(alertDialog: DialogInterface) {
                             goToNextScreen()
                         }
                     })?.show()

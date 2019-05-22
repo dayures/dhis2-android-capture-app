@@ -1,5 +1,6 @@
 package org.dhis2.usescases.eventsWithoutRegistration.eventCapture;
 
+import android.content.DialogInterface;
 import android.os.Handler;
 
 import androidx.annotation.NonNull;
@@ -676,12 +677,12 @@ public class EventCapturePresenterImpl implements EventCaptureContract.Presenter
                             view.getContext().getString(R.string.action_accept),
                             null, new OnDialogClickListener() {
                                 @Override
-                                public void onPossitiveClick(AlertDialog alertDialog) {
+                                public void onPossitiveClick(DialogInterface alertDialog) {
                                     snackBarIsShowing = false;
                                 }
 
                                 @Override
-                                public void onNegativeClick(AlertDialog alertDialog) {
+                                public void onNegativeClick(DialogInterface alertDialog) {
                                     snackBarIsShowing = false;
                                 }
                             }).show()

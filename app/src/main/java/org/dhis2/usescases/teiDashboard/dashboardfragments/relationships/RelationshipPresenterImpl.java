@@ -1,5 +1,6 @@
 package org.dhis2.usescases.teiDashboard.dashboardfragments.relationships;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 
@@ -164,12 +165,12 @@ public class RelationshipPresenterImpl implements RelationshipContracts.Presente
                     view.getContext().getString(R.string.no),
                     new OnDialogClickListener() {
                         @Override
-                        public void onPossitiveClick(AlertDialog alertDialog) {
+                        public void onPossitiveClick(DialogInterface alertDialog) {
                             view.back();
                         }
 
                         @Override
-                        public void onNegativeClick(AlertDialog alertDialog) {
+                        public void onNegativeClick(DialogInterface alertDialog) {
                             //not needed
                         }
                     }).show();

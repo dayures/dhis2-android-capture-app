@@ -1,5 +1,7 @@
 package org.dhis2.utils;
 
+import android.content.DialogInterface;
+
 import androidx.appcompat.app.AlertDialog;
 
 /**
@@ -7,6 +9,6 @@ import androidx.appcompat.app.AlertDialog;
  */
 
 public interface OnDialogClickListener {
-    void onPossitiveClick(AlertDialog alertDialog);
-    void onNegativeClick(AlertDialog alertDialog);
+    void onPossitiveClick(DialogInterface alertDialog);
+    void onNegativeClick(DialogInterface alertDialog);
 }

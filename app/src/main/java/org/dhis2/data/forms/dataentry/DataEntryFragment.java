@@ -1,6 +1,7 @@
 package org.dhis2.data.forms.dataentry;
 
 import android.content.Context;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -192,12 +193,12 @@ public final class DataEntryFragment extends FragmentGlobalAbstract implements D
         AlertDialog dialog = showInfoDialog(getString(R.string.error), getString(R.string.unique_warning), new OnDialogClickListener() {
 
             @Override
-            public void onPossitiveClick(androidx.appcompat.app.AlertDialog alertDialog) {
+            public void onPossitiveClick(DialogInterface alertDialog) {
                 //nothing
             }
 
             @Override
-            public void onNegativeClick(androidx.appcompat.app.AlertDialog alertDialog) {
+            public void onNegativeClick(DialogInterface alertDialog) {
                 //nothing
             }
         });
