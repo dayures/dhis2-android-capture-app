@@ -4,6 +4,7 @@ import android.app.NotificationManager
 import android.content.Context
 import android.os.Bundle
 import android.os.Handler
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -147,110 +148,58 @@ class SettingsFragment: BaseFragment() {
     override fun showTutorial(shacked: Boolean) {
         if (isAdded && abstractActivity != null && context != null) {
             Handler().postDelayed({
-                val layoutManager = binding.recycler.layoutManager!!
+                val recycler = binding.recycler
                 val tuto1 = FancyShowCaseView.Builder(abstractActivity)
-                        .focusOn(layoutManager.getChildAt(0))
+                        .focusOn(recycler.findViewById(R.id.settings_sync_data))
                         .title(getString(R.string.tuto_settings_1))
                         .closeOnTouch(true)
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
-                        .dismissListener(object: DismissListener {
-                            override fun onSkipped(id: String?) {}
-
-                            override fun onDismiss(id: String?) {
-                                viewModel.config.set(ConfigData.SYNC_CONFIGURATION)
-                                binding.recycler.scrollToPosition(1)
-                            }
-                        })
                         .build();
 
                 val tuto2 = FancyShowCaseView.Builder(abstractActivity)
-                        .focusOn(layoutManager.getChildAt(1))
+                        .focusOn(recycler.findViewById(R.id.settings_sync_configuration))
                         .title(getString(R.string.tuto_settings_2))
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .closeOnTouch(true)
-                        .dismissListener(object: DismissListener {
-                            override fun onSkipped(id: String?) {}
-
-                            override fun onDismiss(id: String?) {
-                                viewModel.config.set(ConfigData.SYNC_PARAMETERS)
-                                binding.recycler.scrollToPosition(2)
-                            }
-                        })
                         .build();
 
                 val tuto3 = FancyShowCaseView.Builder(abstractActivity)
-                        .focusOn(layoutManager.getChildAt(2))
+                        .focusOn(recycler.findViewById(R.id.settings_sync_parameters))
                         .title(getString(R.string.tuto_settings_3))
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
+                        .titleGravity(Gravity.TOP)
                         .closeOnTouch(true)
-                        .dismissListener(object: DismissListener {
-                            override fun onSkipped(id: String?) {}
-
-                            override fun onDismiss(id: String?) {
-                                viewModel.config.set(ConfigData.RESERVED_VALUES)
-                                binding.recycler.scrollToPosition(3)
-                            }
-                        })
                         .build();
 
                 val tuto4 = FancyShowCaseView.Builder(abstractActivity)
-                        .focusOn(layoutManager.getChildAt(3))
+                        .focusOn(recycler.findViewById(R.id.settings_reserved_values))
                         .title(getString(R.string.tuto_settings_reserved))
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .closeOnTouch(true)
-                        .dismissListener(object: DismissListener {
-                            override fun onSkipped(id: String?) {}
-
-                            override fun onDismiss(id: String?) {
-                                viewModel.config.set(ConfigData.OPEN_SYNC_ERROR)
-                                binding.recycler.scrollToPosition(4)
-                            }
-                        })
+                        .titleGravity(Gravity.TOP)
                         .build();
 
                 val tuto5 = FancyShowCaseView.Builder(abstractActivity)
-                        .focusOn(layoutManager.getChildAt(4))
+                        .focusOn(recycler.findViewById(R.id.settings_sync_error))
                         .title(getString(R.string.tuto_settings_errors))
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .closeOnTouch(true)
-                        .dismissListener(object: DismissListener {
-                            override fun onSkipped(id: String?) {}
-
-                            override fun onDismiss(id: String?) {
-                                viewModel.config.set(ConfigData.RESET_APP)
-                                binding.recycler.scrollToPosition(6)
-                            }
-                        })
+                        .titleGravity(Gravity.TOP)
                         .build();
 
                 val tuto6 = FancyShowCaseView.Builder(abstractActivity)
-                        .focusOn(layoutManager.getChildAt(5))
+                        .focusOn(recycler.findViewById(R.id.settings_delete_local))
                         .title(getString(R.string.tuto_settings_reset))
                         .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .closeOnTouch(true)
-                        .dismissListener(object: DismissListener {
-                            override fun onSkipped(id: String?) {}
-
-                            override fun onDismiss(id: String?) {
-                                viewModel.config.set(ConfigData.DELETE_LOCAL)
-                                binding.recycler.scrollToPosition(7)
-                            }
-                        })
                         .build();
 
                 val tuto7 = FancyShowCaseView.Builder(abstractActivity)
-                        .focusOn(layoutManager.getChildAt(6))
+                        .focusOn(recycler.findViewById(R.id.settings_reset_app))
                         .title(getString(R.string.tuto_settings_4))
                         .closeOnTouch(true)
-                        .focusShape(FocusShape.ROUNDED_RECTANGLE)
-                        .dismissListener(object: DismissListener {
-                            override fun onSkipped(id: String?) {}
 
-                            override fun onDismiss(id: String?) {
-                                viewModel.config.set(ConfigData.SYNC_DATA)
-                                binding.recycler.scrollToPosition(0)
-                            }
-                        })
+                        .focusShape(FocusShape.ROUNDED_RECTANGLE)
                         .build();
 
 
@@ -264,8 +213,6 @@ class SettingsFragment: BaseFragment() {
                 steps.add(tuto7);
                 HelpManager.getInstance().setScreenHelp(javaClass.name, steps);
                 if (!abstractActivity.getDhisPreferences("TUTO_SETTINGS_SHOWN", false) && !BuildConfig.DEBUG) {
-                    binding.recycler.scrollToPosition(0)
-                    viewModel.config.set(ConfigData.SYNC_DATA)
                     HelpManager.getInstance().showHelp()
                     abstractActivity.setDhisPreferences("TUTO_SETTINGS_SHOWN", true)
                 }
