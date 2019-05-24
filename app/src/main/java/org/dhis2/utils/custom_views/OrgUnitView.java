@@ -1,18 +1,18 @@
 package org.dhis2.utils.custom_views;
 
 import android.content.Context;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.view.View;
-import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
 
 import androidx.annotation.Nullable;
 import androidx.databinding.ViewDataBinding;
 import androidx.fragment.app.FragmentManager;
 
-import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 
+import org.dhis2.BR;
 import org.dhis2.Bindings.Bindings;
 import org.dhis2.R;
 import org.dhis2.databinding.CustomTextViewAccentBinding;
@@ -27,7 +27,7 @@ public class OrgUnitView extends FieldLayout implements OrgUnitCascadeDialog.Cas
     private ViewDataBinding binding;
 
     private ImageView iconView;
-    private AutoCompleteTextView editText;
+    private TextInputAutoCompleteTextView editText;
     private TextInputLayout inputLayout;
     private View descriptionLabel;
     private OnDataChanged listener;
@@ -83,6 +83,13 @@ public class OrgUnitView extends FieldLayout implements OrgUnitCascadeDialog.Cas
             public void onDialogCancelled() {
                 editText.setEnabled(true);
             }
+
+            @Override
+            public void onClear() {
+                listener.onDataChanged(null);
+                editText.setText(null);
+                editText.setEnabled(true);
+            }
         }).show(fm, label));
     }
 
@@ -109,8 +116,12 @@ public class OrgUnitView extends FieldLayout implements OrgUnitCascadeDialog.Cas
 
     public void setValue(String valueUid, String valueName) {
         value = valueUid;
-        editText.setText(valueName);
+        new Handler().postDelayed(() -> editText.setText(valueName), 100);
 
+    }
+
+    public TextInputAutoCompleteTextView getEditText() {
+        return editText;
     }
 
     public void setWarning(String warning, String error) {
@@ -131,6 +142,7 @@ public class OrgUnitView extends FieldLayout implements OrgUnitCascadeDialog.Cas
                 labelBuilder.append("*");
             this.label = labelBuilder.toString();
             inputLayout.setHint(this.label);
+            binding.setVariable(BR.label, this.label);
         }
     }
 
@@ -146,6 +158,11 @@ public class OrgUnitView extends FieldLayout implements OrgUnitCascadeDialog.Cas
 
     @Override
     public void onDialogCancelled() {
+
+    }
+
+    @Override
+    public void onClear() {
 
     }
 

@@ -30,6 +30,10 @@ public class SyncManagerContracts {
         void showLocalDataDeleted(boolean error);
 
         void showSmsSettings(boolean enabled, String number);
+
+        void syncData();
+
+        void syncMeta();
     }
 
     public interface Presenter {

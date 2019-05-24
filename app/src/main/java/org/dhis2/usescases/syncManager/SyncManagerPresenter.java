@@ -138,6 +138,7 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
      */
     @Override
     public void syncData() {
+        view.syncData();
         OneTimeWorkRequest.Builder syncDataBuilder = new OneTimeWorkRequest.Builder(SyncDataWorker.class);
         syncDataBuilder.addTag(Constants.DATA_NOW);
         syncDataBuilder.setConstraints(new Constraints.Builder()
@@ -152,6 +153,7 @@ public class SyncManagerPresenter implements SyncManagerContracts.Presenter {
      */
     @Override
     public void syncMeta() {
+        view.syncMeta();
         OneTimeWorkRequest.Builder syncDataBuilder = new OneTimeWorkRequest.Builder(SyncMetadataWorker.class);
         syncDataBuilder.addTag(Constants.META_NOW);
         syncDataBuilder.setConstraints(new Constraints.Builder()

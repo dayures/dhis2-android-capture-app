@@ -461,6 +461,8 @@
     <string name="network_unavailable_sms">Network connection is not available, but it looks like there is phone services - you can use SMS.</string>
     <string name="network_unavailable">Network connection is not available.</string>
     <string name="action_close">Close</string>
+    <string name="tuto_main_11">Now you can check sync information by clicking here</string>
+    <string name="no_conflicts_update_message">This data is not yet synced with the server</string>
 
     <string name="sms_receiver_number">Receiver number</string>
     <string name="sms_amount_question">Do you accept to send %d messages?</string>

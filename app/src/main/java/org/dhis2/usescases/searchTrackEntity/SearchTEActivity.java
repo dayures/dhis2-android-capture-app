@@ -17,6 +17,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.Spinner;
 
@@ -142,12 +143,13 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             }
             return true;
         });
-    }
+}
 
     @Override
     protected void onResume() {
         super.onResume();
         presenter.init(this, tEType, initialProgram);
+        presenter.initSearch(this);
         registerReceiver(networkReceiver, new IntentFilter("android.net.conn.CONNECTIVITY_CHANGE"));
     }
 
@@ -189,6 +191,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     @Override
     public void clearData() {
         binding.progressLayout.setVisibility(View.VISIBLE);
+        binding.scrollView.setVisibility(View.GONE);
     }
 
     @Override
@@ -241,20 +244,22 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
 
     @Override
     public void setLiveData(LiveData<PagedList<SearchTeiModel>> liveData) {
-        binding.progressLayout.setVisibility(View.GONE);
         if (!fromRelationship) {
             liveData.observeForever(searchTeiModels -> {
                 Trio<PagedList<SearchTeiModel>, String, Boolean> data = presenter.getMessage(searchTeiModels);
                 if (data.val1().isEmpty()) {
                     binding.messageContainer.setVisibility(View.GONE);
+                    binding.scrollView.setVisibility(View.VISIBLE);
                     liveAdapter.submitList(data.val0());
+                    binding.progressLayout.setVisibility(View.GONE);
                 } else {
+                    binding.progressLayout.setVisibility(View.GONE);
                     binding.messageContainer.setVisibility(View.VISIBLE);
                     binding.message.setText(data.val1());
                 }
 
                 if (!presenter.getQueryData().isEmpty() && data.val2())
-                    needsSearch.set(false);
+                    setFabIcon(false);
 
             });
         } else {
@@ -262,8 +267,11 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
                 Trio<PagedList<SearchTeiModel>, String, Boolean> data = presenter.getMessage(searchTeiModels);
                 if (data.val1().isEmpty()) {
                     binding.messageContainer.setVisibility(View.GONE);
+                    binding.scrollView.setVisibility(View.VISIBLE);
                     relationshipLiveAdapter.submitList(data.val0());
+                    binding.progressLayout.setVisibility(View.GONE);
                 } else {
+                    binding.progressLayout.setVisibility(View.GONE);
                     binding.messageContainer.setVisibility(View.VISIBLE);
                     binding.message.setText(data.val1());
                 }
@@ -394,5 +402,16 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
     @Override
     public void setFabIcon(boolean needsSearch) {
         this.needsSearch.set(needsSearch);
+        animSearchFab(needsSearch);
+    }
+
+    private void animSearchFab(boolean hasQuery){
+        if(hasQuery) {
+            binding.enrollmentButton.startAnimation(
+                    AnimationUtils.loadAnimation(binding.enrollmentButton.getContext(), R.anim.bounce_animation));
+        }else {
+            binding.enrollmentButton.clearAnimation();
+            hideKeyboard();
+        }
     }
 }
