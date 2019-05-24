@@ -27,7 +27,8 @@ final class SyncPresenterImpl implements SyncPresenter {
                 Constants.SHARE_PREFS, Context.MODE_PRIVATE);
         int eventLimit = prefs.getInt(Constants.EVENT_MAX, Constants.EVENT_MAX_DEFAULT);
         boolean limitByOU = prefs.getBoolean(Constants.LIMIT_BY_ORG_UNIT, false);
-        d2.eventModule().downloadSingleEvents(eventLimit, limitByOU).call();
+        boolean limitByProgram = prefs.getBoolean(Constants.LIMIT_BY_PROGRAM, false);
+        d2.eventModule().downloadSingleEvents(eventLimit, limitByOU, limitByProgram).call();
     }
 
     @Override
