@@ -109,6 +109,8 @@
         <activity
             android:name=".usescases.sms.SmsSubmitActivity"
             android:theme="@style/Theme.AppCompat.Translucent" />
+
+        <service android:name=".usescases.sms.SmsSendingService" />
     </application>
 
 </manifest>

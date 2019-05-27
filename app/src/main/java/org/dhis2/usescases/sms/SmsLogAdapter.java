@@ -17,7 +17,7 @@ import java.util.List;
 
 public class SmsLogAdapter extends RecyclerView.Adapter<SmsLogAdapter.ViewHolder> {
 
-    private List<SmsViewModel.SendingStatus> states;
+    private List<SmsSendingService.SendingStatus> states;
 
     @NonNull
     @Override
@@ -32,7 +32,7 @@ public class SmsLogAdapter extends RecyclerView.Adapter<SmsLogAdapter.ViewHolder
         boolean firstItem = position == 0;
         position = states.size() - position - 1;
         Resources res = h.item.getResources();
-        SmsViewModel.SendingStatus state = states.get(position);
+        SmsSendingService.SendingStatus state = states.get(position);
         switch (state.state) {
             case STARTED:
                 h.item.setText(R.string.sms_state_started);
@@ -105,9 +105,13 @@ public class SmsLogAdapter extends RecyclerView.Adapter<SmsLogAdapter.ViewHolder
         return states.size();
     }
 
-    public void setStates(List<SmsViewModel.SendingStatus> states) {
+    void setStates(List<SmsSendingService.SendingStatus> states) {
         this.states = states;
         notifyDataSetChanged();
+    }
+
+    List<SmsSendingService.SendingStatus> getStates() {
+        return states;
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

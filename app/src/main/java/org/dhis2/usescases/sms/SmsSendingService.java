@@ -1,13 +1,19 @@
 package org.dhis2.usescases.sms;
 
+import android.app.Service;
+import android.content.Intent;
+import android.os.Binder;
+import android.os.IBinder;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
-import androidx.lifecycle.ViewModel;
 
+import org.dhis2.App;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
 import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,48 +25,106 @@ import io.reactivex.observers.DisposableObserver;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
 
-public class SmsViewModel extends ViewModel {
-    private final D2 d2;
+public class SmsSendingService extends Service {
+    private final IBinder binder = new LocalBinder();
+    @Inject
+    D2 d2;
     private Type type;
     private String enrollmentId;
     private String eventId;
     private String teiId;
     private CompositeDisposable disposables;
     private SmsSubmitCase smsSender = null;
-    private MutableLiveData<List<SendingStatus>> states;
-    private ArrayList<SendingStatus> statesList;
+    private MutableLiveData<List<SendingStatus>> states = new MutableLiveData<>();
+    private ArrayList<SendingStatus> statesList = new ArrayList<>();
+    private boolean bound = false;
+    private boolean submissionRunning = false;
 
-    @Inject
-    SmsViewModel(D2 d2) {
-        this.d2 = d2;
-        disposables = new CompositeDisposable();
-        states = new MutableLiveData<>();
-        statesList = new ArrayList<>();
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_NOT_STICKY;
     }
 
-    void setTrackerEventData(String eventId, String teiId) {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        ((App) getApplicationContext()).userComponent().plus(new SmsModule()).inject(this);
+        disposables = new CompositeDisposable();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        bound = true;
+        return binder;
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        bound = false;
+        stopEventually();
+        return true;
+    }
+
+    @Override
+    public void onRebind(Intent intent) {
+        bound = true;
+    }
+
+    @Override
+    public void onDestroy() {
+        disposables.dispose();
+        super.onDestroy();
+    }
+
+    private void stopEventually() {
+        if (!bound && !submissionRunning) {
+            stopSelf();
+        }
+    }
+
+    boolean setTrackerEventData(String eventId, String teiId) {
+        if ((type != Type.TRACKER_EVENT && type != null) ||
+                (this.eventId != null && !this.eventId.equals(eventId)) ||
+                (this.teiId != null && !this.teiId.equals(teiId))
+        ) return false;
+
         this.eventId = eventId;
         this.teiId = teiId;
         this.enrollmentId = null;
         type = Type.TRACKER_EVENT;
+        return true;
     }
 
-    void setSimpleEventData(String eventId) {
+    boolean setSimpleEventData(String eventId) {
+        if ((type != Type.SIMPLE_EVENT && type != null) ||
+                (this.eventId != null && !this.eventId.equals(eventId))
+        ) return false;
+
         this.eventId = eventId;
         this.teiId = null;
         this.enrollmentId = null;
         type = Type.SIMPLE_EVENT;
+        return true;
     }
 
-    void setEnrollmentData(String enrollmentId, String teiId) {
+    boolean setEnrollmentData(String enrollmentId, String teiId) {
+        if ((type != Type.ENROLLMENT && type != null) ||
+                (this.enrollmentId != null && !this.enrollmentId.equals(enrollmentId)) ||
+                (this.teiId != null && !this.teiId.equals(teiId))
+        ) return false;
+
         this.eventId = null;
         this.teiId = teiId;
         this.enrollmentId = enrollmentId;
         type = Type.ENROLLMENT;
+        return true;
     }
 
     void sendSMS() {
-        if (smsSender != null) return; // maybe activity rotated caused double call
+        if (smsSender != null) {
+            // started sending before, just republish state
+            return;
+        }
         smsSender = d2.smsModule().smsSubmitCase();
         reportState(State.STARTED, 0, 0);
         Single<Integer> convertTask = chooseConvertTask();
@@ -113,11 +177,6 @@ public class SmsViewModel extends ViewModel {
         states.postValue(statesList);
     }
 
-    @Override
-    protected void onCleared() {
-        disposables.dispose();
-    }
-
     LiveData<List<SendingStatus>> sendingState() {
         return states;
     }
@@ -131,41 +190,46 @@ public class SmsViewModel extends ViewModel {
     }
 
     private void executeSending() {
+        submissionRunning = true;
         disposables.add(smsSender.send().subscribeOn(Schedulers.newThread()
         ).observeOn(Schedulers.newThread()
         ).subscribeWith(new DisposableObserver<SmsRepository.SmsSendingState>() {
             @Override
             public void onNext(SmsRepository.SmsSendingState state) {
-                if (!isLastStateSame(state.getSent(), state.getTotal())) {
+                if (!isLastStateTheSame(state.getSent(), state.getTotal())) {
                     reportState(State.SENDING, state.getSent(), state.getTotal());
                 }
             }
 
             @Override
             public void onError(Throwable e) {
+                submissionRunning = false;
                 reportError(e);
+                stopEventually();
             }
 
             @Override
             public void onComplete() {
+                submissionRunning = false;
                 reportState(State.COMPLETED, 0, 0);
+                stopEventually();
             }
         }));
     }
 
-    private boolean isLastStateSame(int sent, int total) {
+    private boolean isLastStateTheSame(int sent, int total) {
         if (statesList == null || statesList.size() == 0) return false;
         SendingStatus last = statesList.get(statesList.size() - 1);
         return last.state == State.SENDING && last.sent == sent && last.total == total;
     }
 
-    public static class SendingStatus {
+    public static class SendingStatus implements Serializable {
         public final State state;
         public final int sent;
         public final int total;
         public final Throwable error;
 
-        public SendingStatus(State state, Throwable error, int sent, int total) {
+        SendingStatus(State state, Throwable error, int sent, int total) {
             this.state = state;
             this.sent = sent;
             this.total = total;
@@ -173,12 +237,18 @@ public class SmsViewModel extends ViewModel {
         }
     }
 
-    public enum State {
+    public enum State implements Serializable {
         STARTED, CONVERTED, ITEM_NOT_READY, WAITING_COUNT_CONFIRMATION,
         COUNT_NOT_ACCEPTED, SENDING, COMPLETED, ERROR
     }
 
     public enum Type {
         ENROLLMENT, TRACKER_EVENT, SIMPLE_EVENT
+    }
+
+    class LocalBinder extends Binder {
+        SmsSendingService getService() {
+            return SmsSendingService.this;
+        }
     }
 }
