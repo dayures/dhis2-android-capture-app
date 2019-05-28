@@ -1,14 +1,19 @@
 package org.dhis2.usescases.sms;
 
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
+import androidx.core.app.NotificationCompat;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import org.dhis2.App;
+import org.dhis2.R;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.sms.domain.interactor.SmsSubmitCase;
 import org.hisp.dhis.android.core.sms.domain.repository.SmsRepository;
@@ -27,12 +32,11 @@ import io.reactivex.schedulers.Schedulers;
 
 public class SmsSendingService extends Service {
     private final IBinder binder = new LocalBinder();
+    private final static String SMS_NOTIFICATION_CHANNEL_ID = "sms_notification";
+    private final static int SMS_NOTIFICATION_ID = 345434369;
     @Inject
     D2 d2;
-    private Type type;
-    private String enrollmentId;
-    private String eventId;
-    private String teiId;
+    private InputArguments inputArguments = null;
     private CompositeDisposable disposables;
     private SmsSubmitCase smsSender = null;
     private MutableLiveData<List<SendingStatus>> states = new MutableLiveData<>();
@@ -82,42 +86,20 @@ public class SmsSendingService extends Service {
         }
     }
 
-    boolean setTrackerEventData(String eventId, String teiId) {
-        if ((type != Type.TRACKER_EVENT && type != null) ||
-                (this.eventId != null && !this.eventId.equals(eventId)) ||
-                (this.teiId != null && !this.teiId.equals(teiId))
-        ) return false;
-
-        this.eventId = eventId;
-        this.teiId = teiId;
-        this.enrollmentId = null;
-        type = Type.TRACKER_EVENT;
-        return true;
-    }
-
-    boolean setSimpleEventData(String eventId) {
-        if ((type != Type.SIMPLE_EVENT && type != null) ||
-                (this.eventId != null && !this.eventId.equals(eventId))
-        ) return false;
-
-        this.eventId = eventId;
-        this.teiId = null;
-        this.enrollmentId = null;
-        type = Type.SIMPLE_EVENT;
-        return true;
-    }
-
-    boolean setEnrollmentData(String enrollmentId, String teiId) {
-        if ((type != Type.ENROLLMENT && type != null) ||
-                (this.enrollmentId != null && !this.enrollmentId.equals(enrollmentId)) ||
-                (this.teiId != null && !this.teiId.equals(teiId))
-        ) return false;
-
-        this.eventId = null;
-        this.teiId = teiId;
-        this.enrollmentId = enrollmentId;
-        type = Type.ENROLLMENT;
-        return true;
+    /**
+     * @param args new input arguments
+     * @return false when failed to set these arguments because this service is submitting different
+     * set of data. View shouldn't connect to it, because it' submitting something else.
+     */
+    boolean setInputArguments(InputArguments args) {
+        if (args == null) {
+            return false;
+        }
+        if (inputArguments == null || args.isSameSubmission(inputArguments)) {
+            inputArguments = args;
+            return true;
+        }
+        return false;
     }
 
     void sendSMS() {
@@ -147,29 +129,28 @@ public class SmsSendingService extends Service {
     }
 
     private Single<Integer> chooseConvertTask() {
-        switch (type) {
+        switch (inputArguments.getSubmissionType()) {
             case ENROLLMENT:
-                if (enrollmentId != null && teiId != null)
-                    return smsSender.convertEnrollment(enrollmentId, teiId);
-                break;
+                return smsSender.convertEnrollment(inputArguments.getEnrollmentId(), inputArguments.getTeiId());
             case TRACKER_EVENT:
-                if (eventId != null && teiId != null) {
-                    return smsSender.convertTrackerEvent(eventId, teiId);
-                }
-                break;
+                return smsSender.convertTrackerEvent(inputArguments.getEventId(), inputArguments.getTeiId());
             case SIMPLE_EVENT:
-                if (eventId != null) {
-                    return smsSender.convertSimpleEvent(eventId);
-                }
-                break;
+                return smsSender.convertSimpleEvent(inputArguments.getEventId());
+            case WRONG_PARAMS:
+                reportState(State.ITEM_NOT_READY, 0, 0);
         }
-        reportState(State.ITEM_NOT_READY, 0, 0);
         return null;
     }
 
     private void reportState(State state, int sent, int total) {
-        statesList.add(new SendingStatus(state, null, sent, total));
+        SendingStatus currentStatus = new SendingStatus(state, null, sent, total);
+        statesList.add(currentStatus);
         states.postValue(statesList);
+
+        if (submissionRunning) {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.notify(SMS_NOTIFICATION_ID, makeNotification(currentStatus));
+        }
     }
 
     private void reportError(Throwable throwable) {
@@ -189,8 +170,38 @@ public class SmsSendingService extends Service {
         }
     }
 
-    private void executeSending() {
+    private void startBackgroundSubmissionNotification() {
         submissionRunning = true;
+        startForeground(SMS_NOTIFICATION_ID, makeNotification(statesList.get(statesList.size() - 1)));
+    }
+
+    private void stopBackgroundSubmissionNotification() {
+        submissionRunning = false;
+        stopForeground(true);
+        if (!bound) {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.notify(SMS_NOTIFICATION_ID, makeNotification(statesList.get(statesList.size() - 1)));
+        }
+    }
+
+    private Notification makeNotification(SendingStatus currentStatus) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, SMS_NOTIFICATION_CHANNEL_ID);
+        String text = StatusText.getTextForStatus(getResources(), currentStatus);
+        String title = StatusText.getTextSubmissionType(getResources(), inputArguments);
+        builder.setContentText(text);
+        builder.setContentTitle(title);
+        NotificationCompat.BigTextStyle bigTextStyle = new NotificationCompat.BigTextStyle();
+        bigTextStyle.setBigContentTitle(title);
+        bigTextStyle.bigText(text);
+        builder.setStyle(bigTextStyle);
+        builder.setWhen(System.currentTimeMillis());
+        builder.setSmallIcon(R.mipmap.ic_launcher);
+        builder.setPriority(Notification.PRIORITY_MAX);
+        return builder.build();
+    }
+
+    private void executeSending() {
+        startBackgroundSubmissionNotification();
         disposables.add(smsSender.send().subscribeOn(Schedulers.newThread()
         ).observeOn(Schedulers.newThread()
         ).subscribeWith(new DisposableObserver<SmsRepository.SmsSendingState>() {
@@ -203,19 +214,20 @@ public class SmsSendingService extends Service {
 
             @Override
             public void onError(Throwable e) {
-                submissionRunning = false;
                 reportError(e);
+                stopBackgroundSubmissionNotification();
                 stopEventually();
             }
 
             @Override
             public void onComplete() {
-                submissionRunning = false;
                 reportState(State.COMPLETED, 0, 0);
+                stopBackgroundSubmissionNotification();
                 stopEventually();
             }
         }));
     }
+
 
     private boolean isLastStateTheSame(int sent, int total) {
         if (statesList == null || statesList.size() == 0) return false;
@@ -240,10 +252,6 @@ public class SmsSendingService extends Service {
     public enum State implements Serializable {
         STARTED, CONVERTED, ITEM_NOT_READY, WAITING_COUNT_CONFIRMATION,
         COUNT_NOT_ACCEPTED, SENDING, COMPLETED, ERROR
-    }
-
-    public enum Type {
-        ENROLLMENT, TRACKER_EVENT, SIMPLE_EVENT
     }
 
     class LocalBinder extends Binder {

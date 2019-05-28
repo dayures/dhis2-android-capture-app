@@ -35,8 +35,6 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
-import timber.log.Timber;
-
 import static org.dhis2.usescases.sms.SmsSendingService.*;
 
 public class SmsSubmitActivity extends ActivityGlobalAbstract {
@@ -47,10 +45,7 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
     private static String STATE_STATES_LIST = "states_list";
     private static final int SMS_PERMISSIONS_REQ_ID = 102;
 
-    private String argEventId;
-    private String argEnrollmentId;
-    private String argTeiId;
-
+    private InputArguments inputArguments = new InputArguments(null, null, null);
     private SmsLogAdapter adapter;
     private View titleBar;
     private TextView state;
@@ -88,20 +83,15 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
         RecyclerView recycler = findViewById(R.id.smsLogRecycler);
         recycler.setAdapter(adapter);
         recycler.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
-        argEventId = getIntent().getStringExtra(ARG_EVENT);
-        argEnrollmentId = getIntent().getStringExtra(ARG_ENROLLMENT);
-        argTeiId = getIntent().getStringExtra(ARG_TEI);
+
+        Intent intent = getIntent();
+        inputArguments = new InputArguments(
+                intent.getStringExtra(ARG_EVENT),
+                intent.getStringExtra(ARG_ENROLLMENT),
+                intent.getStringExtra(ARG_TEI));
+
         TextView title = findViewById(R.id.smsLogTitle);
-        if (argEnrollmentId != null && argTeiId != null) {
-            title.setText(R.string.sms_title_enrollment);
-        } else if (argEventId != null && argTeiId != null) {
-            title.setText(R.string.sms_title_event);
-        } else if (argEventId != null) {
-            title.setText(R.string.sms_title_event);
-        } else {
-            showWrongInputDataError();
-            return;
-        }
+        title.setText(StatusText.getTextSubmissionType(getResources(), inputArguments));
         recoverState(savedInstanceState);
     }
 
@@ -155,30 +145,13 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
 
     private void linkToService() {
         smsSendingService.sendingState().observe(this, this::stateChanged);
-        boolean validService;
-        if (argEnrollmentId != null && argTeiId != null) {
-            validService = smsSendingService.setEnrollmentData(argEnrollmentId, argTeiId);
-        } else if (argEventId != null && argTeiId != null) {
-            validService = smsSendingService.setTrackerEventData(argEventId, argTeiId);
-        } else if (argEventId != null) {
-            validService = smsSendingService.setSimpleEventData(argEventId);
-        } else {
-            showWrongInputDataError();
-            return;
-        }
-        if (!validService) {
+        if (!smsSendingService.setInputArguments(inputArguments)) {
             showOtherServiceRunningError();
             return;
         }
         if (checkPermissions()) {
             smsSendingService.sendSMS();
         }
-    }
-
-    private void showWrongInputDataError() {
-        Timber.tag(SmsSubmitActivity.class.getSimpleName())
-                .e(new IllegalArgumentException("Required Intent arguments not set"));
-        finish();
     }
 
     private void showOtherServiceRunningError() {
