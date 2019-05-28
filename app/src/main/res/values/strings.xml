@@ -478,6 +478,7 @@
     <string name="sms_error_no_gateway_set">No gateway set</string>
     <string name="sms_error_no_user_login">User not logged in</string>
     <string name="sms_error_module_disabled">SMS module is disabled</string>
+    <string name="sms_error_ongoing_sunmission">Another SMS submission ongoing</string>
     <string name="sms_metadata_empty">SMS module not initiated, not found required metadata</string>
     <string name="sms_completed">Completed</string>
     <string name="sms_count_error">SMS count not accepted</string>

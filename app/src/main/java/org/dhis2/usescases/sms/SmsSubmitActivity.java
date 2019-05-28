@@ -16,6 +16,7 @@ import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -34,6 +35,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+import timber.log.Timber;
+
 import static org.dhis2.usescases.sms.SmsSendingService.*;
 
 public class SmsSubmitActivity extends ActivityGlobalAbstract {
@@ -43,6 +46,11 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
     private static String STATE_FINISHED = "submission_finished";
     private static String STATE_STATES_LIST = "states_list";
     private static final int SMS_PERMISSIONS_REQ_ID = 102;
+
+    private String argEventId;
+    private String argEnrollmentId;
+    private String argTeiId;
+
     private SmsLogAdapter adapter;
     private View titleBar;
     private TextView state;
@@ -80,6 +88,20 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
         RecyclerView recycler = findViewById(R.id.smsLogRecycler);
         recycler.setAdapter(adapter);
         recycler.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
+        argEventId = getIntent().getStringExtra(ARG_EVENT);
+        argEnrollmentId = getIntent().getStringExtra(ARG_ENROLLMENT);
+        argTeiId = getIntent().getStringExtra(ARG_TEI);
+        TextView title = findViewById(R.id.smsLogTitle);
+        if (argEnrollmentId != null && argTeiId != null) {
+            title.setText(R.string.sms_title_enrollment);
+        } else if (argEventId != null && argTeiId != null) {
+            title.setText(R.string.sms_title_event);
+        } else if (argEventId != null) {
+            title.setText(R.string.sms_title_event);
+        } else {
+            showWrongInputDataError();
+            return;
+        }
         recoverState(savedInstanceState);
     }
 
@@ -88,7 +110,7 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
         submissionFinished = state.getBoolean(STATE_FINISHED, false);
         try {
             ArrayList<SendingStatus> states = (ArrayList<SendingStatus>) state.getSerializable(STATE_STATES_LIST);
-            adapter.setStates(states);
+            stateChanged(states);
         } catch (Exception e) {
             if (submissionFinished) {
                 finish(); // nothing to show, will not get it from service
@@ -132,35 +154,35 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
     }
 
     private void linkToService() {
-        String eventId = getIntent().getStringExtra(ARG_EVENT);
-        String enrollmentId = getIntent().getStringExtra(ARG_ENROLLMENT);
-        String teiId = getIntent().getStringExtra(ARG_TEI);
-        TextView title = findViewById(R.id.smsLogTitle);
-
         smsSendingService.sendingState().observe(this, this::stateChanged);
         boolean validService;
-        if (enrollmentId != null) {
-            validService = smsSendingService.setEnrollmentData(enrollmentId, teiId);
-            title.setText(R.string.sms_title_enrollment);
-        } else if (eventId != null && teiId != null) {
-            validService = smsSendingService.setTrackerEventData(eventId, teiId);
-            title.setText(R.string.sms_title_event);
+        if (argEnrollmentId != null && argTeiId != null) {
+            validService = smsSendingService.setEnrollmentData(argEnrollmentId, argTeiId);
+        } else if (argEventId != null && argTeiId != null) {
+            validService = smsSendingService.setTrackerEventData(argEventId, argTeiId);
+        } else if (argEventId != null) {
+            validService = smsSendingService.setSimpleEventData(argEventId);
         } else {
-            validService = smsSendingService.setSimpleEventData(eventId);
-            title.setText(R.string.sms_title_event);
+            showWrongInputDataError();
+            return;
         }
         if (!validService) {
             showOtherServiceRunningError();
             return;
         }
-        state.setText(R.string.sms_bar_state_sending);
         if (checkPermissions()) {
             smsSendingService.sendSMS();
         }
     }
 
+    private void showWrongInputDataError() {
+        Timber.tag(SmsSubmitActivity.class.getSimpleName())
+                .e(new IllegalArgumentException("Required Intent arguments not set"));
+        finish();
+    }
+
     private void showOtherServiceRunningError() {
-        // TODO
+        Toast.makeText(this, R.string.sms_error_ongoing_sunmission, Toast.LENGTH_LONG).show();
         finish();
     }
 
@@ -204,23 +226,32 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
     }
 
     private void stateChanged(List<SendingStatus> states) {
+        state.setText("");
         if (states == null) return;
         adapter.setStates(states);
         if (states.size() == 0) {
             return;
         }
         SendingStatus lastState = states.get(states.size() - 1);
-        if (lastState.state == State.WAITING_COUNT_CONFIRMATION) {
-            askForMessagesAmount(lastState.total);
-        } else if (lastState.state == State.COMPLETED) {
-            state.setText(R.string.sms_bar_state_sent);
-            finishSubmission();
-        } else if (lastState.state == State.ERROR ||
-                lastState.state == State.COUNT_NOT_ACCEPTED ||
-                lastState.state == State.ITEM_NOT_READY) {
-            titleBar.setBackgroundColor(ContextCompat.getColor(this, R.color.sms_sync_title_bar_error));
-            state.setText(R.string.sms_bar_state_failed);
-            finishSubmission();
+        switch (lastState.state) {
+            case WAITING_COUNT_CONFIRMATION:
+                askForMessagesAmount(lastState.total);
+            case STARTED:
+            case CONVERTED:
+            case SENDING:
+                state.setText(R.string.sms_bar_state_sending);
+                break;
+            case ITEM_NOT_READY:
+            case COUNT_NOT_ACCEPTED:
+            case ERROR:
+                titleBar.setBackgroundColor(ContextCompat.getColor(this, R.color.sms_sync_title_bar_error));
+                state.setText(R.string.sms_bar_state_failed);
+                finishSubmission();
+                break;
+            case COMPLETED:
+                state.setText(R.string.sms_bar_state_sent);
+                finishSubmission();
+                break;
         }
     }
 
