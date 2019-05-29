@@ -12,7 +12,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.TypedValue;
-import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.Window;
@@ -20,6 +19,17 @@ import android.view.WindowManager;
 import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.Spinner;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.databinding.BindingMethod;
+import androidx.databinding.BindingMethods;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ObservableBoolean;
+import androidx.lifecycle.LiveData;
+import androidx.paging.PagedList;
+import androidx.recyclerview.widget.DividerItemDecoration;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -52,16 +62,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.core.content.ContextCompat;
-import androidx.databinding.BindingMethod;
-import androidx.databinding.BindingMethods;
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ObservableBoolean;
-import androidx.lifecycle.LiveData;
-import androidx.paging.PagedList;
-import androidx.recyclerview.widget.DividerItemDecoration;
 import io.reactivex.Flowable;
 import me.toptas.fancyshowcase.FancyShowCaseView;
 import me.toptas.fancyshowcase.FocusShape;
@@ -131,7 +131,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
 
         binding.scrollView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
 
-        binding.formRecycler.setAdapter(new FormAdapter(getSupportFragmentManager(), LayoutInflater.from(this), presenter.getOrgUnits(), this, presenter.getOrgUnitLevels()));
+        binding.formRecycler.setAdapter(new FormAdapter(getSupportFragmentManager(), this));
 
         binding.enrollmentButton.setOnTouchListener((v, event) -> {
             if (event.getAction() == MotionEvent.ACTION_DOWN) {
@@ -143,7 +143,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
             }
             return true;
         });
-}
+    }
 
     @Override
     protected void onResume() {
@@ -201,7 +201,7 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
 
         new Handler().postDelayed(() -> {
             FancyShowCaseView tuto1 = new FancyShowCaseView.Builder(getAbstractActivity())
-                    .title(getString(R.string.tuto_search_1))
+                    .title(getString(R.string.tuto_search_1_v2))
                     .closeOnTouch(true)
                     .build();
             FancyShowCaseView tuto2 = new FancyShowCaseView.Builder(getAbstractActivity())
@@ -211,13 +211,13 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
                     .closeOnTouch(true)
                     .build();
             FancyShowCaseView tuto3 = new FancyShowCaseView.Builder(getAbstractActivity())
-                    .title(getString(R.string.tuto_search_3))
+                    .title(getString(R.string.tuto_search_3_v2))
                     .focusOn(getAbstractActivity().findViewById(R.id.enrollmentButton))
                     .closeOnTouch(true)
                     .build();
             FancyShowCaseView tuto4 = new FancyShowCaseView.Builder(getAbstractActivity())
                     .focusOn(getAbstractActivity().findViewById(R.id.clear_button))
-                    .title(getString(R.string.tuto_search_4))
+                    .title(getString(R.string.tuto_search_4_v2))
                     .closeOnTouch(true)
                     .build();
 
@@ -229,9 +229,9 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
 
             HelpManager.getInstance().setScreenHelp(getClass().getName(), steps);
 
-            if (!prefs.getBoolean("TUTO_SEARCH_SHOWN", false) && !BuildConfig.DEBUG) {
+            if (!prefs.getBoolean(Constants.TUTORIAL_SEARCH, false) && !BuildConfig.DEBUG) {
                 HelpManager.getInstance().showHelp();/* getAbstractActivity().fancyShowCaseQueue.show();*/
-                prefs.edit().putBoolean("TUTO_SEARCH_SHOWN", true).apply();
+                prefs.edit().putBoolean(Constants.TUTORIAL_SEARCH, true).apply();
             }
 
         }, 500);
@@ -405,11 +405,11 @@ public class SearchTEActivity extends ActivityGlobalAbstract implements SearchTE
         animSearchFab(needsSearch);
     }
 
-    private void animSearchFab(boolean hasQuery){
-        if(hasQuery) {
+    private void animSearchFab(boolean hasQuery) {
+        if (hasQuery) {
             binding.enrollmentButton.startAnimation(
                     AnimationUtils.loadAnimation(binding.enrollmentButton.getContext(), R.anim.bounce_animation));
-        }else {
+        } else {
             binding.enrollmentButton.clearAnimation();
             hideKeyboard();
         }
