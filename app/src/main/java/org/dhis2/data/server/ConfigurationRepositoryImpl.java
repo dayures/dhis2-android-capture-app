@@ -4,6 +4,7 @@ import org.hisp.dhis.android.core.configuration.Configuration;
 import org.hisp.dhis.android.core.configuration.ConfigurationManager;
 
 import androidx.annotation.NonNull;
+
 import io.reactivex.Observable;
 import okhttp3.HttpUrl;
 
@@ -18,8 +19,7 @@ public class ConfigurationRepositoryImpl implements ConfigurationRepository {
     @NonNull
     @Override
     public Observable<Configuration> configure(@NonNull HttpUrl baseUrl) {
-        return Observable.defer(() -> Observable.fromCallable(
-                () -> configurationManager.configure(baseUrl)));
+        return Observable.defer(() -> Observable.just(Configuration.builder().serverUrl(baseUrl).build()));
     }
 
     @NonNull

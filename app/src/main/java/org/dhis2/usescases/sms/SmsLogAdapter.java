@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.dhis2.R;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class SmsLogAdapter extends RecyclerView.Adapter<SmsLogAdapter.ViewHolder> {
@@ -52,6 +53,7 @@ public class SmsLogAdapter extends RecyclerView.Adapter<SmsLogAdapter.ViewHolder
     }
 
     List<SmsSendingService.SendingStatus> getStates() {
+        if (states == null) return new ArrayList<>();
         return states;
     }
 

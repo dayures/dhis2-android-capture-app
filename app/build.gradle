@@ -158,7 +158,7 @@ sonarqube {
 
 dependencies {
 
-//    implementation project(":core")
+    implementation project(":core")
     implementation project(":customFab")
     implementation project(":dhis2-rule-engine")
     implementation project(":viewpagerdotsindicator")
