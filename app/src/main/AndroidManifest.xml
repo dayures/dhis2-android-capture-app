@@ -71,6 +71,7 @@
         <activity android:name=".usescases.map.MapSelectorActivity" />
         <activity android:name=".usescases.eventsWithoutRegistration.eventSummary.EventSummaryActivity" />
         <activity android:name=".usescases.programStageSelection.ProgramStageSelectionActivity" />
+        <activity android:name=".utils.WebViewActivity" />
         <activity
             android:name=".usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity"
             android:windowSoftInputMode="stateHidden" />
@@ -108,6 +109,8 @@
         <activity
             android:name=".usescases.sms.SmsSubmitActivity"
             android:theme="@style/Theme.AppCompat.Translucent" />
+
+        <service android:name=".usescases.sms.SmsSendingService" />
     </application>
 
 </manifest>

@@ -1,10 +1,17 @@
 package org.dhis2.utils.custom_views;
 
 import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.text.InputFilter;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.DatePicker;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.databinding.ViewDataBinding;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
@@ -12,13 +19,13 @@ import com.google.android.material.textfield.TextInputLayout;
 import org.dhis2.R;
 import org.dhis2.databinding.AgeCustomViewAccentBinding;
 import org.dhis2.databinding.AgeCustomViewBinding;
+import org.dhis2.databinding.WidgetDatepickerBinding;
 import org.dhis2.utils.DateUtils;
 
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-import androidx.databinding.ViewDataBinding;
 import timber.log.Timber;
 
 import static android.text.TextUtils.isEmpty;
@@ -41,7 +48,6 @@ public class AgeView extends FieldLayout implements View.OnClickListener, View.O
 
     private OnAgeSet listener;
     private String label;
-    private String description;
     private TextInputLayout inputLayout;
 
     public AgeView(Context context) {
@@ -66,7 +72,6 @@ public class AgeView extends FieldLayout implements View.OnClickListener, View.O
 
     public void setLabel(String label, String description) {
         this.label = label;
-        this.description = description;
         if (binding instanceof AgeCustomViewAccentBinding) {
             ((AgeCustomViewAccentBinding) binding).setLabel(label);
             ((AgeCustomViewAccentBinding) binding).setDescription(description);
@@ -93,6 +98,10 @@ public class AgeView extends FieldLayout implements View.OnClickListener, View.O
 
     @Override
     public void onClick(View view) {
+        showCustomCalendar(view);
+    }
+
+    private void showNativeCalendar(View view) {
         Calendar c = Calendar.getInstance();
         int year = c.get(Calendar.YEAR);
         int month = c.get(Calendar.MONTH);
@@ -105,7 +114,55 @@ public class AgeView extends FieldLayout implements View.OnClickListener, View.O
                 day);
         dateDialog.getDatePicker().setMaxDate(c.getTimeInMillis());
         dateDialog.setTitle(label);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            dateDialog.setButton(DialogInterface.BUTTON_NEUTRAL, getContext().getResources().getString(R.string.change_calendar), (dialog, which) -> {
+                dateDialog.dismiss();
+                showCustomCalendar(view);
+            });
+        }
         dateDialog.show();
+    }
+
+    private void showCustomCalendar(View view) {
+        LayoutInflater layoutInflater = LayoutInflater.from(getContext());
+        WidgetDatepickerBinding binding = WidgetDatepickerBinding.inflate(layoutInflater);
+        final DatePicker datePicker = binding.widgetDatepicker;
+
+        Calendar c = Calendar.getInstance();
+        int year = c.get(Calendar.YEAR);
+        int month = c.get(Calendar.MONTH);
+        int day = c.get(Calendar.DAY_OF_MONTH);
+
+        datePicker.updateDate(year, month, day);
+        datePicker.setMaxDate(c.getTimeInMillis());
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext(), R.style.DatePickerTheme)
+                .setTitle(label);
+                /*.setPositiveButton(R.string.action_accept, (dialog, which) -> handleDateInput(view, datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth()))
+                .setNeutralButton(getContext().getResources().getString(R.string.change_calendar), (dialog, which) -> showNativeCalendar(view));*/
+
+        alertDialog.setView(binding.getRoot());
+        Dialog dialog = alertDialog.create();
+
+        binding.changeCalendarButton.setOnClickListener(calendarButton->{
+            showNativeCalendar(view);
+            dialog.dismiss();
+        });
+        binding.clearButton.setOnClickListener(clearButton->{
+            listener.onAgeSet(null);
+            date.setText(null);
+            this.day.setText(null);
+            this.month.setText(null);
+            this.year.setText(null);
+            dialog.dismiss();
+        });
+
+        binding.acceptButton.setOnClickListener(acceptButton->{
+            handleDateInput(view, datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 
     public void setAgeChangedListener(OnAgeSet listener) {
@@ -117,14 +174,15 @@ public class AgeView extends FieldLayout implements View.OnClickListener, View.O
         if (!hasFocus)
             switch (v.getId()) {
                 case R.id.input_days:
+                    handleSingleInputs(true);
                 case R.id.input_month:
                 case R.id.input_year:
-                    handleSingleInputs();
+                    handleSingleInputs(false);
                     break;
             }
     }
 
-    protected void handleSingleInputs() {
+    protected void handleSingleInputs(boolean finish) {
 
         Calendar calendar = Calendar.getInstance();
 
@@ -139,7 +197,8 @@ public class AgeView extends FieldLayout implements View.OnClickListener, View.O
         String birthDate = DateUtils.uiDateFormat().format(calendar.getTime());
         if (!date.getText().toString().equals(birthDate)) {
             date.setText(birthDate);
-            listener.onAgeSet(calendar.getTime());
+            if (finish)
+                listener.onAgeSet(calendar.getTime());
         }
     }
 
@@ -162,7 +221,7 @@ public class AgeView extends FieldLayout implements View.OnClickListener, View.O
         if (!result.equals(date.getText().toString())) {
             date.setText(result);
             listener.onAgeSet(selectedCalendar.getTime());
-//            nextFocus(view);
+            nextFocus(view);
         }
     }
 
@@ -225,6 +284,20 @@ public class AgeView extends FieldLayout implements View.OnClickListener, View.O
         month.setFilters(new InputFilter[]{new InputFilter.LengthFilter(2)});
         year.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4)});
 
+        day.setOnEditorActionListener((v, actionId, event) -> {
+            nextFocus(v);
+            return true;
+        });
+
+        month.setOnEditorActionListener((v, actionId, event) -> {
+            day.requestFocus();
+            return true;
+        });
+
+        year.setOnEditorActionListener((v, actionId, event) -> {
+            month.requestFocus();
+            return true;
+        });
         day.setOnFocusChangeListener(this);
         month.setOnFocusChangeListener(this);
         year.setOnFocusChangeListener(this);

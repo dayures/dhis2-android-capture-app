@@ -9,14 +9,17 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.databinding.DataBindingUtil;
+import androidx.databinding.ObservableInt;
+import androidx.fragment.app.Fragment;
+
 import com.andrognito.pinlockview.PinLockListener;
 
 import org.dhis2.App;
-import org.dhis2.BuildConfig;
 import org.dhis2.R;
 import org.dhis2.databinding.ActivityMainBinding;
 import org.dhis2.usescases.about.AboutFragment;
-import org.dhis2.usescases.development.DevelopmentActivity;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
 import org.dhis2.usescases.jira.JiraFragment;
 import org.dhis2.usescases.main.program.ProgramFragment;
@@ -25,17 +28,13 @@ import org.dhis2.usescases.syncManager.ErrorDialog;
 import org.dhis2.usescases.syncManager.SyncManagerFragment;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.SharedPreferenceBooleanLiveData;
-import org.hisp.dhis.android.core.maintenance.D2Error;
+import org.hisp.dhis.android.core.imports.TrackerImportConflict;
 
 import java.util.List;
 import java.util.Objects;
 
 import javax.inject.Inject;
 
-import androidx.annotation.NonNull;
-import androidx.databinding.DataBindingUtil;
-import androidx.databinding.ObservableInt;
-import androidx.fragment.app.Fragment;
 import io.reactivex.functions.Consumer;
 
 
@@ -49,9 +48,6 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
 
     ObservableInt currentFragment = new ObservableInt(R.id.menu_home);
     private boolean isPinLayoutVisible = false;
-
-    private boolean metaSyncStatus;
-    private boolean metaNoNetwork;
 
     private int fragId;
     private SharedPreferences prefs;
@@ -103,20 +99,6 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
 
         SharedPreferenceBooleanLiveData lastMetaSyncStatus = new SharedPreferenceBooleanLiveData(prefs, Constants.LAST_META_SYNC_STATUS, true);
         SharedPreferenceBooleanLiveData lastMetaNoNetWork = new SharedPreferenceBooleanLiveData(prefs, Constants.LAST_META_SYNC_NO_NETWORK, false);
-        lastMetaSyncStatus.observe(this, metaStatus -> {
-            this.metaSyncStatus = metaStatus;
-            checkSyncStatus();
-        });
-        lastMetaNoNetWork.observe(this, metaNoNetwork -> {
-            this.metaNoNetwork = metaNoNetwork;
-            checkSyncStatus();
-        });
-
-        /*if (BuildConfig.DEBUG)
-            binding.moreOptions.setOnLongClickListener(view -> {
-                startActivity(DevelopmentActivity.class, null, false, false, null);
-                return false;
-            });*/
 
     }
 
@@ -200,6 +182,7 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
         binding.navView.setCheckedItem(id);
         Fragment fragment = null;
         String tag = null;
+
         switch (id) {
             case R.id.sync_manager:
                 fragment = new SyncManagerFragment();
@@ -243,10 +226,11 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
             binding.title.setText(tag);
         }
         binding.drawerLayout.closeDrawers();
+
     }
 
     @Override
-    public void showSyncErrors(List<D2Error> data) {
+    public void showSyncErrors(List<TrackerImportConflict> data) {
         new ErrorDialog().setData(data).show(getSupportFragmentManager().beginTransaction(), ErrorDialog.TAG);
     }
 
@@ -266,16 +250,5 @@ public class MainActivity extends ActivityGlobalAbstract implements MainContract
         else
             showToast(getString(R.string.no_intructions));
 
-    }
-
-    private void checkSyncStatus() {
-        if (!metaSyncStatus) {
-            if (metaNoNetwork)
-                binding.errorText.setText(getString(R.string.error_no_network_during_sync));
-            else
-                binding.errorText.setText(getString(R.string.errors_during_sync));
-            binding.errorLayout.setVisibility(View.VISIBLE);
-        } else
-            binding.errorLayout.setVisibility(View.GONE);
     }
 }

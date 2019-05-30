@@ -2,7 +2,9 @@ package org.dhis2.usescases.main.program;
 
 import android.annotation.SuppressLint;
 import android.app.DatePickerDialog;
+import android.app.Dialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -10,6 +12,7 @@ import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.DatePicker;
 
 import com.unnamed.b.atv.model.TreeNode;
 import com.unnamed.b.atv.view.AndroidTreeView;
@@ -19,6 +22,7 @@ import org.dhis2.Components;
 import org.dhis2.R;
 import org.dhis2.data.tuples.Pair;
 import org.dhis2.databinding.FragmentProgramBinding;
+import org.dhis2.databinding.WidgetDatepickerBinding;
 import org.dhis2.usescases.general.FragmentGlobalAbstract;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.DateUtils;
@@ -40,7 +44,7 @@ import javax.inject.Inject;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
-import androidx.core.content.ContextCompat;
+import androidx.appcompat.content.res.AppCompatResources;
 import androidx.core.view.GravityCompat;
 import androidx.databinding.DataBindingUtil;
 import androidx.drawerlayout.widget.DrawerLayout;
@@ -68,7 +72,6 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
     ProgramContract.Presenter presenter;
 
     private Period currentPeriod = NONE;
-    private StringBuilder orgUnitFilter = new StringBuilder();
 
     private AndroidTreeView treeView;
 
@@ -133,10 +136,6 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
 
     //endregion
 
-    public void setOrgUnitFilter(StringBuilder orgUnitFilter) {
-        this.orgUnitFilter = orgUnitFilter;
-    }
-
     @SuppressLint({"CheckResult", "RxLeakedSubscription"})
     @Override
     public void showRageDatePicker() {
@@ -198,21 +197,79 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
                     }
                 }, Timber::d);
             } else if (currentPeriod == DAILY) {
-                Calendar cal = Calendar.getInstance();
-                cal.setTime(chosenDateDay);
-                DatePickerDialog pickerDialog;
-                pickerDialog = new DatePickerDialog(context, (datePicker, year, monthOfYear, dayOfMonth) -> {
-                    calendar.set(year, monthOfYear, dayOfMonth);
+                showCustomCalendar(calendar);
+            }
+        }
+    }
+
+    private void showNativeCalendar(Calendar calendar) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(chosenDateDay);
+        DatePickerDialog pickerDialog;
+        pickerDialog = new DatePickerDialog(getContext(), (datePicker, year, monthOfYear, dayOfMonth) -> {
+            calendar.set(year, monthOfYear, dayOfMonth);
+            Date[] dates = DateUtils.getInstance().getDateFromDateAndPeriod(calendar.getTime(), currentPeriod);
+            ArrayList<Date> selectedDates = new ArrayList<>();
+            selectedDates.add(dates[0]);
+            presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(selectedDates, currentPeriod));
+            binding.buttonPeriodText.setText(DateUtils.getInstance().formatDate(dates[0]));
+            chosenDateDay = dates[0];
+        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+            pickerDialog.setButton(DialogInterface.BUTTON_NEUTRAL, getContext().getResources().getString(R.string.change_calendar), (dialog, which) -> {
+                pickerDialog.dismiss();
+                showCustomCalendar(calendar);
+            });
+        }
+
+        pickerDialog.show();
+    }
+
+    private void showCustomCalendar(Calendar calendar) {
+        LayoutInflater layoutInflater = LayoutInflater.from(getContext());
+//        View datePickerView = layoutInflater.inflate(R.layout.widget_datepicker, null);
+        WidgetDatepickerBinding widgetBinding = WidgetDatepickerBinding.inflate(layoutInflater);
+        final DatePicker datePicker = widgetBinding.widgetDatepicker;
+
+        Calendar c = Calendar.getInstance();
+        datePicker.updateDate(
+                c.get(Calendar.YEAR),
+                c.get(Calendar.MONTH),
+                c.get(Calendar.DAY_OF_MONTH));
+
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getContext(), R.style.DatePickerTheme);
+                /*.setPositiveButton(R.string.action_accept, (dialog, which) -> {
+                    calendar.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
                     Date[] dates = DateUtils.getInstance().getDateFromDateAndPeriod(calendar.getTime(), currentPeriod);
                     ArrayList<Date> selectedDates = new ArrayList<>();
                     selectedDates.add(dates[0]);
                     presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(selectedDates, currentPeriod));
                     binding.buttonPeriodText.setText(DateUtils.getInstance().formatDate(dates[0]));
                     chosenDateDay = dates[0];
-                }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
-                pickerDialog.show();
-            }
-        }
+                })
+                .setNeutralButton(getContext().getResources().getString(R.string.change_calendar), (dialog, which) -> showNativeCalendar(calendar));*/
+
+        alertDialog.setView(widgetBinding.getRoot());
+        Dialog dialog = alertDialog.create();
+
+        widgetBinding.changeCalendarButton.setOnClickListener(calendarButton -> {
+            showNativeCalendar(calendar);
+            dialog.dismiss();
+        });
+        widgetBinding.clearButton.setOnClickListener(clearButton -> dialog.dismiss());
+        widgetBinding.acceptButton.setOnClickListener(acceptButton -> {
+            calendar.set(datePicker.getYear(), datePicker.getMonth(), datePicker.getDayOfMonth());
+            Date[] dates = DateUtils.getInstance().getDateFromDateAndPeriod(calendar.getTime(), currentPeriod);
+            ArrayList<Date> selectedDates = new ArrayList<>();
+            selectedDates.add(dates[0]);
+            presenter.updateDateFilter(DateUtils.getInstance().getDatePeriodListFor(selectedDates, currentPeriod));
+            binding.buttonPeriodText.setText(DateUtils.getInstance().formatDate(dates[0]));
+            chosenDateDay = dates[0];
+            dialog.dismiss();
+        });
+
+        dialog.show();
     }
 
     public Period getCurrentPeriod() {
@@ -233,23 +290,23 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
             switch (currentPeriod) {
                 case NONE:
                     currentPeriod = DAILY;
-                    drawable = ContextCompat.getDrawable(context, R.drawable.ic_view_day);
+                    drawable = AppCompatResources.getDrawable(context, R.drawable.ic_view_day);
                     break;
                 case DAILY:
                     currentPeriod = WEEKLY;
-                    drawable = ContextCompat.getDrawable(context, R.drawable.ic_view_week);
+                    drawable = AppCompatResources.getDrawable(context, R.drawable.ic_view_week);
                     break;
                 case WEEKLY:
                     currentPeriod = MONTHLY;
-                    drawable = ContextCompat.getDrawable(context, R.drawable.ic_view_month);
+                    drawable = AppCompatResources.getDrawable(context, R.drawable.ic_view_month);
                     break;
                 case MONTHLY:
                     currentPeriod = YEARLY;
-                    drawable = ContextCompat.getDrawable(context, R.drawable.ic_view_year);
+                    drawable = AppCompatResources.getDrawable(context, R.drawable.ic_view_year);
                     break;
                 case YEARLY:
                     currentPeriod = NONE;
-                    drawable = ContextCompat.getDrawable(context, R.drawable.ic_view_none);
+                    drawable = AppCompatResources.getDrawable(context, R.drawable.ic_view_none);
                     break;
             }
             if (binding.programRecycler.getAdapter() != null) {
@@ -522,12 +579,20 @@ public class ProgramFragment extends FragmentGlobalAbstract implements ProgramCo
                     steps.add(tuto5);
                     steps.add(tuto6);
 
+                    if (binding.programRecycler.getAdapter().getItemCount() > 0) {
+                        FancyShowCaseView tuto11 = new FancyShowCaseView.Builder(getAbstractActivity())
+                                .title(getString(R.string.tuto_main_11))
+                                .focusOn(getAbstractActivity().findViewById(R.id.sync_status))
+                                .closeOnTouch(true)
+                                .build();
+                        steps.add(tuto11);
+                    }
 
                     HelpManager.getInstance().setScreenHelp(getClass().getName(), steps);
 
-                    if (!prefs.getBoolean("TUTO_SHOWN", false) && !BuildConfig.DEBUG) {
+                    if (!prefs.getBoolean(Constants.TUTORIAL_HOME, false) && !BuildConfig.DEBUG) {
                         HelpManager.getInstance().showHelp();
-                        prefs.edit().putBoolean("TUTO_SHOWN", true).apply();
+                        prefs.edit().putBoolean(Constants.TUTORIAL_HOME, true).apply();
                     }
 
                 }, 500);

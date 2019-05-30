@@ -5,6 +5,9 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.utils.CodeGenerator;
@@ -16,6 +19,7 @@ import org.hisp.dhis.android.core.category.CategoryOption;
 import org.hisp.dhis.android.core.category.CategoryOptionCombo;
 import org.hisp.dhis.android.core.common.BaseIdentifiableObject;
 import org.hisp.dhis.android.core.common.State;
+import org.hisp.dhis.android.core.enrollment.Enrollment;
 import org.hisp.dhis.android.core.enrollment.EnrollmentModel;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
 import org.hisp.dhis.android.core.event.Event;
@@ -24,6 +28,7 @@ import org.hisp.dhis.android.core.event.EventStatus;
 import org.hisp.dhis.android.core.organisationunit.OrganisationUnitModel;
 import org.hisp.dhis.android.core.program.ProgramModel;
 import org.hisp.dhis.android.core.program.ProgramStageModel;
+import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceModel;
 
 import java.text.ParseException;
@@ -35,8 +40,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;
 import io.reactivex.Observable;
@@ -189,9 +192,11 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                     orgUnitUid, programStage);
             return Observable.error(new SQLiteConstraintException(message));
         } else {
+            if (enrollmentUid != null)
+                updateEnrollment(enrollmentUid);
             if (trackedEntityInstanceUid != null)
                 updateTei(trackedEntityInstanceUid);
-            updateProgramTable(createDate, programUid);
+
             return Observable.just(uid);
         }
     }
@@ -243,19 +248,13 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                     orgUnitUid, programStage);
             return Observable.error(new SQLiteConstraintException(message));
         } else {
+            if (enrollmentUid != null)
+                updateEnrollment(enrollmentUid);
             if (trackedEntityInstanceUid != null)
                 updateTei(trackedEntityInstanceUid);
-            updateTrackedEntityInstance(uid, trackedEntityInstanceUid, orgUnitUid);
-            updateProgramTable(createDate, program);
+//            updateTrackedEntityInstance(uid, trackedEntityInstanceUid, orgUnitUid);
             return Observable.just(uid);
         }
-    }
-
-    private void updateProgramTable(Date lastUpdated, String programUid) {
-        //TODO: Update program causes crash
-        /* ContentValues program = new ContentValues();
-        program.put(EnrollmentModel.Columns.LAST_UPDATED, BaseIdentifiableObject.DATE_FORMAT.format(lastUpdated));
-        briteDatabase.update(ProgramModel.TABLE, program, ProgramModel.Columns.UID + " = ?", programUid);*/
     }
 
     @Override
@@ -368,12 +367,12 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
                 String message = String.format(Locale.US, "Failed to update event for uid=[%s]", eventUid);
                 return Observable.error(new SQLiteConstraintException(message));
             }
+            if (event.enrollment() != null)
+                updateEnrollment(event.enrollment());
             if (trackedEntityInstance != null)
                 updateTei(trackedEntityInstance);
         }
-        return event(eventUid).map(eventModel1 -> {
-            return eventModel1;
-        });
+        return event(eventUid).map(eventModel1 -> eventModel1);
     }
 
     @NonNull
@@ -456,30 +455,21 @@ public class EventInitialRepositoryImpl implements EventInitialRepository {
 
 
     private void updateEnrollment(String enrollmentUid) {
-        String selectEnrollment = "SELECT * FROM Enrollment WHERE uid = ?";
-        try (Cursor enrollmentCursor = briteDatabase.query(selectEnrollment, enrollmentUid)) {
-            if (enrollmentCursor != null && enrollmentCursor.moveToFirst()) {
-                EnrollmentModel enrollment = EnrollmentModel.create(enrollmentCursor);
-                ContentValues cv = enrollment.toContentValues();
-                cv.put(EnrollmentModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-                cv.put(EnrollmentModel.Columns.STATE,
-                        enrollment.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                briteDatabase.update(EnrollmentModel.TABLE, cv, "uid = ?", enrollmentUid);
-            }
-        }
+        Enrollment enrollment = d2.enrollmentModule().enrollments.uid(enrollmentUid).get();
+        ContentValues cv = enrollment.toContentValues();
+        cv.put(EnrollmentModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+        cv.put(EnrollmentModel.Columns.STATE, enrollment.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+        int enrollmentUpdated = briteDatabase.update(EnrollmentModel.TABLE, cv, "uid = ?", enrollmentUid);
+        Timber.d("ENROLLMENT %s UPDATED (%s)", enrollmentUid, enrollmentUpdated);
     }
 
     private void updateTei(String teiUid) {
-        String selectTei = "SELECT * FROM TrackedEntityInstance WHERE uid = ?";
-        try (Cursor teiCursor = briteDatabase.query(selectTei, teiUid)) {
-            if (teiCursor != null && teiCursor.moveToFirst()) {
-                TrackedEntityInstanceModel teiModel = TrackedEntityInstanceModel.create(teiCursor);
-                ContentValues cv = teiModel.toContentValues();
-                cv.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-                cv.put(TrackedEntityInstanceModel.Columns.STATE,
-                        teiModel.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-                briteDatabase.update(TrackedEntityInstanceModel.TABLE, cv, "uid = ?", teiUid);
-            }
-        }
+        TrackedEntityInstance tei = d2.trackedEntityModule().trackedEntityInstances.uid(teiUid).get();
+        ContentValues cv = tei.toContentValues();
+        cv.put(TrackedEntityInstanceModel.Columns.LAST_UPDATED, DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
+        cv.put(TrackedEntityInstanceModel.Columns.STATE, tei.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
+        int teiUpdated = briteDatabase.update(TrackedEntityInstanceModel.TABLE, cv, "uid = ?", teiUid);
+        Timber.d("TEI %s UPDATED (%s)", teiUid, teiUpdated);
+
     }
 }

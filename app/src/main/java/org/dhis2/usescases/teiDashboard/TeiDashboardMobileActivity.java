@@ -5,18 +5,16 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.TextUtils;
+import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
-
-import androidx.annotation.Nullable;
-import androidx.databinding.DataBindingUtil;
-import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentStatePagerAdapter;
-import androidx.lifecycle.ViewModelProviders;
-import androidx.viewpager.widget.ViewPager;
+import android.view.Window;
+import android.view.WindowManager;
 
 import com.google.android.material.tabs.TabLayout;
 
@@ -31,6 +29,7 @@ import org.dhis2.usescases.teiDashboard.adapters.DashboardPagerAdapter;
 import org.dhis2.usescases.teiDashboard.adapters.DashboardPagerTabletAdapter;
 import org.dhis2.usescases.teiDashboard.dashboardfragments.tei_data.TEIDataFragment;
 import org.dhis2.usescases.teiDashboard.teiProgramList.TeiProgramListActivity;
+import org.dhis2.utils.ColorUtils;
 import org.dhis2.utils.Constants;
 import org.dhis2.utils.HelpManager;
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus;
@@ -40,6 +39,13 @@ import java.util.ArrayList;
 
 import javax.inject.Inject;
 
+import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
+import androidx.databinding.DataBindingUtil;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.lifecycle.ViewModelProviders;
+import androidx.viewpager.widget.ViewPager;
 import me.toptas.fancyshowcase.FancyShowCaseView;
 import me.toptas.fancyshowcase.FocusShape;
 
@@ -65,6 +71,7 @@ public class TeiDashboardMobileActivity extends ActivityGlobalAbstract implement
     private boolean changingProgram;
 
     private DashboardViewModel dashboardViewModel;
+    private boolean fromRelationship;
 
 
     @Override
@@ -109,7 +116,7 @@ public class TeiDashboardMobileActivity extends ActivityGlobalAbstract implement
             finish();
         } else {
             orientation = Resources.getSystem().getConfiguration().orientation;
-            init(teiUid, programUid);
+            restoreAdapter(programUid);
         }
     }
 
@@ -154,6 +161,8 @@ public class TeiDashboardMobileActivity extends ActivityGlobalAbstract implement
             currentAdapter = adapter;
             binding.teiPager.setAdapter(adapter);
             binding.tabLayout.setVisibility(View.VISIBLE);
+            if (fromRelationship)
+                binding.teiPager.setCurrentItem(2, false);
         } else {
             tabletAdapter = new DashboardPagerTabletAdapter(this, getSupportFragmentManager(), programUid);
             currentAdapter = tabletAdapter;
@@ -178,6 +187,8 @@ public class TeiDashboardMobileActivity extends ActivityGlobalAbstract implement
             binding.tabLayout.setVisibility(View.GONE);
             binding.dotsIndicator.setVisibility(View.VISIBLE);
             binding.dotsIndicator.setViewPager(binding.teiPager);
+            if (fromRelationship)
+                binding.teiPager.setCurrentItem(1, false);
         }
 
     }
@@ -186,6 +197,7 @@ public class TeiDashboardMobileActivity extends ActivityGlobalAbstract implement
     public void setData(DashboardProgramModel program) {
 
         dashboardViewModel.updateDashboard(program);
+        setProgramColor(program.getObjectStyleForProgram(program.getCurrentProgram().uid()).color());
 
 
         binding.setDashboardModel(program);
@@ -239,6 +251,8 @@ public class TeiDashboardMobileActivity extends ActivityGlobalAbstract implement
 
     @Override
     public void setDataWithOutProgram(DashboardProgramModel program) {
+        dashboardViewModel.updateDashboard(program);
+        setProgramColor("");
 
         binding.setDashboardModel(program);
         binding.setTrackEntity(program.getTei());
@@ -303,6 +317,7 @@ public class TeiDashboardMobileActivity extends ActivityGlobalAbstract implement
                 currentAdapter = null;
                 changingProgram = true;
             }
+
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
@@ -401,4 +416,71 @@ public class TeiDashboardMobileActivity extends ActivityGlobalAbstract implement
         return programUid;
     }
 
+    public void toRelationships() {
+        fromRelationship = true;
+    }
+
+    public int getOrientation() {
+        return orientation;
+    }
+
+
+    private void setProgramColor(String color) {
+        int programTheme = ColorUtils.getThemeFromColor(color);
+        int programColor = ColorUtils.getColorFrom(color, ColorUtils.getPrimaryColor(this, ColorUtils.ColorType.PRIMARY));
+
+
+        SharedPreferences prefs = getAbstracContext().getSharedPreferences(
+                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
+        if (programTheme != -1) {
+            prefs.edit().putInt(Constants.PROGRAM_THEME, programTheme).apply();
+            binding.toolbar.setBackgroundColor(programColor);
+            binding.tabLayout.setBackgroundColor(programColor);
+            if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE)
+                if (binding.dotsIndicator.getVisibility() == View.VISIBLE) {
+                    binding.dotsIndicator.setDotIndicatorColor(programColor);
+                    binding.dotsIndicator.setStrokeDotsIndicatorColor(programColor);
+                }
+        } else {
+            prefs.edit().remove(Constants.PROGRAM_THEME).apply();
+            int colorPrimary;
+            switch (prefs.getInt(Constants.THEME, R.style.AppTheme)) {
+                case R.style.AppTheme:
+                    colorPrimary = R.color.colorPrimary;
+                    break;
+                case R.style.RedTheme:
+                    colorPrimary = R.color.colorPrimaryRed;
+                    break;
+                case R.style.OrangeTheme:
+                    colorPrimary = R.color.colorPrimaryOrange;
+                    break;
+                case R.style.GreenTheme:
+                    colorPrimary = R.color.colorPrimaryGreen;
+                    break;
+                default:
+                    colorPrimary = R.color.colorPrimary;
+                    break;
+            }
+            binding.toolbar.setBackgroundColor(ContextCompat.getColor(this, colorPrimary));
+            binding.tabLayout.setBackgroundColor(ContextCompat.getColor(this, colorPrimary));
+            if(getOrientation() == Configuration.ORIENTATION_LANDSCAPE)
+                if (binding.dotsIndicator.getVisibility() == View.VISIBLE) {
+                    binding.dotsIndicator.setDotIndicatorColor(ContextCompat.getColor(this, colorPrimary));
+                    binding.dotsIndicator.setStrokeDotsIndicatorColor(ContextCompat.getColor(this, colorPrimary));
+                }
+        }
+
+        binding.executePendingBindings();
+        setTheme(prefs.getInt(Constants.PROGRAM_THEME, prefs.getInt(Constants.THEME, R.style.AppTheme)));
+
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            TypedValue typedValue = new TypedValue();
+            TypedArray a = obtainStyledAttributes(typedValue.data, new int[]{R.attr.colorPrimaryDark});
+            int colorToReturn = a.getColor(0, 0);
+            a.recycle();
+            window.setStatusBarColor(colorToReturn);
+        }
+    }
 }

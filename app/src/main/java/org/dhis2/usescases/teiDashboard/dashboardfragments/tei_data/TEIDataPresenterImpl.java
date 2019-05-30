@@ -8,6 +8,7 @@ import android.view.View;
 
 import org.dhis2.R;
 import org.dhis2.data.metadata.MetadataRepository;
+import org.dhis2.usescases.eventsWithoutRegistration.eventCapture.EventCaptureActivity;
 import org.dhis2.usescases.eventsWithoutRegistration.eventInitial.EventInitialActivity;
 import org.dhis2.usescases.qrCodes.QrActivity;
 import org.dhis2.usescases.sms.SmsSubmitActivity;
@@ -233,18 +234,26 @@ class TEIDataPresenterImpl implements TEIDataContracts.Presenter {
     }
 
     @Override
-    public void onEventSelected(String uid, View sharedView) {
-        Event event = d2.eventModule().events.uid(uid).get();
-        Intent intent = new Intent(view.getContext(), EventInitialActivity.class);
-        intent.putExtras(EventInitialActivity.getBundle(
-                programUid, uid, EventCreationType.DEFAULT.name(), teiUid, null, event.organisationUnit(), event.programStage(), dashboardModel.getCurrentEnrollment().uid(), 0, dashboardModel.getCurrentEnrollment().enrollmentStatus()
-        ));
-        view.openEventInitial(intent);
+    public void onEventSelected(String uid, EventStatus eventStatus, View sharedView) {
+        if (eventStatus == EventStatus.ACTIVE || eventStatus == EventStatus.COMPLETED){
+            Intent intent = new Intent(view.getContext(), EventCaptureActivity.class);
+            intent.putExtras(EventCaptureActivity.getActivityBundle(uid, programUid));
+            view.openEventCapture(intent);
+        }
+        else {
+            Event event = d2.eventModule().events.uid(uid).get();
+            Intent intent = new Intent(view.getContext(), EventInitialActivity.class);
+            intent.putExtras(EventInitialActivity.getBundle(
+                    programUid, uid, EventCreationType.DEFAULT.name(), teiUid, null, event.organisationUnit(), event.programStage(), dashboardModel.getCurrentEnrollment().uid(), 0, dashboardModel.getCurrentEnrollment().enrollmentStatus()
+            ));
+            view.openEventInitial(intent);
+        }
     }
 
     @Override
     public void setDashboardProgram(DashboardProgramModel dashboardModel) {
         this.dashboardModel = dashboardModel;
+        this.programUid = dashboardModel.getCurrentProgram().uid();
     }
 
     @Override

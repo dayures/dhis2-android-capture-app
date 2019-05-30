@@ -48,6 +48,13 @@ android {
         setProperty("archivesBaseName", "dhis2-v" + versions.vName)
 
         buildConfigField "String", "SDK_VERSION", "\"" + libraries.dhis2sdk + "\""
+        buildConfigField "String", "MAPBOX_ACCESS_TOKEN", "\"pk.eyJ1Ijoib3Jpa2dnIiwiYSI6ImNqdWpqb24zYTFsOXo0M2xwcXRseGx3aXkifQ.6N9aqvpqdrrSBwO9GyfjUw\""
+
+        javaCompileOptions {
+            annotationProcessorOptions {
+                includeCompileClasspath true
+            }
+        }
     }
 
     testOptions {
@@ -117,8 +124,8 @@ android {
     }
 
     compileOptions {
-        targetCompatibility JavaVersion.VERSION_1_8
-        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility = "8"
+        sourceCompatibility = "8"
     }
 
     dataBinding {
@@ -139,7 +146,13 @@ android {
     }
 
     configurations.all {
-        resolutionStrategy.force 'junit:junit:4.12'
+        resolutionStrategy {
+            preferProjectModules()
+
+            force 'junit:junit:4.12','com.squareup.okhttp3:okhttp:3.12.0'
+
+            forcedModules = ['com.squareup.okhttp3:okhttp:3.12.0']
+        }
     }
 }
 
@@ -160,7 +173,7 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.1.0-alpha01'
     implementation 'androidx.annotation:annotation:1.0.1'
     implementation 'androidx.cardview:cardview:1.0.0'
-    implementation 'com.google.android.material:material:1.1.0-alpha02'
+    implementation 'com.google.android.material:material:1.1.0-alpha06'
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 
     implementation 'androidx.multidex:multidex:2.0.1'
@@ -204,7 +217,7 @@ dependencies {
     // Google's auto-value. Annotations are used only during compilation time, as well as
     // annotation processor which hoops up into compilation process
     api "com.google.auto.value:auto-value:${libraries.autovalue}"
-    annotationProcessor "com.google.auto.value:auto-value:${libraries.autovalue}"
+    kapt "com.google.auto.value:auto-value:${libraries.autovalue}"
 
     // Extension which generates mappers for work with cursors
     kapt "com.gabrielittner.auto.value:auto-value-cursor:${libraries.autovaluecursor}"
@@ -222,9 +235,10 @@ dependencies {
     //LOCATION
     implementation 'com.google.android.gms:play-services-basement:16.2.0'
     implementation 'com.google.android.gms:play-services-location:16.0.0'
-    implementation 'com.google.android.gms:play-services-maps:16.1.0'
-
     //endregion
+
+    // Kujaku dependencies
+    implementation 'io.ona.kujaku:library:0.7.1'
 
     // Jake Wharton libraries
     //timber
@@ -250,12 +264,12 @@ dependencies {
     //Test
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestImplementation'androidx.test.espresso:espresso-core:3.1.1'
-  /*  androidTestImplementation('androidx.test.espresso:espresso-core:3.1.1', {
-        exclude group: 'com.android.support', module: 'support-annotations'
-        exclude group: 'com.google.code.findbugs'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.1.1'
+    /*  androidTestImplementation('androidx.test.espresso:espresso-core:3.1.1', {
+          exclude group: 'com.android.support', module: 'support-annotations'
+          exclude group: 'com.google.code.findbugs'
 
-    })*/
+      })*/
     androidTestImplementation 'androidx.test.ext:junit:1.1.0'
 
 
@@ -268,6 +282,8 @@ dependencies {
 
     implementation 'com.facebook.stetho:stetho:1.5.0'
     implementation 'com.facebook.stetho:stetho-okhttp3:1.5.0'
+
+    implementation("com.squareup.okhttp3:okhttp:3.12.0")
 
     //RXLint
     implementation 'nl.littlerobots.rxlint:rxlint:1.6'
@@ -293,7 +309,7 @@ dependencies {
     //Paperwork
     implementation "hu.supercluster:paperwork:${libraries.paperwork}"
 
-    implementation group: 'com.google.guava', name: 'guava', version: '24.1-jre'
+    implementation 'com.google.guava:guava:27.0.1-android'
 
     implementation 'cat.ereza:customactivityoncrash:2.2.0'
 

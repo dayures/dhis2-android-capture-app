@@ -209,7 +209,11 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
         Activity activity = view.getAbstractActivity();
         Intent intent = new Intent(activity, SmsSubmitActivity.class);
         Bundle args = new Bundle();
-        SmsSubmitActivity.setEventData(args, eventId, teiId);
+        if (teiId != null) {
+            SmsSubmitActivity.setTrackerEventData(args, eventId, teiId);
+        } else {
+            SmsSubmitActivity.setSimpleEventData(args, eventId);
+        }
         intent.putExtras(args);
         activity.startActivity(intent);
     }
@@ -302,6 +306,25 @@ public class EventInitialPresenter implements EventInitialContract.Presenter {
                         .subscribe(
                                 eventUid -> view.onEventCreated(eventUid),
                                 t -> view.renderError(t.getMessage())));
+    }
+
+    @Override
+    public void scheduleEventPermanent(String enrollmentUid, String trackedEntityInstanceUid, String programStageModel, Date dueDate, String orgUnitUid,
+                              String categoryOptionComboUid, String categoryOptionsUid,
+                              String latitude, String longitude) {
+        if (programModel != null)
+            compositeDisposable.add(
+                    eventInitialRepository.scheduleEvent(enrollmentUid, null, view.getContext(), programModel.uid(),
+                            programStageModel, dueDate, orgUnitUid,
+                            categoryOptionComboUid, categoryOptionsUid,
+                            latitude, longitude)
+                            .subscribeOn(Schedulers.io())
+                            .switchMap(
+                                    eventId -> eventInitialRepository.updateTrackedEntityInstance(eventId, trackedEntityInstanceUid, orgUnitUid)
+                            )
+                            .observeOn(AndroidSchedulers.mainThread())
+                            .subscribe(view::onEventCreated, t -> view.renderError(t.getMessage()))
+            );
     }
 
     @Override

@@ -2,15 +2,21 @@ package org.dhis2.usescases.sms;
 
 import android.Manifest;
 import android.app.Dialog;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -19,27 +25,28 @@ import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentActivity;
-import androidx.lifecycle.ViewModelProviders;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import org.dhis2.App;
 import org.dhis2.R;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
-import org.dhis2.usescases.general.ViewModelFactory;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import javax.inject.Inject;
+import static org.dhis2.usescases.sms.SmsSendingService.*;
 
 public class SmsSubmitActivity extends ActivityGlobalAbstract {
     private static String ARG_TEI = "tei";
     private static String ARG_EVENT = "event";
     private static String ARG_ENROLLMENT = "enrollment";
+    private static String STATE_FINISHED = "submission_finished";
+    private static String STATE_STATES_LIST = "states_list";
     private static final int SMS_PERMISSIONS_REQ_ID = 102;
+
+    private InputArguments inputArguments = new InputArguments(null, null, null);
     private SmsLogAdapter adapter;
-    private SmsViewModel smsViewModel;
     private View titleBar;
     private TextView state;
     private RotateAnimation rotate = new RotateAnimation(
@@ -48,13 +55,15 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
             Animation.RELATIVE_TO_SELF, 0.5f
     );
     private boolean submissionFinished = false;
+    private SmsSendingService smsSendingService = null;
 
-    @Inject
-    ViewModelFactory<SmsViewModel> vmFactory;
-
-    public static void setEventData(Bundle args, String eventId, String teiId) {
+    public static void setTrackerEventData(Bundle args, String eventId, String teiId) {
         args.putString(ARG_EVENT, eventId);
         args.putString(ARG_TEI, teiId);
+    }
+
+    public static void setSimpleEventData(Bundle args, String eventId) {
+        args.putString(ARG_EVENT, eventId);
     }
 
     public static void setEnrollmentData(Bundle args, String teiId, String enrollmentId) {
@@ -69,46 +78,85 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
         getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         findViewById(R.id.smsLogOverlay).setOnClickListener(v -> finish());
         titleBar = findViewById(R.id.smsLogTitleBar);
-        TextView title = findViewById(R.id.smsLogTitle);
         state = findViewById(R.id.smsLogState);
         adapter = new SmsLogAdapter();
         RecyclerView recycler = findViewById(R.id.smsLogRecycler);
         recycler.setAdapter(adapter);
         recycler.setLayoutManager(new LinearLayoutManager(this, RecyclerView.VERTICAL, false));
 
-        String eventId = getIntent().getStringExtra(ARG_EVENT);
-        String enrollmentId = getIntent().getStringExtra(ARG_ENROLLMENT);
-        String teiId = getIntent().getStringExtra(ARG_TEI);
-        ((App) getApplicationContext()).userComponent().plus(new SmsModule()).inject(this);
-        smsViewModel = ViewModelProviders.of(this, vmFactory).get(SmsViewModel.class);
-        smsViewModel.sendingState().observe(this, this::stateChanged);
-        if (enrollmentId != null) {
-            smsViewModel.setEnrollmentData(enrollmentId, teiId);
-            title.setText(R.string.sms_title_enrollment);
-        } else if (eventId != null) {
-            smsViewModel.setEventData(eventId, teiId);
-            title.setText(R.string.sms_title_event);
-        }
-        state.setText(R.string.sms_bar_state_sending);
-        if (checkPermissions()) {
-            smsViewModel.sendSMS();
+        Intent intent = getIntent();
+        inputArguments = new InputArguments(
+                intent.getStringExtra(ARG_EVENT),
+                intent.getStringExtra(ARG_ENROLLMENT),
+                intent.getStringExtra(ARG_TEI));
+
+        TextView title = findViewById(R.id.smsLogTitle);
+        title.setText(StatusText.getTextSubmissionType(getResources(), inputArguments));
+        recoverState(savedInstanceState);
+    }
+
+    private void recoverState(Bundle state) {
+        if (state == null) return;
+        submissionFinished = state.getBoolean(STATE_FINISHED, false);
+        try {
+            ArrayList<SendingStatus> states = (ArrayList<SendingStatus>) state.getSerializable(STATE_STATES_LIST);
+            stateChanged(states);
+        } catch (Exception e) {
+            if (submissionFinished) {
+                finish(); // nothing to show, will not get it from service
+            }
+            // nothing scary, will get it from service later
         }
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        if (!submissionFinished) {
-            rotate.setDuration(1000);
-            rotate.setRepeatCount(Animation.INFINITE);
-            findViewById(R.id.smsLogIcon).startAnimation(rotate);
+        if (submissionFinished) {
+            // not connecting to service or starting animation
+            return;
         }
+        rotate.setDuration(1000);
+        rotate.setRepeatCount(Animation.INFINITE);
+        findViewById(R.id.smsLogIcon).startAnimation(rotate);
+        Intent intent = new Intent(this, SmsSendingService.class);
+        startService(intent);
+        bindService(intent, connection, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     protected void onStop() {
         rotate.cancel();
+        try {
+            unbindService(connection);
+        } catch (IllegalArgumentException error) {
+            // service not registered, maybe disconnected before automatically
+        }
+        smsSendingService = null;
         super.onStop();
+    }
+
+    @Override
+    protected void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(STATE_FINISHED, submissionFinished);
+        outState.putSerializable(STATE_STATES_LIST, new ArrayList<>(adapter.getStates()));
+    }
+
+    private void linkToService() {
+        smsSendingService.sendingState().observe(this, this::stateChanged);
+        if (!smsSendingService.setInputArguments(inputArguments)) {
+            showOtherServiceRunningError();
+            return;
+        }
+        if (checkPermissions()) {
+            smsSendingService.sendSMS();
+        }
+    }
+
+    private void showOtherServiceRunningError() {
+        Toast.makeText(this, R.string.sms_error_ongoing_sunmission, Toast.LENGTH_LONG).show();
+        finish();
     }
 
     private boolean hasPermissions(String[] permissions) {
@@ -125,7 +173,7 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode != SMS_PERMISSIONS_REQ_ID) return;
         // Try to send anyway. It will show a right message in case of important permission missing.
-        smsViewModel.sendSMS();
+        if (smsSendingService != null) smsSendingService.sendSMS();
     }
 
     private boolean checkPermissions() {
@@ -150,27 +198,59 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
         dialog.show(getSupportFragmentManager(), null);
     }
 
-    private void stateChanged(List<SmsViewModel.SendingStatus> states) {
+    private void stateChanged(List<SendingStatus> states) {
+        state.setText("");
+        if (states == null) return;
         adapter.setStates(states);
         if (states.size() == 0) {
             return;
         }
-        SmsViewModel.SendingStatus lastState = states.get(states.size() - 1);
-        if (lastState.state == SmsViewModel.State.WAITING_COUNT_CONFIRMATION) {
-            askForMessagesAmount(lastState.total);
-        } else if (lastState.state == SmsViewModel.State.COMPLETED) {
-            state.setText(R.string.sms_bar_state_sent);
-            finishSubmission();
-        } else if (lastState.state == SmsViewModel.State.ERROR || lastState.state == SmsViewModel.State.COUNT_NOT_ACCEPTED) {
-            titleBar.setBackgroundColor(ContextCompat.getColor(this, R.color.sms_sync_title_bar_error));
-            state.setText(R.string.sms_bar_state_failed);
-            finishSubmission();
+        SendingStatus lastState = states.get(states.size() - 1);
+        switch (lastState.state) {
+            case WAITING_COUNT_CONFIRMATION:
+                askForMessagesAmount(lastState.total);
+            case STARTED:
+            case CONVERTED:
+            case SENDING:
+                state.setText(R.string.sms_bar_state_sending);
+                break;
+            case ITEM_NOT_READY:
+            case COUNT_NOT_ACCEPTED:
+            case ERROR:
+                titleBar.setBackgroundColor(ContextCompat.getColor(this, R.color.sms_sync_title_bar_error));
+                state.setText(R.string.sms_bar_state_failed);
+                finishSubmission();
+                break;
+            case COMPLETED:
+                state.setText(R.string.sms_bar_state_sent);
+                finishSubmission();
+                break;
         }
     }
 
     private void finishSubmission() {
         rotate.cancel();
         submissionFinished = true;
+    }
+
+    private ServiceConnection connection = new ServiceConnection() {
+
+        @Override
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            SmsSendingService.LocalBinder binder = (SmsSendingService.LocalBinder) service;
+            smsSendingService = binder.getService();
+            linkToService();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName className) {
+            smsSendingService = null;
+        }
+    };
+
+    private void acceptSMSCount(boolean accept) {
+        if (smsSendingService == null) return;
+        smsSendingService.acceptSMSCount(accept);
     }
 
     public static class MessagesAmountDialog extends DialogFragment {
@@ -187,10 +267,10 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
             builder.setMessage(getString(R.string.sms_amount_question, amount));
 
             builder.setPositiveButton(android.R.string.yes, (dialog, which) ->
-                    ((SmsSubmitActivity) getActivity()).smsViewModel.acceptSMSCount(true)
+                    ((SmsSubmitActivity) getActivity()).acceptSMSCount(true)
             );
             builder.setNegativeButton(android.R.string.no, (dialog, which) ->
-                    ((SmsSubmitActivity) getActivity()).smsViewModel.acceptSMSCount(false)
+                    ((SmsSubmitActivity) getActivity()).acceptSMSCount(false)
             );
             return builder.create();
         }
@@ -208,7 +288,7 @@ public class SmsSubmitActivity extends ActivityGlobalAbstract {
         public void onCancel(@NonNull DialogInterface dialog) {
             FragmentActivity activity = getActivity();
             if (activity instanceof SmsSubmitActivity) {
-                ((SmsSubmitActivity) getActivity()).smsViewModel.acceptSMSCount(false);
+                ((SmsSubmitActivity) getActivity()).acceptSMSCount(false);
             }
         }
 

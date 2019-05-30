@@ -1,6 +1,6 @@
 package org.dhis2.data.forms;
 
-import com.google.android.gms.maps.model.LatLng;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 
 import org.dhis2.data.forms.dataentry.fields.FieldViewModel;
 import org.dhis2.data.tuples.Pair;
@@ -40,7 +40,13 @@ public interface FormRepository {
     Consumer<String> storeReportDate();
 
     @NonNull
+    Observable<Long> saveReportDate(String date);
+
+    @NonNull
     Consumer<String> storeIncidentDate();
+
+    @NonNull
+    Observable<Long> saveIncidentDate(String date);
 
     @NonNull
     Consumer<LatLng> storeCoordinates();
